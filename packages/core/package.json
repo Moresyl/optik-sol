@@ -5,6 +5,15 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "author": "zhanghaidong",
+  "keywords": ["debug", "console", "devtools", "mobile", "cdp", "instrumentation"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhanghaidong/optik.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/zhanghaidong/optik#readme",
+  "bugs": "https://github.com/zhanghaidong/optik/issues",
   "files": ["dist"],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

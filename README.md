@@ -1,5 +1,9 @@
 # Optik
 
+[![npm](https://img.shields.io/npm/v/@optik/debug.svg)](https://www.npmjs.com/package/@optik/debug)
+[![CI](https://github.com/zhanghaidong/optik/actions/workflows/ci.yml/badge.svg)](https://github.com/zhanghaidong/optik/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@optik/debug.svg)](LICENSE)
+
 移动端网页调试面板。一个 `<script>` 标签，零服务端，零运行时依赖。
 
 手机上排查问题最难受的从来不是「看不到日志」，而是**看到了拿不出来、点不中、展开就卡死**。
@@ -262,6 +266,16 @@ pnpm dev          # 启动验证台
 带副作用的 getter、跨 realm 对象、不冒泡的资源错误、不透明跨域响应。
 拿手机扫码打开，逐个点过去。
 
+## 参与
+
+欢迎提 Issue 和 PR。动手之前请先读 [CONTRIBUTING.md](CONTRIBUTING.md)——
+里面有一个必须知道的坑（UnoCSS 是 CLI 生成的，新 class 不重新生成就静默失效），
+以及几条不可协商的约束（只用 px、触控目标 44px、插桩必须可完整还原）。
+
+- 行为准则：[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- 安全问题：[SECURITY.md](SECURITY.md)，请勿通过公开 Issue 报告
+- 变更记录：[CHANGELOG.md](CHANGELOG.md)
+
 ## 许可
 
-MIT
+MIT，见 [LICENSE](LICENSE)。

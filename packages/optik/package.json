@@ -13,6 +13,14 @@
     "inspector",
     "webview"
   ],
+  "author": "zhanghaidong",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhanghaidong/optik.git",
+    "directory": "packages/optik"
+  },
+  "homepage": "https://github.com/zhanghaidong/optik#readme",
+  "bugs": "https://github.com/zhanghaidong/optik/issues",
   "files": [
     "dist"
   ],

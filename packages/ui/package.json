@@ -5,6 +5,15 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "author": "zhanghaidong",
+  "keywords": ["debug", "console", "devtools", "mobile", "solid", "shadow-dom"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhanghaidong/optik.git",
+    "directory": "packages/ui"
+  },
+  "homepage": "https://github.com/zhanghaidong/optik#readme",
+  "bugs": "https://github.com/zhanghaidong/optik/issues",
   "files": [
     "dist"
   ],
