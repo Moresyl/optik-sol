@@ -147,9 +147,10 @@ export function instrumentConsole(
     const existing = target[method];
     // Some embedded webviews ship a partial console; only wrap what exists, but still
     // provide a no-op original so callers can rely on `original[method]`.
-    original[method] = typeof existing === 'function'
-      ? (existing as (...args: unknown[]) => void).bind(globalThis.console)
-      : () => {};
+    original[method] =
+      typeof existing === 'function'
+        ? (existing as (...args: unknown[]) => void).bind(globalThis.console)
+        : () => {};
 
     descriptors.set(method, Object.getOwnPropertyDescriptor(globalThis.console, method));
 
@@ -210,12 +211,7 @@ interface HandleContext {
   shouldCaptureStack: boolean;
 }
 
-function handle(
-  method: ConsoleMethod,
-  level: LogLevel,
-  args: unknown[],
-  ctx: HandleContext,
-): void {
+function handle(method: ConsoleMethod, level: LogLevel, args: unknown[], ctx: HandleContext): void {
   const { counters, timers, emit, shouldCaptureStack } = ctx;
   const stackTrace = shouldCaptureStack ? captureStack() : undefined;
 

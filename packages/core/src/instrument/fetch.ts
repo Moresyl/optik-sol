@@ -26,7 +26,10 @@ export interface FetchInstrumentOptions {
   nextId(): string;
 }
 
-export function instrumentFetch(sink: NetworkSink, options: FetchInstrumentOptions): Instrumentation {
+export function instrumentFetch(
+  sink: NetworkSink,
+  options: FetchInstrumentOptions,
+): Instrumentation {
   const { maxBodyBytes = DEFAULT_MAX_BODY_BYTES, nextId } = options;
   const originalFetch = globalThis.fetch;
   if (typeof originalFetch !== 'function') return { dispose() {} };
@@ -53,11 +56,7 @@ export function instrumentFetch(sink: NetworkSink, options: FetchInstrumentOptio
           : headersToEntries(input.headers);
         // A Request's body is a stream we must not consume — record it as such.
         requestBody = init?.body
-          ? describeRequestBody(
-              init.body,
-              findHeader(requestHeaders, 'content-type'),
-              maxBodyBytes,
-            )
+          ? describeRequestBody(init.body, findHeader(requestHeaders, 'content-type'), maxBodyBytes)
           : input.bodyUsed || input.body
             ? { omitted: true, omittedReason: 'streaming' }
             : undefined;
@@ -212,7 +211,7 @@ function finalize(
       timing: { startTime, responseStart, endTime, duration: endTime - startTime },
     });
   } catch {
-    // Ignore.
+          // Ignore.
   }
 }
 
@@ -227,7 +226,7 @@ function reportFailure(sink: NetworkSink, id: string, startTime: number, error: 
       timing: { startTime, endTime, duration: endTime - startTime },
     });
   } catch {
-    // Ignore.
+          // Ignore.
   }
 }
 

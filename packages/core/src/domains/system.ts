@@ -77,9 +77,11 @@ export function readSafeArea(): SystemInfo['safeArea'] {
 }
 
 function readConnection(): SystemInfo['network'] {
-  const connection = (globalThis.navigator as Navigator & {
-    connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean };
-  })?.connection;
+  const connection = (
+    globalThis.navigator as Navigator & {
+      connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean };
+    }
+  )?.connection;
   if (!connection) return undefined;
   return {
     effectiveType: connection.effectiveType,
@@ -90,9 +92,11 @@ function readConnection(): SystemInfo['network'] {
 }
 
 function readMemory(): SystemInfo['memory'] {
-  const memory = (performance as Performance & {
-    memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
-  }).memory;
+  const memory = (
+    performance as Performance & {
+      memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+    }
+  ).memory;
   if (!memory) return undefined;
   return {
     usedJSHeapSize: memory.usedJSHeapSize,

@@ -1,6 +1,6 @@
 {
   "name": "optik-sol-monorepo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Optik Sol 工作区：移动端网页调试面板。",
   "private": true,
   "type": "module",

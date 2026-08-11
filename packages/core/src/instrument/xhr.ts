@@ -86,7 +86,10 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
     return originalSetRequestHeader.call(this, name, value);
   };
 
-  Original.prototype.send = function send(this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null) {
+  Original.prototype.send = function send(
+    this: XMLHttpRequest,
+    body?: Document | XMLHttpRequestBodyInit | null,
+  ) {
     const state = states.get(this);
     if (!state || state.internal) return originalSend.call(this, body as XMLHttpRequestBodyInit);
 

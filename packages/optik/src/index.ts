@@ -30,14 +30,15 @@ function readScriptOptions(): MountOptions {
 
   const options: MountOptions = {};
   const theme = script.dataset['theme'];
-  if (theme === 'dark' || theme === 'light' || theme === 'auto') options.theme = theme;
+  if (theme === 'dark' || theme === 'light') options.theme = theme;
   if (script.dataset['open'] !== undefined) options.defaultOpen = true;
 
   const maxLogs = Number(script.dataset['maxLogs']);
   if (Number.isFinite(maxLogs) && maxLogs > 0) options.log = { maxEntries: maxLogs };
 
   const maxRequests = Number(script.dataset['maxRequests']);
-  if (Number.isFinite(maxRequests) && maxRequests > 0) options.network = { maxRecords: maxRequests };
+  if (Number.isFinite(maxRequests) && maxRequests > 0)
+    options.network = { maxRecords: maxRequests };
 
   return options;
 }

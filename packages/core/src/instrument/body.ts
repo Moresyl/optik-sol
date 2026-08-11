@@ -12,7 +12,8 @@ import type { NetworkBody } from '../types';
 /** Bodies above this are recorded as metadata only. */
 export const DEFAULT_MAX_BODY_BYTES = 512 * 1024;
 
-const TEXTUAL_MIME = /^(text\/|application\/(json|xml|javascript|x-www-form-urlencoded|graphql|ld\+json|problem\+json)|.*\+json$|.*\+xml$)/i;
+const TEXTUAL_MIME =
+  /^(text\/|application\/(json|xml|javascript|x-www-form-urlencoded|graphql|ld\+json|problem\+json)|.*\+json$|.*\+xml$)/i;
 
 export function mimeTypeOf(contentType: string | null | undefined): string | undefined {
   if (!contentType) return undefined;
@@ -131,7 +132,12 @@ export function truncateText(
   };
 }
 
-export function splitUrl(rawUrl: string): { url: string; name: string; origin: string; query: [string, string][] } {
+export function splitUrl(rawUrl: string): {
+  url: string;
+  name: string;
+  origin: string;
+  query: [string, string][];
+} {
   let parsed: URL | undefined;
   try {
     parsed = new URL(rawUrl, globalThis.location?.href);

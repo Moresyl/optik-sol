@@ -157,7 +157,8 @@ export function formatStyledParts(
 
 /** Plain-text rendering of a mirrored argument, used for search and clipboard. */
 export function remoteObjectToText(remote: RemoteObject, depth = 0): string {
-  if (remote.type === 'string') return depth === 0 ? String(remote.value ?? '') : JSON.stringify(remote.value);
+  if (remote.type === 'string')
+    return depth === 0 ? String(remote.value ?? '') : JSON.stringify(remote.value);
   if (remote.unserializableValue !== undefined) return remote.unserializableValue;
   if (remote.type !== 'object' && remote.type !== 'function') return remote.description;
   if (remote.subtype === 'null') return 'null';
@@ -182,8 +183,10 @@ export function remoteObjectToText(remote: RemoteObject, depth = 0): string {
   const body = preview.properties
     .map((property) =>
       isArray
-        ? (property.valuePreview ? previewToText(property.valuePreview, depth + 1) : property.value ?? '')
-        : `${property.name}: ${property.valuePreview ? previewToText(property.valuePreview, depth + 1) : property.value ?? ''}`,
+        ? property.valuePreview
+          ? previewToText(property.valuePreview, depth + 1)
+          : (property.value ?? '')
+        : `${property.name}: ${property.valuePreview ? previewToText(property.valuePreview, depth + 1) : (property.value ?? '')}`,
     )
     .join(', ');
 

@@ -82,10 +82,13 @@ export function createStore(kernel: OptikKernel): Store {
     disposeRoot = dispose;
     return buildStore(kernel);
   });
-  return { ...store, dispose: () => {
-    store.dispose();
-    disposeRoot();
-  } };
+  return {
+    ...store,
+    dispose: () => {
+      store.dispose();
+      disposeRoot();
+    },
+  };
 }
 
 function buildStore(kernel: OptikKernel): Store {

@@ -10,7 +10,7 @@
 import { createSignal, For, Show, createMemo, type JSX } from 'solid-js';
 import type { NetworkRecord, NetworkBody, OptikKernel, RequestInitiator } from 'optik-core';
 import type { Store } from '../store';
-import type { CopyController } from './Copy';
+import { CopyButton, type CopyController } from './Copy';
 import { ValueView } from './Value';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
@@ -31,7 +31,8 @@ const INITIATOR_LABELS: Record<RequestInitiator, string> = {
  * 混在一起的列表等于没有列表——所以分类要同时做两件事：**能一键筛掉**，
  * 以及**每行一眼能认出来**。
  */
-export type RequestKind = 'api' | 'stream' | 'script' | 'style' | 'image' | 'font' | 'media' | 'doc' | 'other';
+export type RequestKind =
+  'api' | 'stream' | 'script' | 'style' | 'image' | 'font' | 'media' | 'doc' | 'other';
 
 const KIND_LABELS: Record<RequestKind, string> = {
   api: '接口',
@@ -47,13 +48,35 @@ const KIND_LABELS: Record<RequestKind, string> = {
 
 /** 扩展名 → 分类。Resource Timing 拿不到 Content-Type 时的兜底。 */
 const EXTENSION_KINDS: Record<string, RequestKind> = {
-  js: 'script', mjs: 'script', cjs: 'script', ts: 'script',
+  js: 'script',
+  mjs: 'script',
+  cjs: 'script',
+  ts: 'script',
   css: 'style',
-  png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
-  avif: 'image', svg: 'image', ico: 'image', bmp: 'image',
-  woff: 'font', woff2: 'font', ttf: 'font', otf: 'font', eot: 'font',
-  mp4: 'media', webm: 'media', mp3: 'media', wav: 'media', ogg: 'media', m3u8: 'media',
-  html: 'doc', htm: 'doc', json: 'api', xml: 'doc',
+  png: 'image',
+  jpg: 'image',
+  jpeg: 'image',
+  gif: 'image',
+  webp: 'image',
+  avif: 'image',
+  svg: 'image',
+  ico: 'image',
+  bmp: 'image',
+  woff: 'font',
+  woff2: 'font',
+  ttf: 'font',
+  otf: 'font',
+  eot: 'font',
+  mp4: 'media',
+  webm: 'media',
+  mp3: 'media',
+  wav: 'media',
+  ogg: 'media',
+  m3u8: 'media',
+  html: 'doc',
+  htm: 'doc',
+  json: 'api',
+  xml: 'doc',
 };
 
 /** `initiatorType`（来自 Resource Timing）→ 分类。比猜扩展名可靠。 */
@@ -106,22 +129,22 @@ function kindOf(record: NetworkRecord): RequestKind {
 const NARROW_COLUMNS = '36px minmax(0, 1fr) 44px';
 const WIDE_COLUMNS = '36px minmax(0, 1fr) 44px 72px 68px';
 
-/** 顶部筛选的三档。分类有九种，但手指要点的只该有三个。 */
-type KindFilter = 'all' | 'api' | 'resource' | 'stream';
-
-const FILTER_LABELS: Record<KindFilter, string> = {
-  all: '全部',
-  api: '接口',
-  resource: '资源',
-  stream: '实时',
-};
-
-function matchesFilter(kind: RequestKind, filter: KindFilter): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'api') return kind === 'api';
-  if (filter === 'stream') return kind === 'stream';
-  return kind !== 'api' && kind !== 'stream';
-}
+/**
+ * 筛选条上分类的排列顺序，与 DevTools 的 Fetch/XHR、JS、CSS、Img… 同一套思路：
+ * 一档对应一种资源，不做「资源」这种二次归堆——查 JS 的时候不该连图片一起看。
+ * 排序按查问题的频率，不按字母。
+ */
+const FILTER_ORDER: RequestKind[] = [
+  'api',
+  'script',
+  'style',
+  'image',
+  'media',
+  'font',
+  'doc',
+  'stream',
+  'other',
+];
 
 /** 分类徽章。颜色由 CSS 的 data-kind 驱动——类名是数据拼的，Uno 的静态扫描看不见。 */
 function KindBadge(props: { kind: RequestKind }): JSX.Element {
@@ -195,17 +218,25 @@ function recordToText(record: NetworkRecord): string {
     ...record.requestHeaders.map(([name, value]) => `${name}: ${value}`),
   ];
   if (record.requestBody?.text) lines.push('', '--- 请求体 ---', record.requestBody.text);
-  lines.push('', '--- 响应头 ---', ...record.responseHeaders.map(([name, value]) => `${name}: ${value}`));
+  lines.push(
+    '',
+    '--- 响应头 ---',
+    ...record.responseHeaders.map(([name, value]) => `${name}: ${value}`),
+  );
   if (record.responseBody?.text) lines.push('', '--- 响应体 ---', record.responseBody.text);
   if (record.error) lines.push('', `错误：${record.error}`);
   return lines.join('\n');
 }
 
-function Section(props: { title: string; children: JSX.Element; action?: JSX.Element }): JSX.Element {
+function Section(props: {
+  title: string;
+  children: JSX.Element;
+  action?: JSX.Element;
+}): JSX.Element {
   return (
     <div class="border-b border-line">
       <div class="row-center justify-between px-3 py-2 bg-bg-elevated not-selectable">
-        <span class="text-sm font-600 text-fg-secondary">{props.title}</span>
+        <span class="font-600 text-fg-secondary">{props.title}</span>
         {props.action}
       </div>
       <div class="px-3 py-2">{props.children}</div>
@@ -217,11 +248,11 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
   return (
     <Show
       when={props.items.length > 0}
-      fallback={<div class="text-sm text-fg-tertiary not-selectable">（无）</div>}
+      fallback={<div class="text-fg-tertiary not-selectable">（无）</div>}
     >
       <For each={props.items}>
         {([name, value]) => (
-          <div class="selectable wrap-anywhere font-mono text-sm leading-5 py-0.5">
+          <div class="selectable wrap-anywhere font-mono leading-5 py-0.5">
             <span style={{ color: 'var(--optik-token-key)' }}>{name}</span>
             <span class="text-fg-tertiary">: </span>
             <span>{value}</span>
@@ -239,39 +270,49 @@ function BodyView(props: {
   label: string;
 }): JSX.Element {
   return (
-    <Show
-      when={props.body}
-      fallback={<div class="text-sm text-fg-tertiary not-selectable">（无）</div>}
-    >
+    <Show when={props.body} fallback={<div class="text-fg-tertiary not-selectable">（无）</div>}>
       {(body) => (
         <>
           <Show when={body().omitted}>
-            <div class="text-sm text-warn not-selectable">
+            <div class="text-warn not-selectable">
               {OMITTED_REASONS[body().omittedReason ?? 'unavailable'] ?? '内容未保留'}
               <Show when={body().size}>（{formatBytes(body().size)}）</Show>
             </div>
           </Show>
 
-          {/* JSON 已在内核里做过惰性镜像，直接给树，不必让用户面对一行压缩文本。 */}
+          {/*
+            JSON 已在内核里做过惰性镜像，直接给树，不必让用户面对一行压缩文本。
+            domain 必须显式给网络域：这些 objectId 是网络域的注册表发的，
+            用默认的日志域去解会解到编号相同的另一个对象上。
+          */}
           <Show when={body().parsed}>
-            {(parsed) => <ValueView value={parsed()} kernel={props.kernel} />}
+            {(parsed) => (
+              <ValueView value={parsed()} kernel={props.kernel} domain={props.kernel.network} />
+            )}
           </Show>
 
           <Show when={body().text && !body().parsed}>
-            <div class="selectable wrap-anywhere font-mono text-sm leading-5 max-h-80 overflow-y-auto">
+            <div class="selectable wrap-anywhere font-mono leading-5 max-h-80 overflow-y-auto">
               {body().text}
             </div>
           </Show>
 
           <Show when={body().text}>
             {(text) => (
-              <div class="row-center gap-3 mt-2 text-2xs not-selectable">
-                <button class="text-accent py-1" onClick={() => props.copier.copy(text()!, props.label)}>
-                  复制
-                </button>
-                <button class="text-fg-tertiary py-1" onClick={() => props.copier.reveal(text()!, props.label)}>
+              <div class="row-center gap-1 mt-2 not-selectable">
+                <CopyButton
+                  copier={props.copier}
+                  text={() => text()!}
+                  label={props.label}
+                  class="min-h-9 px-2 text-accent"
+                />
+                <button
+                  class="icon-btn min-h-9 px-2"
+                  onClick={() => props.copier.reveal(text()!, props.label)}
+                >
                   查看原文
                 </button>
+                <span class="flex-1" />
                 <span class="text-fg-tertiary">{formatBytes(body().size)}</span>
               </div>
             )}
@@ -292,7 +333,10 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
       { label: 'TLS 握手', value: tls, color: '#f07070' },
       { label: '等待响应', value: ttfb, color: '#60b0f0' },
       { label: '内容下载', value: download, color: '#60c088' },
-    ].filter((phase): phase is { label: string; value: number; color: string } => phase.value !== undefined);
+    ].filter(
+      (phase): phase is { label: string; value: number; color: string } =>
+        phase.value !== undefined,
+    );
   });
 
   const total = createMemo(() => phases().reduce((sum, phase) => sum + phase.value, 0));
@@ -301,7 +345,7 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
     <Show
       when={phases().length > 0}
       fallback={
-        <div class="text-sm text-fg-tertiary not-selectable">
+        <div class="text-fg-tertiary not-selectable">
           无分段数据（跨域资源需服务端返回 Timing-Allow-Origin 才会暴露耗时明细）
         </div>
       }
@@ -318,7 +362,7 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
       </div>
       <For each={phases()}>
         {(phase) => (
-          <div class="row-center justify-between text-sm py-0.5">
+          <div class="row-center justify-between py-0.5">
             <span class="row-center gap-1.5 text-fg-secondary">
               <span class="w-2 h-2 rounded-full shrink-0" style={{ background: phase.color }} />
               {phase.label}
@@ -350,28 +394,32 @@ function RequestDetail(props: {
             </button>
           }
         >
-          <button class="chip shrink-0 text-fg-tertiary" aria-label="关闭详情" onClick={props.onBack}>
+          <button
+            class="chip shrink-0 text-fg-tertiary"
+            aria-label="关闭详情"
+            onClick={props.onBack}
+          >
             ✕
           </button>
         </Show>
-        <span class="flex-1 min-w-0 truncate text-sm not-selectable">{props.record.name}</span>
-        <button
-          class="chip shrink-0 text-accent"
-          onClick={() => props.copier.copy(toCurl(props.record), 'cURL 命令')}
-        >
-          cURL
-        </button>
-        <button
-          class="chip shrink-0"
-          onClick={() => props.copier.copy(recordToText(props.record), '请求详情')}
-        >
-          复制
-        </button>
+        <span class="flex-1 min-w-0 truncate not-selectable">{props.record.name}</span>
+        {/*
+          详情头上只留一颗复制按钮，复制的是整份详情。
+          原来这里并排放着「cURL」和「全部」两颗——两颗都是复制，
+          却用两个不同的词，还得先读懂哪个是哪个。cURL 挪进了下面
+          自己的分区，标题写着「cURL 命令」，按钮就只用说「复制」。
+        */}
+        <CopyButton
+          copier={props.copier}
+          text={() => recordToText(props.record)}
+          label="请求详情"
+          class="min-h-9 px-2"
+        />
       </div>
 
       <div class="flex-1 min-h-0 overflow-y-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">
         <Section title="概览">
-          <div class="selectable wrap-anywhere font-mono text-sm leading-5">
+          <div class="selectable wrap-anywhere font-mono leading-5">
             <div>
               <span class="text-fg-tertiary">请求地址：</span>
               {props.record.url}
@@ -401,6 +449,33 @@ function RequestDetail(props: {
             </Show>
           </div>
         </Section>
+
+        {/*
+          cURL 单独成一个分区，而不是头上一颗写着「cURL」的按钮。
+          按钮的文案统一成「复制」之后，「复制的是什么」这件事得由别处交代——
+          分区标题正是干这个的。顺带还多了一样原来没有的东西：
+          命令本身摆在眼前，可以先看一眼再决定要不要复制，
+          也可以直接长按选中其中一段（比如只要那串 token）。
+          WebSocket 不给：curl 对 ws:// 的支持是实验性的，
+          给一条注定跑不通的命令比不给更糟。
+        */}
+        <Show when={props.record.initiator !== 'websocket'}>
+          <Section
+            title="cURL 命令"
+            action={
+              <CopyButton
+                copier={props.copier}
+                text={() => toCurl(props.record)}
+                label="cURL 命令"
+                class="min-h-8 px-2 text-accent"
+              />
+            }
+          >
+            <div class="selectable wrap-anywhere font-mono leading-5 text-fg-secondary">
+              {toCurl(props.record)}
+            </div>
+          </Section>
+        </Show>
 
         <Show when={props.record.query.length > 0}>
           <Section title="查询参数">
@@ -445,14 +520,19 @@ function RequestDetail(props: {
             <For each={props.record.frames}>
               {(frame) => (
                 <div class="border-b border-line py-1 last:border-0">
-                  <div class="row-center gap-1.5 text-2xs text-fg-tertiary not-selectable">
-                    <span classList={{ 'text-accent': frame.direction === 'send', 'text-info': frame.direction === 'receive' }}>
+                  <div class="row-center gap-1.5 text-fg-tertiary not-selectable">
+                    <span
+                      classList={{
+                        'text-accent': frame.direction === 'send',
+                        'text-info': frame.direction === 'receive',
+                      }}
+                    >
                       {frame.direction === 'send' ? '↑ 发送' : '↓ 接收'}
                     </span>
                     <span>{new Date(frame.timestamp).toLocaleTimeString('zh-CN')}</span>
                     <span>{formatBytes(frame.size)}</span>
                   </div>
-                  <div class="selectable wrap-anywhere font-mono text-sm leading-5">{frame.payload}</div>
+                  <div class="selectable wrap-anywhere font-mono leading-5">{frame.payload}</div>
                 </div>
               )}
             </For>
@@ -480,10 +560,9 @@ function RequestRow(props: {
   narrowColumns: boolean;
   dense: boolean;
   onSelect: () => void;
-  onCopyCurl: () => void;
+  copier: CopyController;
 }): JSX.Element {
-  /** 行尾操作列的宽度：手指下必须够得着，鼠标下可以收窄给内容让位。 */
-  const actionWidth = () => (props.dense ? 'w-10' : 'w-11');
+  // 行尾复制列的样式见 uno.config.ts 的 copy-col，与控制台面板共用同一条。
 
   return (
     <div class="optik-row flex items-stretch" data-selected={props.selected ? 'true' : undefined}>
@@ -497,12 +576,21 @@ function RequestRow(props: {
           when={props.dense}
           fallback={
             <>
-              <div class="row-center gap-1.5 text-2xs">
+              <div class="row-center gap-1.5">
                 <KindBadge kind={props.kind} />
                 <span class="font-mono text-fg-secondary shrink-0">{props.record.method}</span>
                 <span class={`font-mono shrink-0 ${statusClass(props.record)}`}>
                   {statusText(props.record)}
                 </span>
+                {/*
+                  同样是「接口」，走 XHR 还是 fetch 会影响怎么复现，值得占这几个字。
+                  但静态资源就不必了——徽章已经写着 JS/CSS，再补一个「资源」是废话。
+      */}
+                <Show when={props.kind === 'api' || props.kind === 'stream'}>
+                  <span class="text-fg-tertiary shrink-0">
+                    {INITIATOR_LABELS[props.record.initiator]}
+                  </span>
+                </Show>
                 <Show when={props.record.fromCache}>
                   <span class="text-info shrink-0">缓存</span>
                 </Show>
@@ -512,12 +600,12 @@ function RequestRow(props: {
                 </span>
               </div>
               <div class="truncate text-base mt-0.5">{props.record.name}</div>
-              <div class="truncate text-2xs text-fg-tertiary">{props.record.origin}</div>
+              <div class="truncate text-fg-tertiary">{props.record.origin}</div>
             </>
           }
         >
           <div
-            class="grid items-center gap-2 font-mono text-xs h-6"
+            class="grid items-center gap-2 font-mono h-6"
             style={{ 'grid-template-columns': props.narrowColumns ? NARROW_COLUMNS : WIDE_COLUMNS }}
           >
             {/* 分类列打头且永不折叠：列表最先要回答的问题是「这条是不是接口」。 */}
@@ -540,23 +628,16 @@ function RequestRow(props: {
       </button>
 
       {/*
-        WebSocket 不给 cURL：curl 对 ws:// 的支持是实验性的，
-        给一条注定跑不通的命令比不给更糟。位置仍然占住，列不会错位。
+        行尾常驻的复制列，复制的是整条请求的详情——和控制台里那一列
+        复制整条日志是同一个意思，位置、宽度、贴顶方式也都来自同一条 copy-col。
+        （只想要 cURL 的话在详情里，那里单独有一个分区。）
       */}
-      <Show
-        when={props.record.initiator !== 'websocket'}
-        fallback={<span class={`shrink-0 ${actionWidth()}`} />}
-      >
-        <button
-          class={`shrink-0 ${actionWidth()} row-center justify-center border-l border-line
-                  text-2xs text-fg-tertiary not-selectable active:bg-bg-sunken`}
-          title="复制为 cURL 命令"
-          aria-label={`复制「${props.record.name}」为 cURL 命令`}
-          onClick={props.onCopyCurl}
-        >
-          cURL
-        </button>
-      </Show>
+      <CopyButton
+        copier={props.copier}
+        text={() => recordToText(props.record)}
+        label={`请求「${props.record.name}」`}
+        class="copy-col"
+      />
     </div>
   );
 }
@@ -570,9 +651,12 @@ export function NetworkPanel(props: {
   const [selectedId, setSelectedId] = createSignal<string | null>(null);
   const [query, setQuery] = createSignal('');
   const [onlyFailed, setOnlyFailed] = createSignal(false);
-  const [kindFilter, setKindFilter] = createSignal<KindFilter>('all');
+  /** null 表示「全部」。 */
+  const [kindFilter, setKindFilter] = createSignal<RequestKind | null>(null);
 
-  const selected = createMemo(() => props.store.requests().find((r) => r.id === selectedId()) ?? null);
+  const selected = createMemo(
+    () => props.store.requests().find((r) => r.id === selectedId()) ?? null,
+  );
 
   /** 分栏且已选中时左栏很窄，多余的列会把名称挤没，此时收起它们。 */
   const narrowColumns = createMemo(() => layout.wide() && selected() !== null);
@@ -582,37 +666,25 @@ export function NetworkPanel(props: {
     props.store.requests().map((record) => ({ record, kind: kindOf(record) })),
   );
 
-  /** 筛选条上的计数。空的档位直接不显示，390px 上每一个 chip 都占地方。 */
+  /** 每一档的条数。 */
   const counts = createMemo(() => {
-    const result: Record<KindFilter, number> = { all: 0, api: 0, resource: 0, stream: 0 };
-    for (const { kind } of classified()) {
-      result.all++;
-      if (kind === 'api') result.api++;
-      else if (kind === 'stream') result.stream++;
-      else result.resource++;
-    }
+    const result = {} as Record<RequestKind, number>;
+    for (const { kind } of classified()) result[kind] = (result[kind] ?? 0) + 1;
     return result;
   });
-
-  const availableFilters = createMemo(() =>
-    (['all', 'api', 'resource', 'stream'] as KindFilter[]).filter(
-      (filter) => filter === 'all' || filter === kindFilter() || counts()[filter] > 0,
-    ),
-  );
 
   const visible = createMemo(() => {
     const needle = query().toLowerCase();
     const filter = kindFilter();
-    return classified()
-      .filter(({ record, kind }) => {
-        if (!matchesFilter(kind, filter)) return false;
-        if (onlyFailed()) {
-          const failed = record.phase === 'failed' || (record.status ?? 0) >= 400;
-          if (!failed) return false;
-        }
-        if (needle && !record.url.toLowerCase().includes(needle)) return false;
-        return true;
-      });
+    return classified().filter(({ record, kind }) => {
+      if (filter !== null && kind !== filter) return false;
+      if (onlyFailed()) {
+        const failed = record.phase === 'failed' || (record.status ?? 0) >= 400;
+        if (!failed) return false;
+      }
+      if (needle && !record.url.toLowerCase().includes(needle)) return false;
+      return true;
+    });
   });
 
   const list = (
@@ -620,7 +692,7 @@ export function NetworkPanel(props: {
       <div class="shrink-0 border-b border-line bg-bg-elevated">
         <div class="row-center gap-1.5 px-2 py-1.5">
           <input
-            class="flex-1 min-w-0 px-2.5 min-h-9 rounded-md bg-bg border border-line text-input selectable"
+            class="field flex-1"
             type="search"
             inputmode="search"
             placeholder="按地址筛选…"
@@ -640,26 +712,52 @@ export function NetworkPanel(props: {
         </div>
         {/*
           分类筛选。一个页面几十条请求里真正在查的往往只有几条接口，
-          「接口」这一档是这个面板被打开时最常按的按钮，所以它必须在第一屏、
-          不能藏进任何菜单里。
-        */}
-        <div class="row-center gap-1 px-2 pb-1.5 overflow-x-auto no-scrollbar">
-          <For each={availableFilters()}>
-            {(filter) => (
+          「接口」这一档是这个面板被打开时最常按的按钮，所以它排第一、
+          在第一屏、不藏进任何菜单里。再点一次回到全部，省掉一次来回。
+
+          九档全部常驻、横向滑动，不再按「有没有抓到」增删：
+          档位随请求陆续插进来的话，整条筛选条会在手指底下自己变长，
+          刚瞄准的那个 chip 就跑掉了。位置固定比少滑两下值钱。
+          空档保留可点——点进去看到「没有匹配的请求」，本身就是个明确的答案。
+      */}
+        <div class="row-center gap-1 px-2 pb-1.5">
+          <div class="relative flex-1 min-w-0">
+            <div class="row-center gap-1 overflow-x-auto no-scrollbar">
               <button
                 class="chip shrink-0 gap-1"
-                classList={{ 'bg-accent text-accent-fg': kindFilter() === filter }}
-                aria-pressed={kindFilter() === filter}
-                onClick={() => setKindFilter(filter)}
+                classList={{ 'bg-accent text-accent-fg': kindFilter() === null }}
+                aria-pressed={kindFilter() === null}
+                onClick={() => setKindFilter(null)}
               >
-                {FILTER_LABELS[filter]}
-                <span class="text-2xs" classList={{ 'text-fg-tertiary': kindFilter() !== filter }}>
-                  {counts()[filter]}
+                全部
+                <span classList={{ 'text-fg-tertiary': kindFilter() !== null }}>
+                  {classified().length}
                 </span>
               </button>
-            )}
-          </For>
-          <span class="flex-1 min-w-2" />
+              <For each={FILTER_ORDER}>
+                {(kind) => (
+                  <button
+                    class="chip shrink-0 gap-1"
+                    classList={{
+                      'bg-accent text-accent-fg': kindFilter() === kind,
+                      // 没抓到过的档位压暗，一眼能看出这一屏的流量都落在哪几档
+                      'text-fg-tertiary': kindFilter() !== kind && !counts()[kind],
+                    }}
+                    aria-pressed={kindFilter() === kind}
+                    onClick={() => setKindFilter(kindFilter() === kind ? null : kind)}
+                  >
+                    {KIND_LABELS[kind]}
+                    <span classList={{ 'text-fg-tertiary': kindFilter() !== kind }}>
+                      {counts()[kind] ?? 0}
+                    </span>
+                  </button>
+                )}
+              </For>
+            </div>
+            {/* 横向滚动条是隐藏的，没有这道渐变看不出右边还有档位 */}
+            <div class="optik-fade-right" />
+          </div>
+          {/* 「清空」留在滚动区外：它要是跟着滑走，想清空得先滑到头 */}
           <button class="chip shrink-0" onClick={props.store.clearRequests}>
             清空
           </button>
@@ -669,7 +767,7 @@ export function NetworkPanel(props: {
       <div class="flex-1 min-h-0 overflow-y-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">
         {/* 表头只在紧凑模式出现：舒适模式的卡片没有列可对齐 */}
         <Show when={layout.dense() && visible().length > 0}>
-          <div class="optik-thead flex items-center h-6 text-2xs text-fg-tertiary not-selectable">
+          <div class="optik-thead flex items-center h-6 text-fg-tertiary not-selectable">
             <div
               class="flex-1 min-w-0 grid items-center gap-2 px-2"
               style={{ 'grid-template-columns': narrowColumns() ? NARROW_COLUMNS : WIDE_COLUMNS }}
@@ -682,8 +780,8 @@ export function NetworkPanel(props: {
                 <span class="text-right">耗时</span>
               </Show>
             </div>
-            {/* 对齐行尾的 cURL 列，宽度必须和 RequestRow 的 actionWidth 一致 */}
-            <span class="shrink-0 w-10 text-center">复制</span>
+            {/* 对齐行尾的复制列，宽度必须和 copy-col 一致 */}
+            <span class="shrink-0 w-12 text-center">复制</span>
           </div>
         </Show>
 
@@ -704,7 +802,7 @@ export function NetworkPanel(props: {
                 narrowColumns={narrowColumns()}
                 dense={layout.dense()}
                 onSelect={() => setSelectedId(record.id)}
-                onCopyCurl={() => props.copier.copy(toCurl(record), 'cURL 命令')}
+                copier={props.copier}
               />
             )}
           </For>

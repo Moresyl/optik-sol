@@ -20,11 +20,18 @@ export interface MiscNetworkOptions {
   maxFramePayload?: number;
 }
 
-export function instrumentSendBeacon(sink: NetworkSink, options: MiscNetworkOptions): Instrumentation {
+export function instrumentSendBeacon(
+  sink: NetworkSink,
+  options: MiscNetworkOptions,
+): Instrumentation {
   const original = globalThis.navigator?.sendBeacon;
   if (typeof original !== 'function') return { dispose() {} };
 
-  const wrapped = function sendBeacon(this: Navigator, rawUrl: string | URL, data?: BodyInit | null): boolean {
+  const wrapped = function sendBeacon(
+    this: Navigator,
+    rawUrl: string | URL,
+    data?: BodyInit | null,
+  ): boolean {
     const id = options.nextId();
     const startTime = performance.now();
     const { url, name, origin, query } = splitUrl(String(rawUrl));
@@ -55,7 +62,11 @@ export function instrumentSendBeacon(sink: NetworkSink, options: MiscNetworkOpti
         phase: accepted ? 'complete' : 'failed',
         status: accepted ? 202 : 0,
         statusText: accepted ? 'Queued by browser' : 'Rejected (queue full or payload too large)',
-        error: error ? String(error) : accepted ? undefined : 'navigator.sendBeacon() returned false',
+        error: error
+          ? String(error)
+          : accepted
+            ? undefined
+            : 'navigator.sendBeacon() returned false',
         timing: { startTime, endTime, duration: endTime - startTime },
       };
       sink.onStart(record);
@@ -75,7 +86,10 @@ export function instrumentSendBeacon(sink: NetworkSink, options: MiscNetworkOpti
   };
 }
 
-export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptions): Instrumentation {
+export function instrumentWebSocket(
+  sink: NetworkSink,
+  options: MiscNetworkOptions,
+): Instrumentation {
   const Original = globalThis.WebSocket;
   if (typeof Original !== 'function') return { dispose() {} };
 
@@ -97,7 +111,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
         try {
           sink.onUpdate(id, { frames: [...frames] });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       };
 
@@ -111,7 +125,12 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
           origin,
           query,
           requestHeaders: protocols
-            ? [['Sec-WebSocket-Protocol', Array.isArray(protocols) ? protocols.join(', ') : protocols]]
+            ? [
+                [
+                  'Sec-WebSocket-Protocol',
+                  Array.isArray(protocols) ? protocols.join(', ') : protocols,
+                ],
+              ]
             : [],
           responseHeaders: [],
           phase: 'pending',
@@ -119,7 +138,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
           frames: [],
         });
       } catch {
-        // Ignore.
+      // Ignore.
       }
 
       this.addEventListener('open', () => {
@@ -132,7 +151,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
             timing: { startTime, responseStart: now },
           });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
 
@@ -158,7 +177,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
             timing: { startTime, endTime, duration: endTime - startTime },
           });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
 
@@ -166,7 +185,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
         try {
           sink.onUpdate(id, { phase: 'failed', error: 'WebSocket error' });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
 
@@ -176,7 +195,7 @@ export function instrumentWebSocket(sink: NetworkSink, options: MiscNetworkOptio
         try {
           pushFrame(describeFrame('send', data, maxFramePayload));
         } catch {
-          // Ignore.
+      // Ignore.
         }
         originalSend(data);
       };
@@ -238,7 +257,10 @@ function describeFrame(
   return { direction, timestamp: Date.now(), opcode: 'binary', payload: String(data), size: 0 };
 }
 
-export function instrumentEventSource(sink: NetworkSink, options: MiscNetworkOptions): Instrumentation {
+export function instrumentEventSource(
+  sink: NetworkSink,
+  options: MiscNetworkOptions,
+): Instrumentation {
   const Original = globalThis.EventSource;
   if (typeof Original !== 'function') return { dispose() {} };
 
@@ -268,14 +290,18 @@ export function instrumentEventSource(sink: NetworkSink, options: MiscNetworkOpt
           frames: [],
         });
       } catch {
-        // Ignore.
+      // Ignore.
       }
 
       this.addEventListener('open', () => {
         try {
-          sink.onUpdate(id, { phase: 'loading', status: 200, timing: { startTime, responseStart: performance.now() } });
+          sink.onUpdate(id, {
+            phase: 'loading',
+            status: 200,
+            timing: { startTime, responseStart: performance.now() },
+          });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
 
@@ -285,7 +311,7 @@ export function instrumentEventSource(sink: NetworkSink, options: MiscNetworkOpt
         try {
           sink.onUpdate(id, { frames: [...frames] });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
 
@@ -296,7 +322,7 @@ export function instrumentEventSource(sink: NetworkSink, options: MiscNetworkOpt
             error: this.readyState === 2 ? 'EventSource closed' : 'EventSource reconnecting',
           });
         } catch {
-          // Ignore.
+      // Ignore.
         }
       });
     }

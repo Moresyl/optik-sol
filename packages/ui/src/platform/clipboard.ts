@@ -103,7 +103,9 @@ interface ExecResult {
   reason: string;
 }
 
-function copyViaExecCommand(text: string): ExecResult & { ok: true; method: 'exec-command' } | (ExecResult & { ok: false }) {
+function copyViaExecCommand(
+  text: string,
+): (ExecResult & { ok: true; method: 'exec-command' }) | (ExecResult & { ok: false }) {
   const doc = globalThis.document;
   if (!doc?.body || typeof doc.execCommand !== 'function') {
     return { ok: false, method: 'exec-command', reason: 'document.execCommand is unavailable' };

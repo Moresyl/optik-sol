@@ -16,14 +16,7 @@
  */
 
 export type RemoteObjectType =
-  | 'object'
-  | 'function'
-  | 'undefined'
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'symbol'
-  | 'bigint';
+  'object' | 'function' | 'undefined' | 'string' | 'number' | 'boolean' | 'symbol' | 'bigint';
 
 export type RemoteObjectSubtype =
   | 'array'
@@ -261,13 +254,20 @@ function isError(value: object): value is Error {
 }
 
 function isNode(value: object): value is Node {
-  return typeof (value as Node).nodeType === 'number' && typeof (value as Node).nodeName === 'string';
+  return (
+    typeof (value as Node).nodeType === 'number' && typeof (value as Node).nodeName === 'string'
+  );
 }
 
 /** `arguments`, NodeList, HTMLCollection, and friends. */
 function isArrayLike(value: object): boolean {
   const tag = tagOf(value);
-  if (tag === 'Arguments' || tag === 'NodeList' || tag === 'HTMLCollection' || tag === 'DOMTokenList') {
+  if (
+    tag === 'Arguments' ||
+    tag === 'NodeList' ||
+    tag === 'HTMLCollection' ||
+    tag === 'DOMTokenList'
+  ) {
     return true;
   }
   return false;
@@ -447,7 +447,13 @@ function previewOf(value: unknown, depth: number, ctx: PreviewContext): ObjectPr
   const type = typeof value as RemoteObjectType;
 
   if (value === null) {
-    return { type: 'object', subtype: 'null', description: 'null', overflow: false, properties: [] };
+    return {
+      type: 'object',
+      subtype: 'null',
+      description: 'null',
+      overflow: false,
+      properties: [],
+    };
   }
   if (type !== 'object' && type !== 'function') {
     return { type, description: describePrimitive(value), overflow: false, properties: [] };
@@ -466,7 +472,13 @@ function previewOf(value: unknown, depth: number, ctx: PreviewContext): ObjectPr
 
   const subtype = subtypeOf(object);
   const description = describeObject(object, subtype);
-  const base: ObjectPreview = { type: 'object', subtype, description, overflow: false, properties: [] };
+  const base: ObjectPreview = {
+    type: 'object',
+    subtype,
+    description,
+    overflow: false,
+    properties: [],
+  };
 
   if (subtype && SELF_DESCRIBING.has(subtype)) return base;
 
@@ -719,8 +731,7 @@ export function getProperties(
         writable: descriptor.writable,
         configurable: descriptor.configurable,
         enumerable: descriptor.enumerable,
-        keyKind:
-          typeof name === 'symbol' ? 'symbol' : /^\d+$/.test(key) ? 'index' : 'string',
+        keyKind: typeof name === 'symbol' ? 'symbol' : /^\d+$/.test(key) ? 'index' : 'string',
       };
 
       if ('value' in descriptor) {

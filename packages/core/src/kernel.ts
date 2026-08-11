@@ -22,7 +22,6 @@ import {
   instrumentWebSocket,
 } from './instrument/misc-network';
 import { instrumentResourceTiming } from './instrument/resource-timing';
-import { toRemoteObject, type RemoteObject } from './remote-object';
 import type { LogEntry, NetworkRecord } from './types';
 
 export interface CaptureOptions {
@@ -58,9 +57,26 @@ export interface KernelEvents {
   networkCleared: void;
 }
 
+/**
+ * The outcome of one `evaluate` call.
+ *
+ * This hands back the *raw* value rather than a mirrored `RemoteObject`, and that is
+ * deliberate: mirroring must be done by whoever ends up owning the result. The console
+ * feeds it straight into `log.ingest`, which retains a handle and releases it when the
+ * entry falls out of the ring buffer. Mirroring here instead produced a handle nobody
+ * was responsible for releasing — the registry kept a strong reference to every REPL
+ * result for the life of the page — and it also flattened the value to a description
+ * string on the way out, so the caller could no longer expand what it had just asked for.
+ *
+ * `threw` is not redundant with `error !== undefined`: `throw undefined` is legal, and an
+ * expression evaluating to `undefined` is routine. The two must stay distinguishable.
+ */
 export interface EvaluationResult {
-  value?: RemoteObject;
-  thrown?: RemoteObject;
+  /** What the expression produced. Meaningless when `threw`. */
+  value?: unknown;
+  /** What was thrown. Not necessarily an `Error` — `throw 1` is legal. */
+  error?: unknown;
+  threw: boolean;
   /** Wall time of the evaluation, in milliseconds. */
   duration: number;
 }
@@ -145,7 +161,12 @@ export class OptikKernel {
       this.console = this.#consoleInstrumentation.original;
     }
 
-    if (capture.exceptions || capture.rejections || capture.resourceErrors || capture.cspViolations) {
+    if (
+      capture.exceptions ||
+      capture.rejections ||
+      capture.resourceErrors ||
+      capture.cspViolations
+    ) {
       const errors = instrumentErrors(
         (record) =>
           this.log.ingest({
@@ -212,15 +233,9 @@ export class OptikKernel {
         else throw wrapError;
       }
       this.#lastEvaluation = value;
-      return {
-        value: toRemoteObject(value, this.log.registry),
-        duration: performance.now() - started,
-      };
+      return { value, threw: false, duration: performance.now() - started };
     } catch (error) {
-      return {
-        thrown: toRemoteObject(error, this.log.registry),
-        duration: performance.now() - started,
-      };
+      return { error, threw: true, duration: performance.now() - started };
     } finally {
       if (previous === undefined) delete (globalThis as Record<string, unknown>)['$_'];
       else (globalThis as Record<string, unknown>)['$_'] = previous;

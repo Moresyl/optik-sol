@@ -48,7 +48,7 @@
 
 | 属性 | 说明 |
 | --- | --- |
-| `data-theme` | `auto`（默认）/ `light` / `dark` |
+| `data-theme` | `light`（默认）/ `dark` |
 | `data-open` | 存在则默认展开面板 |
 | `data-max-logs` | 日志条数上限，默认 1000 |
 | `data-max-requests` | 请求条数上限，默认 300 |
@@ -66,7 +66,7 @@ npm i optik-sol
 import { mount } from 'optik-sol';
 
 if (import.meta.env.DEV) {
-  mount({ theme: 'auto' });
+  mount();
 }
 ```
 
@@ -76,7 +76,7 @@ if (import.meta.env.DEV) {
 
 ```ts
 const optik = mount({
-  theme: 'auto',           // 'auto' | 'light' | 'dark'
+  theme: 'light',          // 'light' | 'dark'
   defaultOpen: false,
   defaultTab: 'console',
   log: { maxEntries: 1000 },

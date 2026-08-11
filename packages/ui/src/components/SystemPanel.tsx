@@ -9,41 +9,66 @@
 
 import { createSignal, createMemo, For, Show, onCleanup, type JSX } from 'solid-js';
 import type { OptikKernel } from 'optik-core';
-import type { CopyController } from './Copy';
+import type { ThemeMode } from '../App';
+import { CopyButton, type CopyController } from './Copy';
 
+/**
+ * 主题只有两档，就摆成两颗并排的按钮，而不是一个「深色模式」开关。
+ *
+ * 开关这种控件表达的是「某个特性开着还是关着」；浅色和深色是两种同等的选择，
+ * 谁也不是谁的"关闭状态"。写成开关就得挑一个当默认——标签写「深色模式」，
+ * 关掉之后是什么？得读的人自己推。两颗按钮把两个选项都写出来，
+ * 当前是哪个由高亮说明，没有需要推理的地方。
+ */
+const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
+  { id: 'light', label: '浅色' },
+  { id: 'dark', label: '深色' },
+];
+
+/**
+ * 探测项的中文名。键必须与 core 的 `readCapabilities()` 逐字对上——
+ * 对不上不会报错，只会安静地把 `cssEnvSafeArea` 这种内部标识符直接显示出来，
+ * 既不是中文，也会撑破左侧固定宽度的标签列。
+ *
+ * 名字统一控制在 9 个中文字符以内，正好在 112px 的标签列里排成一行；
+ * 一行放不下就会折成两行，整列的基线立刻参差不齐。
+ * WebSocket / IndexedDB 这类保留英文原名：它们是开发者用来搜索的技术标识，
+ * 译成中文反而对不上文档。
+ */
 const CAPABILITY_LABELS: Record<string, string> = {
-  clipboard: '异步剪贴板接口',
-  execCommand: 'execCommand 复制',
-  secureContext: '安全上下文（HTTPS）',
-  serviceWorker: 'Service Worker',
-  performanceObserver: 'Performance Observer',
-  resourceTiming: 'Resource Timing',
-  localStorage: '本地存储',
-  sessionStorage: '会话存储',
-  indexedDB: 'IndexedDB',
-  webSocket: 'WebSocket',
-  eventSource: 'EventSource',
-  sendBeacon: 'sendBeacon',
-  fetch: 'Fetch',
+  secureContext: '安全上下文',
+  asyncClipboard: '异步剪贴板',
+  execCommandCopy: '同步复制',
   shadowDom: 'Shadow DOM',
-  visualViewport: 'Visual Viewport',
-  intersectionObserver: 'Intersection Observer',
-  cookieEnabled: 'Cookie 已启用',
+  resizeObserver: '尺寸监听',
+  performanceObserver: '性能监听',
+  resourceTiming: '资源时序',
+  longTaskTiming: '长任务时序',
+  visualViewport: '可视视口',
+  pointerEvents: '指针事件',
+  webSocket: 'WebSocket',
+  serviceWorker: 'Service Worker',
+  indexedDB: 'IndexedDB',
+  localStorage: '本地存储',
+  dvhUnits: 'dvh 单位',
+  cssEnvSafeArea: '安全区变量',
 };
 
+/**
+ * 同上，键要与 core 的 `readNavigationTiming()` 对齐。
+ * 注意 Paint Timing 的条目名来自浏览器本身，是 `first-paint` 这样的短横线形式，
+ * 不是驼峰——写成驼峰就永远匹配不上。
+ */
 const TIMING_LABELS: Record<string, string> = {
   dns: 'DNS 解析',
   tcp: 'TCP 连接',
-  tls: 'TLS 握手',
   ttfb: '首字节',
-  request: '请求',
-  response: '响应',
+  response: '响应下载',
   domInteractive: 'DOM 可交互',
   domContentLoaded: 'DOM 就绪',
-  domComplete: 'DOM 完成',
   load: '页面加载完成',
-  firstPaint: '首次绘制',
-  firstContentfulPaint: '首次内容绘制',
+  'first-paint': '首次绘制',
+  'first-contentful-paint': '首次内容绘制',
 };
 
 function formatBytes(bytes: number): string {
@@ -51,11 +76,18 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+/**
+ * 一行「标签 + 值」。
+ *
+ * 标签列宽度写死，是为了让整个面板里所有的值都从同一条竖线开始——
+ * 几十行长短不一的标签各自撑开宽度的话，值那一列会像锯齿一样错开。
+ * 112px 是按最长的标签（9 个中文字 @12px）量的，改标签文案时要一起看。
+ */
 function Row(props: { label: string; value: JSX.Element }): JSX.Element {
   return (
     <div class="flex gap-3 px-3 py-1.5 border-b border-line">
-      <span class="shrink-0 w-28 text-sm text-fg-secondary not-selectable">{props.label}</span>
-      <span class="flex-1 min-w-0 selectable wrap-anywhere font-mono text-sm">{props.value}</span>
+      <span class="shrink-0 w-28 leading-5 text-fg-secondary not-selectable">{props.label}</span>
+      <span class="flex-1 min-w-0 selectable wrap-anywhere font-mono leading-5">{props.value}</span>
     </div>
   );
 }
@@ -63,7 +95,7 @@ function Row(props: { label: string; value: JSX.Element }): JSX.Element {
 function Group(props: { title: string; children: JSX.Element }): JSX.Element {
   return (
     <>
-      <div class="px-3 py-1.5 bg-bg-elevated text-sm font-600 text-fg-secondary not-selectable border-b border-line">
+      <div class="px-3 py-1.5 bg-bg-elevated font-600 text-fg-secondary not-selectable border-b border-line">
         {props.title}
       </div>
       {props.children}
@@ -71,7 +103,12 @@ function Group(props: { title: string; children: JSX.Element }): JSX.Element {
   );
 }
 
-export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController }): JSX.Element {
+export function SystemPanel(props: {
+  kernel: OptikKernel;
+  copier: CopyController;
+  theme: ThemeMode;
+  onThemeChange: (mode: ThemeMode) => void;
+}): JSX.Element {
   const [version, setVersion] = createSignal(0);
 
   // 视口和内存会随旋转、键盘弹出、GC 而变化，定时重读一次。
@@ -86,7 +123,10 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
   const timings = createMemo(() =>
     Object.entries(info().timing)
       .filter(([, value]) => Number.isFinite(value) && value >= 0)
-      .map(([key, value]) => [TIMING_LABELS[key] ?? key, `${Math.round(value)} ms`] as [string, string]),
+      .map(
+        ([key, value]) =>
+          [TIMING_LABELS[key] ?? key, `${Math.round(value)} ms`] as [string, string],
+      ),
   );
 
   const capabilities = createMemo(() =>
@@ -118,16 +158,48 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
 
   return (
     <div class="flex flex-col h-full min-h-0">
-      <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated text-2xs not-selectable">
+      <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated not-selectable">
         <button class="chip" onClick={() => setVersion((n) => n + 1)}>
           刷新
         </button>
+        {/*
+          写「复制」不写「导出」。点下去发生的事就是把环境信息写进剪贴板，
+          「导出」会让人以为要存文件或者拉个分享面板出来——
+          用户点了「导出」、屏幕上飘出「已复制」，是这个面板里最刺眼的一处不一致。
+        */}
         <button class="chip text-accent" onClick={exportAll}>
-          导出全部
+          复制
         </button>
       </div>
 
       <div class="flex-1 min-h-0 overflow-y-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">
+        {/*
+          设置排在最前，虽然这个面板剩下的部分全是只读信息。
+
+          主题原来常驻在标签栏右上角。那是整个面板里最贵的一块地——横向就那么宽，
+          放不下几个东西——而主题是装好之后基本不再动的选项，一天点一次都算多。
+          常驻位置留给随时要用的（关闭），低频设置收进这里，需要时找得到就够了。
+        */}
+        <Group title="设置">
+          <div class="row-center gap-3 px-3 py-1.5 border-b border-line">
+            <span class="shrink-0 w-28 leading-5 text-fg-secondary not-selectable">外观</span>
+            <div class="flex-1 min-w-0 row-center gap-1">
+              <For each={THEME_OPTIONS}>
+                {(option) => (
+                  <button
+                    class="chip"
+                    classList={{ 'bg-accent text-accent-fg': props.theme === option.id }}
+                    aria-pressed={props.theme === option.id}
+                    onClick={() => props.onThemeChange(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                )}
+              </For>
+            </div>
+          </div>
+        </Group>
+
         <Group title="设备">
           <Row label="客户端" value={info().client} />
           <Row label="平台" value={info().platform} />
@@ -137,12 +209,12 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
             value={
               <>
                 {info().userAgent}
-                <button
-                  class="block mt-1 text-2xs text-accent not-selectable py-1"
-                  onClick={() => props.copier.copy(info().userAgent, 'User-Agent')}
-                >
-                  复制
-                </button>
+                <CopyButton
+                  copier={props.copier}
+                  text={() => info().userAgent}
+                  label="User-Agent"
+                  class="mt-1 min-h-9 px-2 -ml-2 text-accent"
+                />
               </>
             }
           />
@@ -154,12 +226,12 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
             value={
               <>
                 {location.href}
-                <button
-                  class="block mt-1 text-2xs text-accent not-selectable py-1"
-                  onClick={() => props.copier.copy(location.href, '页面地址')}
-                >
-                  复制
-                </button>
+                <CopyButton
+                  copier={props.copier}
+                  text={() => location.href}
+                  label="页面地址"
+                  class="mt-1 min-h-9 px-2 -ml-2 text-accent"
+                />
               </>
             }
           />
@@ -179,8 +251,14 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
           {(network) => (
             <Group title="网络">
               <Row label="有效类型" value={network().effectiveType ?? '未知'} />
-              <Row label="下行带宽" value={network().downlink !== undefined ? `${network().downlink} Mbps` : '未知'} />
-              <Row label="往返延迟" value={network().rtt !== undefined ? `${network().rtt} ms` : '未知'} />
+              <Row
+                label="下行带宽"
+                value={network().downlink !== undefined ? `${network().downlink} Mbps` : '未知'}
+              />
+              <Row
+                label="往返延迟"
+                value={network().rtt !== undefined ? `${network().rtt} ms` : '未知'}
+              />
               <Row label="省流模式" value={network().saveData ? '开启' : '关闭'} />
             </Group>
           )}
@@ -208,7 +286,9 @@ export function SystemPanel(props: { kernel: OptikKernel; copier: CopyController
               <Row
                 label={label}
                 value={
-                  <span class={supported ? 'text-info' : 'text-warn'}>{supported ? '支持' : '不支持'}</span>
+                  <span class={supported ? 'text-info' : 'text-warn'}>
+                    {supported ? '支持' : '不支持'}
+                  </span>
                 }
               />
             )}

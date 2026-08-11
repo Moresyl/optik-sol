@@ -9,15 +9,7 @@
  *    否则按钮会跑到屏幕外再也拿不回来。
  */
 
-import {
-  createSignal,
-  createMemo,
-  createEffect,
-  onCleanup,
-  For,
-  Show,
-  type JSX,
-} from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup, For, Show, type JSX } from 'solid-js';
 import type { OptikKernel } from 'optik-core';
 import { BUILTIN_TABS, TAB_LABELS, type Store, type TabId } from './store';
 import { makeDraggable } from './platform/gesture';
@@ -30,7 +22,7 @@ import { SystemPanel } from './components/SystemPanel';
 import { PluginRegistry, safely, type PluginContext } from './plugin';
 import { createLayout, LayoutProvider } from './layout';
 
-export type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemeMode = 'light' | 'dark';
 
 export interface AppProps {
   kernel: OptikKernel;
@@ -42,6 +34,13 @@ export interface AppProps {
   onDispose?: (dispose: () => void) => void;
 }
 
+/**
+ * 悬浮球尺寸，必须与它 class 上写死的 48px 一致——拖拽夹取靠它算边界，
+ * 对不上按钮就会贴不准边。
+ *
+ * 这个尺寸刻意不参与 uno.config.ts 里的 SCALE 全局缩放：面板内部要紧凑，
+ * 是因为你已经进来了；进来之前那一下不该变难点。
+ */
 const LAUNCHER_SIZE = 48;
 const POSITION_KEY = 'optik:launcher-position';
 const HEIGHT_KEY = 'optik:panel-height';
@@ -85,17 +84,14 @@ export function App(props: AppProps): JSX.Element {
 
   // ---- 主题 --------------------------------------------------------------
 
-  const media = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
-  const [systemDark, setSystemDark] = createSignal(media?.matches ?? false);
-  if (media) {
-    const onChange = (event: MediaQueryListEvent) => setSystemDark(event.matches);
-    media.addEventListener('change', onChange);
-    onCleanup(() => media.removeEventListener('change', onChange));
-  }
-
-  const resolvedTheme = createMemo<'light' | 'dark'>(() =>
-    themeMode() === 'auto' ? (systemDark() ? 'dark' : 'light') : (themeMode() as 'light' | 'dark'),
-  );
+  /**
+   * 只有浅色和深色两档，不跟随系统。
+   *
+   * 跟随系统在这个场景里是负收益：调试面板经常要和宿主页面对着看，
+   * 而宿主页面绝大多数是写死浅色的；系统一到晚上自动切深色，面板就跟着翻脸，
+   * 截图发出去还得解释一句「我这边是深色」。默认浅色、手动切换、切了就不动。
+   */
+  const resolvedTheme = createMemo<'light' | 'dark'>(() => themeMode());
 
   // 主题落在宿主元素的属性上，CSS 变量与 uno 的 dark: 变体都以它为准。
   createEffect(() => props.host.setAttribute('data-theme', resolvedTheme()));
@@ -219,19 +215,6 @@ export function App(props: AppProps): JSX.Element {
     return tab.startsWith('plugin:') ? tab.slice(7) : null;
   });
 
-  const cycleTheme = () => {
-    const order: ThemeMode[] = ['auto', 'light', 'dark'];
-    setThemeMode(order[(order.indexOf(themeMode()) + 1) % order.length]);
-  };
-
-  // 标签栏在 390px 上本来就挤，主题按钮只能占一到两个字；完整说法放 title。
-  const THEME_LABELS: Record<ThemeMode, string> = { auto: '自动', light: '浅色', dark: '深色' };
-  const THEME_TITLES: Record<ThemeMode, string> = {
-    auto: '当前：跟随系统，点击切换到浅色',
-    light: '当前：浅色，点击切换到深色',
-    dark: '当前：深色，点击切换到跟随系统',
-  };
-
   return (
     <>
       {/*
@@ -246,9 +229,9 @@ export function App(props: AppProps): JSX.Element {
             if (suppressClick) return;
             setOpen(true);
           }}
-          class="fixed w-12 h-12 rounded-full row-center justify-center not-selectable
-                 bg-accent text-accent-fg text-2xs font-600
-                 [box-shadow:0_4px_16px_rgba(0,0,0,0.25)] [touch-action:none]"
+          class="fixed w-[48px] h-[48px] rounded-full row-center justify-center not-selectable
+ bg-accent text-accent-fg font-600
+ [box-shadow:0_4px_16px_rgba(0,0,0,0.25)] [touch-action:none]"
           style={{
             left: `${resolvedPosition().x}px`,
             top: `${resolvedPosition().y}px`,
@@ -258,8 +241,11 @@ export function App(props: AppProps): JSX.Element {
           <span>Optik</span>
           {/* 错误数角标：面板关着的时候也能第一时间知道出事了。 */}
           <Show when={props.store.errorCount() > 0}>
-            <span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full row-center justify-center
-                         bg-danger text-white text-2xs">
+            {/* 同理，角标要装得下「99+」，尺寸跟着悬浮球一起钉死 */}
+            <span
+              class="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full row-center justify-center
+ bg-danger text-bg"
+            >
               {props.store.errorCount() > 99 ? '99+' : props.store.errorCount()}
             </span>
           </Show>
@@ -271,7 +257,7 @@ export function App(props: AppProps): JSX.Element {
         <div
           ref={layout.observe}
           class="fixed left-0 right-0 bottom-0 flex flex-col bg-bg border-t border-line
-                 rounded-t-xl overflow-hidden [box-shadow:0_-4px_24px_rgba(0,0,0,0.18)]"
+ rounded-t-xl overflow-hidden [box-shadow:0_-4px_24px_rgba(0,0,0,0.18)]"
           style={{
             // dvh 而非 vh：iOS 的可折叠地址栏会让 vh 算出一个够不着的高度。
             height: `calc(${height()} * 100dvh)`,
@@ -282,55 +268,76 @@ export function App(props: AppProps): JSX.Element {
             'z-index': 'var(--optik-z)',
           }}
         >
-          {/* 拖拽把手 */}
+          {/*
+            把手和标签栏共用一层 elevated 底色，合成一整块「面板头」，
+            和下面白底的内容区分开——原来两者同底色，视觉上是散的。
+      */}
           <div
             ref={attachResizer}
-            class="shrink-0 row-center justify-center h-6 not-selectable [touch-action:none] cursor-ns-resize"
+            class="shrink-0 row-center justify-center h-5 bg-bg-elevated not-selectable
+ [touch-action:none] cursor-ns-resize"
             aria-label="拖动调整面板高度"
           >
             <div class="w-9 h-1 rounded-full bg-line-strong" />
           </div>
 
           {/* 标签栏 */}
-          <div class="shrink-0 row-center border-b border-line">
-            <div class="flex-1 min-w-0 row-center overflow-x-auto no-scrollbar">
-              <For each={tabs()}>
-                {(tab) => (
-                  <button
-                    class="shrink-0 px-3.5 min-h-11 text-md not-selectable border-b-2 border-transparent"
-                    classList={{
-                      'text-accent [border-bottom-color:var(--optik-accent)]':
-                        props.store.activeTab() === tab.id,
-                      'text-fg-secondary': props.store.activeTab() !== tab.id,
-                    }}
-                    onClick={() => props.store.setActiveTab(tab.id)}
-                  >
-                    {tab.label}
-                    <Show when={tab.id === 'console' && props.store.errorCount() > 0}>
-                      <span class="ml-1 px-1.5 rounded-full bg-danger text-white text-2xs">
-                        {props.store.errorCount()}
-                      </span>
-                    </Show>
-                  </button>
-                )}
-              </For>
+          <div class="shrink-0 row-center border-b border-line bg-bg-elevated">
+            {/* 相对定位是给右侧那道渐变用的：标签能横向滚动时得让人看出来还有 */}
+            <div class="relative flex-1 min-w-0">
+              <div class="row-center overflow-x-auto no-scrollbar">
+                <For each={tabs()}>
+                  {(tab) => (
+                    <button
+                      // -mb-px 让选中态那条 2px 下划线压住容器自己的 1px 边框，
+                      // 否则两条线并排，看着像描歪了
+                      class="optik-tab shrink-0 row-center gap-1 px-3.5 min-h-11 -mb-px
+ not-selectable border-b-2 border-transparent active:bg-bg-sunken"
+                      classList={{
+                        'text-accent font-600 [border-bottom-color:var(--optik-accent)]':
+                          props.store.activeTab() === tab.id,
+                        'text-fg-secondary': props.store.activeTab() !== tab.id,
+                      }}
+                      aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
+                      onClick={() => props.store.setActiveTab(tab.id)}
+                    >
+                      {tab.label}
+                      <Show when={tab.id === 'console' && props.store.errorCount() > 0}>
+                        {/*
+ text-bg 而不是 text-white：深色主题下的 danger 是浅红，
+                          白字压上去几乎看不清，用背景色反而两套主题都成立。
+      */}
+                        <span class="px-1.5 rounded-full bg-danger text-bg">
+                          {props.store.errorCount()}
+                        </span>
+                      </Show>
+                    </button>
+                  )}
+                </For>
+              </div>
+              <div class="optik-fade-right" />
             </div>
-            <button
-              class="shrink-0 px-2 min-h-11 text-2xs text-fg-tertiary not-selectable
-                     border-l border-line"
-              onClick={cycleTheme}
-              title={THEME_TITLES[themeMode()]}
-              aria-label={THEME_TITLES[themeMode()]}
-            >
-              {THEME_LABELS[themeMode()]}
-            </button>
-            <button
-              class="shrink-0 px-3 min-h-11 min-w-11 text-lg text-fg-tertiary not-selectable"
-              aria-label="关闭面板"
-              onClick={() => setOpen(false)}
-            >
-              ✕
-            </button>
+
+            <div class="shrink-0 row-center border-l border-line">
+              {/*
+                「关闭」写成字，不画图标。
+
+                原来这里是一个自己画的叉——用画的而不是 ✕ 字符，是因为那个字形的
+                粗细大小全由系统字体决定，在多数安卓机上又细又小。可即便描粗到 2px，
+                它仍然是个符号：得先认出来，才知道点下去会发生什么。而这是整个面板里
+                唯一一个「点错了就全没了」的按钮，最不该让人猜。
+
+                浅色/深色那颗挪进「环境」之后，这一栏空出了一半，正好够放两个中文字。
+                这也是 Shadow DOM 里最后一个 <svg>，去掉之后面板里不再有任何图标。
+              */}
+              <button
+                class="icon-btn min-h-11 px-4 font-600 text-fg"
+                aria-label="关闭面板"
+                onClick={() => setOpen(false)}
+              >
+                关闭
+              </button>
+            </div>
           </div>
 
           {/* 内容区 */}
@@ -349,7 +356,12 @@ export function App(props: AppProps): JSX.Element {
                 <StoragePanel kernel={props.kernel} copier={copier} />
               </Show>
               <Show when={props.store.activeTab() === 'system'}>
-                <SystemPanel kernel={props.kernel} copier={copier} />
+                <SystemPanel
+                  kernel={props.kernel}
+                  copier={copier}
+                  theme={themeMode()}
+                  onThemeChange={setThemeMode}
+                />
               </Show>
               <Show when={activePluginId()}>
                 {(id) => (

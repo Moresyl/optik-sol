@@ -1,6 +1,6 @@
 {
   "name": "optik-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Optik Sol 内核：CDP 形状的插桩与数据域，零依赖，不碰 DOM。",
   "license": "MIT",

@@ -19,7 +19,12 @@ import {
   type PropertyDescriptor,
   type RemoteObject,
 } from '../remote-object';
-import { flattenToText, formatStyledParts, hasFormatSpecifier, remoteObjectToText } from '../format';
+import {
+  flattenToText,
+  formatStyledParts,
+  hasFormatSpecifier,
+  remoteObjectToText,
+} from '../format';
 import type { CallFrame, LogEntry, LogLevel, LogOrigin, StyledPart } from '../types';
 
 export interface LogDomainOptions {
@@ -58,7 +63,11 @@ export class LogDomain {
   #handles = new Map<string, string[]>();
 
   constructor(options: LogDomainOptions = {}) {
-    const { maxEntries = 5000, previewLimits = DEFAULT_PREVIEW_LIMITS, coalesceRepeats = true } = options;
+    const {
+      maxEntries = 5000,
+      previewLimits = DEFAULT_PREVIEW_LIMITS,
+      coalesceRepeats = true,
+    } = options;
     this.#limits = previewLimits;
     this.#coalesce = coalesceRepeats;
     this.#entries = new RingBuffer<LogEntry>(maxEntries, (evicted) => this.#releaseEntry(evicted));
@@ -157,7 +166,10 @@ export class LogDomain {
    * Applies console format directives when the first argument is a format string,
    * otherwise joins the arguments the way a browser console does.
    */
-  #render(rawArgs: unknown[], remoteArgs: RemoteObject[]): { text: string; styledParts?: StyledPart[] } {
+  #render(
+    rawArgs: unknown[],
+    remoteArgs: RemoteObject[],
+  ): { text: string; styledParts?: StyledPart[] } {
     const first = rawArgs[0];
 
     if (typeof first === 'string' && rawArgs.length > 1 && hasFormatSpecifier(first)) {

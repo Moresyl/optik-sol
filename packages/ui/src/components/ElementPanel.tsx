@@ -15,17 +15,53 @@
  */
 
 import { createSignal, createMemo, For, Show, onCleanup, type JSX } from 'solid-js';
-import type { CopyController } from './Copy';
+import { CopyButton, type CopyController } from './Copy';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
 
 /** 常看的一批属性，按 DevTools 的分组顺序排列。 */
 const STYLE_GROUPS: { title: string; properties: string[] }[] = [
-  { title: '布局', properties: ['display', 'position', 'top', 'right', 'bottom', 'left', 'z-index', 'float', 'overflow'] },
+  {
+    title: '布局',
+    properties: [
+      'display',
+      'position',
+      'top',
+      'right',
+      'bottom',
+      'left',
+      'z-index',
+      'float',
+      'overflow',
+    ],
+  },
   { title: '盒模型', properties: ['width', 'height', 'padding', 'border', 'margin', 'box-sizing'] },
-  { title: '弹性/网格', properties: ['flex', 'flex-direction', 'justify-content', 'align-items', 'gap', 'grid-template-columns'] },
-  { title: '文字', properties: ['font-family', 'font-size', 'font-weight', 'line-height', 'color', 'text-align'] },
-  { title: '外观', properties: ['background-color', 'background-image', 'border-radius', 'opacity', 'box-shadow', 'transform'] },
+  {
+    title: '弹性/网格',
+    properties: [
+      'flex',
+      'flex-direction',
+      'justify-content',
+      'align-items',
+      'gap',
+      'grid-template-columns',
+    ],
+  },
+  {
+    title: '文字',
+    properties: ['font-family', 'font-size', 'font-weight', 'line-height', 'color', 'text-align'],
+  },
+  {
+    title: '外观',
+    properties: [
+      'background-color',
+      'background-image',
+      'border-radius',
+      'opacity',
+      'box-shadow',
+      'transform',
+    ],
+  },
 ];
 
 /** 高亮层：四块半透明色分别对应 margin / border / padding / content。 */
@@ -154,13 +190,13 @@ function TreeNode(props: {
   return (
     <div>
       <div
-        class="row-center gap-1 min-h-7 pr-2 font-mono text-sm active:bg-bg-sunken"
+        class="row-center gap-1 min-h-7 pr-2 font-mono active:bg-bg-sunken"
         classList={{ 'bg-accent/15': isSelected() }}
         style={{ 'padding-left': `${4 + props.depth * 12}px` }}
       >
         <Show when={hasChildren()} fallback={<span class="w-3 shrink-0" />}>
           <button
-            class="shrink-0 w-3 h-7 text-fg-tertiary text-2xs not-selectable row-center justify-center"
+            class="shrink-0 w-3 self-stretch min-h-7 text-fg-tertiary not-selectable row-center justify-center"
             aria-expanded={expanded()}
             aria-label={expanded() ? '收起' : '展开'}
             onClick={(event) => {
@@ -176,7 +212,9 @@ function TreeNode(props: {
           class="flex-1 min-w-0 text-left truncate py-1 not-selectable"
           onClick={() => props.onSelect(props.node)}
         >
-          <span style={{ color: 'var(--optik-token-tag)' }}>&lt;{props.node.tagName.toLowerCase()}</span>
+          <span style={{ color: 'var(--optik-token-tag)' }}>
+            &lt;{props.node.tagName.toLowerCase()}
+          </span>
           <Show when={props.node.id}>
             <span style={{ color: 'var(--optik-token-attr)' }}> id</span>
             <span class="text-fg-tertiary">=</span>
@@ -185,7 +223,9 @@ function TreeNode(props: {
           <Show when={typeof props.node.className === 'string' && props.node.className.trim()}>
             <span style={{ color: 'var(--optik-token-attr)' }}> class</span>
             <span class="text-fg-tertiary">=</span>
-            <span style={{ color: 'var(--optik-token-string)' }}>"{(props.node.className as string).trim()}"</span>
+            <span style={{ color: 'var(--optik-token-string)' }}>
+              "{(props.node.className as string).trim()}"
+            </span>
           </Show>
           <span style={{ color: 'var(--optik-token-tag)' }}>&gt;</span>
           <Show when={inlineText()}>
@@ -278,7 +318,9 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const attributes = createMemo(() => {
     const node = selected();
     if (!node) return [];
-    return [...node.attributes].map((attribute) => [attribute.name, attribute.value] as [string, string]);
+    return [...node.attributes].map(
+      (attribute) => [attribute.name, attribute.value] as [string, string],
+    );
   });
 
   const styles = createMemo(() => {
@@ -288,7 +330,9 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
     return STYLE_GROUPS.map((group) => ({
       title: group.title,
       entries: group.properties
-        .map((property) => [property, computed.getPropertyValue(property).trim()] as [string, string])
+        .map(
+          (property) => [property, computed.getPropertyValue(property).trim()] as [string, string],
+        )
         .filter(([, value]) => value && value !== 'none' && value !== 'normal' && value !== 'auto'),
     })).filter((group) => group.entries.length > 0);
   });
@@ -298,13 +342,29 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
     if (!node) return null;
     const rect = node.getBoundingClientRect();
     const computed = getComputedStyle(node);
-    const read = (property: string) => Math.round(parseFloat(computed.getPropertyValue(property)) || 0);
+    const read = (property: string) =>
+      Math.round(parseFloat(computed.getPropertyValue(property)) || 0);
     return {
       width: Math.round(rect.width),
       height: Math.round(rect.height),
-      margin: [read('margin-top'), read('margin-right'), read('margin-bottom'), read('margin-left')],
-      border: [read('border-top-width'), read('border-right-width'), read('border-bottom-width'), read('border-left-width')],
-      padding: [read('padding-top'), read('padding-right'), read('padding-bottom'), read('padding-left')],
+      margin: [
+        read('margin-top'),
+        read('margin-right'),
+        read('margin-bottom'),
+        read('margin-left'),
+      ],
+      border: [
+        read('border-top-width'),
+        read('border-right-width'),
+        read('border-bottom-width'),
+        read('border-left-width'),
+      ],
+      padding: [
+        read('padding-top'),
+        read('padding-right'),
+        read('padding-bottom'),
+        read('padding-left'),
+      ],
     };
   });
 
@@ -330,7 +390,15 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
         </button>
         {/* 分栏时结构和样式同屏，不需要用标签互斥切换 */}
         <Show when={!layout.wide()}>
-          <For each={[['tree', '结构'], ['style', '样式'], ['attrs', '属性']] as const}>
+          <For
+            each={
+              [
+                ['tree', '结构'],
+                ['style', '样式'],
+                ['attrs', '属性'],
+              ] as const
+            }
+          >
             {([id, label]) => (
               <button
                 class="chip shrink-0"
@@ -355,31 +423,33 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
       <Show when={selected()}>
         {(node) => (
           <div class="shrink-0 px-3 py-1.5 border-b border-line bg-bg-sunken">
-            <div class="selectable wrap-anywhere font-mono text-sm">{selectorFor(node())}</div>
-            <div class="row-center flex-wrap gap-3 mt-1 text-2xs not-selectable">
-              <button
-                class="text-accent py-1"
-                onClick={() => props.copier.copy(selectorFor(node()), '选择器')}
-              >
-                复制选择器
-              </button>
-              <button class="text-fg-tertiary py-1" onClick={() => highlighter.show(node())}>
+            <div class="selectable wrap-anywhere font-mono">{selectorFor(node())}</div>
+            <div class="row-center flex-wrap gap-1 mt-1 not-selectable">
+              <CopyButton
+                copier={props.copier}
+                text={() => selectorFor(node())}
+                label="选择器"
+                class="min-h-9 px-2 -ml-2 text-accent"
+              />
+              <button class="icon-btn min-h-9 px-2" onClick={() => highlighter.show(node())}>
                 高亮
               </button>
               <button
-                class="text-fg-tertiary py-1"
+                class="icon-btn min-h-9 px-2"
                 onClick={() => node().scrollIntoView({ behavior: 'smooth', block: 'center' })}
               >
                 滚动到此
               </button>
               <button
-                class="text-fg-tertiary py-1"
+                class="icon-btn min-h-9 px-2"
                 onClick={() => props.copier.reveal(node().outerHTML, '元素 HTML')}
               >
                 查看 HTML
               </button>
-              <Show when={node().parentElement && node().parentElement !== document.documentElement}>
-                <button class="text-fg-tertiary py-1" onClick={() => select(node().parentElement!)}>
+              <Show
+                when={node().parentElement && node().parentElement !== document.documentElement}
+              >
+                <button class="icon-btn min-h-9 px-2" onClick={() => select(node().parentElement!)}>
                   选父级
                 </button>
               </Show>
@@ -394,7 +464,14 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
             ‹ 结构
           </button>
         </Show>
-        <For each={[['style', '样式'], ['attrs', '属性']] as const}>
+        <For
+          each={
+            [
+              ['style', '样式'],
+              ['attrs', '属性'],
+            ] as const
+          }
+        >
           {([id, label]) => (
             <button
               class="chip shrink-0"
@@ -411,7 +488,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
         <Show when={detailTab() === 'attrs'}>
           <For each={attributes()}>
             {([name, value]) => (
-              <div class="px-3 py-1.5 border-b border-line selectable wrap-anywhere font-mono text-sm">
+              <div class="px-3 py-1.5 border-b border-line selectable wrap-anywhere font-mono">
                 <span style={{ color: 'var(--optik-token-attr)' }}>{name}</span>
                 <span class="text-fg-tertiary"> = </span>
                 <span style={{ color: 'var(--optik-token-string)' }}>{value || '""'}</span>
@@ -419,7 +496,9 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
             )}
           </For>
           <Show when={attributes().length === 0}>
-            <div class="p-8 text-center text-fg-tertiary text-base not-selectable">该元素没有属性</div>
+            <div class="p-8 text-center text-fg-tertiary text-base not-selectable">
+              该元素没有属性
+            </div>
           </Show>
         </Show>
 
@@ -427,9 +506,9 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
           <Show when={boxModel()}>
             {(box) => (
               <div class="px-3 py-2 border-b border-line">
-                <div class="text-sm font-600 text-fg-secondary mb-1.5 not-selectable">盒模型</div>
+                <div class="font-600 text-fg-secondary mb-1.5 not-selectable">盒模型</div>
                 {/* 三层嵌套框，从外到内是 margin / border / padding，中心是内容尺寸。 */}
-                <div class="p-2 text-center text-2xs bg-[rgba(246,178,107,0.25)] rounded-sm not-selectable">
+                <div class="p-2 text-center bg-[rgba(246,178,107,0.25)] rounded-sm not-selectable">
                   <div class="text-fg-secondary">外边距 {box().margin.join(' / ')}</div>
                   <div class="p-2 mt-1 bg-[rgba(255,229,153,0.35)] rounded-sm">
                     <div class="text-fg-secondary">边框 {box().border.join(' / ')}</div>
@@ -448,12 +527,12 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
           <For each={styles()}>
             {(group) => (
               <div class="border-b border-line">
-                <div class="px-3 py-1.5 bg-bg-elevated text-sm font-600 text-fg-secondary not-selectable">
+                <div class="px-3 py-1.5 bg-bg-elevated font-600 text-fg-secondary not-selectable">
                   {group.title}
                 </div>
                 <For each={group.entries}>
                   {([property, value]) => (
-                    <div class="px-3 py-1 selectable wrap-anywhere font-mono text-sm">
+                    <div class="px-3 py-1 selectable wrap-anywhere font-mono">
                       <span style={{ color: 'var(--optik-token-key)' }}>{property}</span>
                       <span class="text-fg-tertiary">: </span>
                       <span>{value}</span>

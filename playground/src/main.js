@@ -13,7 +13,7 @@
 
 import { mount } from 'optik-sol';
 
-const optik = mount({ theme: 'auto' });
+const optik = mount();
 
 // 一个演示插件：证明插件不需要依赖 Solid，返回原生 DOM 即可。
 optik.use({

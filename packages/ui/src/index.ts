@@ -18,7 +18,7 @@ import unoStyles from './generated/uno.css?inline';
 export interface MountOptions extends KernelOptions {
   /** 挂载容器，默认 `document.body`。 */
   container?: HTMLElement;
-  /** 主题，默认跟随系统。 */
+  /** 主题，默认浅色。不提供跟随系统——宿主页面通常是写死浅色的。 */
   theme?: ThemeMode;
   /** 初始是否展开面板，默认否。 */
   defaultOpen?: boolean;
@@ -47,7 +47,14 @@ export function mount(options: MountOptions = {}): OptikInstance {
   // 重复挂载在热更新场景下很常见，直接复用而不是叠两个面板。
   if (current) return current;
 
-  const { container, theme = 'auto', defaultOpen, defaultTab, plugins = [], ...kernelOptions } = options;
+  const {
+    container,
+    theme = 'light',
+    defaultOpen,
+    defaultTab,
+    plugins = [],
+    ...kernelOptions
+  } = options;
 
   const kernel = new OptikKernel(kernelOptions);
   kernel.start();

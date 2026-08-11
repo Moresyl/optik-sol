@@ -59,9 +59,11 @@ export function captureStack(maxFrames = 12): CallFrame[] | undefined {
   const holder: { stack?: string } = {};
 
   // V8 fast path: skips message construction entirely.
-  const CaptureStackTrace = (Error as unknown as {
-    captureStackTrace?: (target: object, constructor?: Function) => void;
-  }).captureStackTrace;
+  const CaptureStackTrace = (
+    Error as unknown as {
+      captureStackTrace?: (target: object, constructor?: Function) => void;
+    }
+  ).captureStackTrace;
 
   if (CaptureStackTrace) {
     CaptureStackTrace(holder, captureStack);

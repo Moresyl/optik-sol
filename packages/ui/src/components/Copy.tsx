@@ -11,8 +11,12 @@ import { createSignal, Show, onCleanup, type JSX } from 'solid-js';
 import { copyText } from '../platform/clipboard';
 
 export interface CopyController {
-  /** 复制文本；失败时自动弹出兜底层。 */
-  copy: (text: string, label?: string) => void;
+  /**
+   * 复制文本；失败时自动弹出兜底层。
+   * 返回是否走通了自动路径——按钮据此决定要不要就地闪一个「已复制」，
+   * 兜底层已经弹出来的时候再报一次成功只会让人困惑。
+   */
+  copy: (text: string, label?: string) => boolean;
   /** 直接打开兜底层（用于「查看原文」这类主动入口）。 */
   reveal: (text: string, title?: string) => void;
   toast: () => string | null;
@@ -38,12 +42,16 @@ export function createCopyController(): CopyController {
     copy(text, label = '内容') {
       if (!text) {
         showToast('没有可复制的内容');
-        return;
+        return false;
       }
       // 必须同步调用，才能保留用户手势。
       const result = copyText(text);
-      if (result.ok) showToast(`已复制${label}（${formatSize(text.length)}）`);
-      else setSheet({ text, title: `手动复制${label}` });
+      if (result.ok) {
+        showToast(`已复制${label}（${formatSize(text.length)}）`);
+        return true;
+      }
+      setSheet({ text, title: `手动复制${label}` });
+      return false;
     },
 
     reveal(text, title = '原文') {
@@ -61,6 +69,75 @@ function formatSize(length: number): string {
   return `${(length / 1000).toFixed(1)}k 字`;
 }
 
+/**
+ * 全站统一的复制按钮。**面板里但凡是往剪贴板里写东西的，都必须是这个组件。**
+ *
+ * **文字恒为「复制」，没有参数可以改。** 这不是省事，是这个组件唯一的职责：
+ * 之前它开着一个 `caption`，于是同一个动作在五个地方长出了五个名字——
+ * 网络面板叫「cURL」、存储面板叫「导出」、环境面板叫「导出全部」、
+ * 控制台叫「全部」和「选中 3 条」。每一个单独看都说得通，
+ * 合起来的效果是用户点了「导出」，弹出来的提示写着「已复制」。
+ * 名字里那点额外信息（复制的是什么、有多少）已经由长按提示、
+ * 无障碍名称和复制成功的轻提示说完了，按钮本身只需要回答「点了会怎样」。
+ *
+ * **不配图标。** 试过内联 SVG：图标要跟旁边的中文一样高才叫对齐，
+ * 写死 px 就会比字大一圈、看着像浮在文字上面；换成 em 跟着字号缩，
+ * 又只剩一团勉强分辨得出的轮廓。何况剪贴板、两页纸、下载箭头，
+ * 本来就没有一个是所有人都认的。
+ *
+ * 复制是这类操作里反馈最弱的一种——点完页面没有任何变化，用户唯一能确认的
+ * 只有那句一闪而过的提示，而提示固定飘在屏幕底部，说不清是哪个按钮生效了。
+ * 所以按钮自己要变：文字切成「已复制」并染成强调色，1.4 秒后复位。
+ */
+export function CopyButton(props: {
+  copier: CopyController;
+  /** 取文本要延迟到点击那一刻——序列化一整个响应体不该在每次渲染时都跑一遍。 */
+  text: () => string;
+  /** 只进提示语和无障碍名称，不上按钮，如「cURL 命令」。 */
+  label?: string;
+  class?: string;
+}): JSX.Element {
+  const [done, setDone] = createSignal(false);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => clearTimeout(timer));
+
+  const name = () => `复制${props.label ?? '内容'}`;
+
+  return (
+    <button
+      class={`icon-btn ${props.class ?? ''}`}
+      classList={{ 'text-accent': done() }}
+      title={name()}
+      aria-label={name()}
+      onClick={(event) => {
+        // 行尾按钮的父元素常常也是可点的（选中该行），别让它跟着触发。
+        event.stopPropagation();
+        if (!props.copier.copy(props.text(), props.label)) return;
+        setDone(true);
+        clearTimeout(timer);
+        timer = setTimeout(() => setDone(false), 1400);
+      }}
+    >
+      {/*
+        「复制」和「已复制」差一个字。直接换文字的话，按钮会在点下去的瞬间变宽，
+        把右边的兄弟按钮一起推走——同一排有好几个复制按钮时，整排都在抖。
+
+        所以两段文字都渲染，叠在同一个网格格子里，只切换谁可见：
+        格子的宽度恒等于两者中较宽的那个，永远不变。
+        `invisible` 是 visibility:hidden，被藏起来的那段不会进读屏的朗读序列。
+      */}
+      <span class="grid justify-items-center">
+        <span class="[grid-area:1/1]" classList={{ invisible: done() }}>
+          复制
+        </span>
+        <span class="[grid-area:1/1]" classList={{ invisible: !done() }}>
+          已复制
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function Toast(props: { message: string | null }): JSX.Element {
   return (
     <Show when={props.message}>
@@ -69,8 +146,8 @@ export function Toast(props: { message: string | null }): JSX.Element {
           role="status"
           aria-live="polite"
           class="optik-toast-anim not-selectable fixed left-1/2 bottom-20 -translate-x-1/2
-                 px-4 py-2.5 rounded-lg text-base max-w-80 text-center
-                 bg-[rgba(0,0,0,0.82)] text-white pointer-events-none"
+ px-4 py-2.5 rounded-lg text-base max-w-80 text-center
+ bg-[rgba(0,0,0,0.82)] text-white pointer-events-none"
           style={{ 'z-index': 'calc(var(--optik-z) + 20)' }}
         >
           {message()}
@@ -111,14 +188,25 @@ export function CopySheet(props: {
             if (event.target === event.currentTarget) props.onClose();
           }}
         >
+          {/*
+            宽度上限写死 480px，不走会被 SCALE 缩放的 max-w-* 档位：
+            这是「平板上别拉成一整条」的边界，跟控件密度没有关系，
+            跟着一起缩会让手动复制这个兜底弹层在小屏上白白变窄。
+          */}
           <div
-            class="flex flex-col gap-3 w-full max-w-120 max-h-[80dvh] p-4 rounded-xl bg-bg border border-line"
+            class="flex flex-col gap-3 w-full max-w-[480px] max-h-[80dvh] p-4 rounded-xl bg-bg border border-line"
             style={{ 'padding-bottom': 'calc(16px + var(--optik-safe-bottom))' }}
           >
-            <div class="text-lg font-600 not-selectable">{data().title}</div>
-            <div class="text-sm text-fg-secondary leading-5">
-              自动复制在当前环境不可用（多为非 HTTPS 页面，此时浏览器不提供剪贴板接口）。
-              内容已全选，长按下方文本选择「拷贝」即可。
+            <div class="font-600 not-selectable">{data().title}</div>
+            {/*
+              别把原因写成「因为不是 HTTPS」——那是错的：我们的首选路径是同步的
+ execCommand，它不受安全上下文限制，普通 http 页面照样能复制成功。
+              真正会走到这一层的是 WebView 阉割了 execCommand、或页面的权限策略
+              把剪贴板整个关掉。这两种情况用户都改不了，所以文案不解释原因，
+              只说下一步该怎么做。
+            */}
+            <div class="text-fg-secondary leading-5">
+              当前环境不允许脚本写剪贴板。内容已全选，长按下方文本选择「拷贝」即可。
             </div>
             <textarea
               readOnly
@@ -128,7 +216,7 @@ export function CopySheet(props: {
               value={data().text}
               // 16px 是硬性要求：更小的字号会让 iOS Safari 在聚焦时强制缩放页面。
               class="selectable w-full flex-1 min-h-40 p-2.5 rounded-md resize-none
-                     font-mono text-input bg-bg-sunken border border-line"
+ font-mono text-input bg-bg-sunken border border-line"
               ref={(element) => {
                 textarea = element;
                 // 等一帧，确保元素已完成布局，否则 iOS 上设置选区不生效。

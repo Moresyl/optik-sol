@@ -56,6 +56,11 @@ export const BASE_STYLES = /* css */ `
   /* 宿主页面的继承样式在这里被彻底截断，我们的样式同样出不去 */
   all: initial;
   font-family: var(--optik-font);
+  /* 面板唯一的字号，见 uno.config.ts 的 fontSize。
+     写在 :host 上是为了让它成为**继承下来的默认值**：
+     没写任何字号类的元素自动就是 13px，而不是 all:initial 之后的 medium（16px）。 */
+  font-size: 13px;
+  line-height: 20px;
   color: var(--optik-text);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -100,6 +105,27 @@ export const BASE_STYLES = /* css */ `
   padding: 0;
   border: 0 solid var(--optik-border);
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+   Uno 的 transform 类是靠一组 CSS 变量拼出来的：
+   哪怕只写 -translate-x-1/2，生成的也是 translateX(var(--un-translate-x)) … scaleZ(var(--un-scale-z))
+   这一长串。只要有一个变量没有初值，整条 transform 就是非法值，会被整体丢弃——
+   表现为「类明明生成了却完全不生效」。
+   这组初值本该由 preflight 提供，而我们关掉了 preflight，只能自己补。 */
+*, *::before, *::after {
+  --un-translate-x: 0;
+  --un-translate-y: 0;
+  --un-translate-z: 0;
+  --un-rotate: 0;
+  --un-rotate-x: 0;
+  --un-rotate-y: 0;
+  --un-rotate-z: 0;
+  --un-skew-x: 0;
+  --un-skew-y: 0;
+  --un-scale-x: 1;
+  --un-scale-y: 1;
+  --un-scale-z: 1;
 }
 
 button, input, textarea, select {
@@ -175,11 +201,13 @@ button { cursor: pointer; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 16px;
+  /* 徽章不自己定字号，跟着面板那一个 13px 走。
+     高度随之从 14px 提到 18px：13px 的中文字身框就是 13px 高，
+     留 14px 会把「接口」两个字的上下缘切掉。 */
+  height: 18px;
   padding: 0 4px;
   border-radius: 3px;
   font-family: var(--optik-font);
-  font-size: 10px;
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
@@ -200,6 +228,28 @@ button { cursor: pointer; }
 .optik-kind[data-kind='font']   { color: var(--optik-token-tag); }
 .optik-kind[data-kind='media']  { color: var(--optik-token-number); }
 .optik-kind[data-kind='doc']    { color: var(--optik-text-secondary); }
+
+/* 标签栏右缘的渐变。装了插件之后标签会超出一屏，而横向滚动条是被隐藏的，
+   没有这道渐变就完全看不出右边还有东西。
+   pointer-events: none 是必须的——它盖在最后一个标签上面。 */
+.optik-fade-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--optik-bg-elevated));
+}
+
+/* 选中的标签额外给一点底色。只靠一条下划线在小屏上不够显眼，
+   但底色要压得很淡，否则整条标签栏会变成一排色块。 */
+.optik-tab[aria-current='page'] {
+  background: color-mix(in srgb, var(--optik-accent) 10%, transparent);
+}
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+  .optik-tab[aria-current='page'] { background: var(--optik-bg); }
+}
 
 /* 表头：紧凑模式下的列标题，滚动时钉在顶部 */
 .optik-thead {
@@ -233,9 +283,9 @@ mark.optik-hit {
 .optik-spin { animation: optik-spin 0.9s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+*, *::before, *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
   }
 }
 `;

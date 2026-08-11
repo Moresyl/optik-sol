@@ -14,7 +14,7 @@ npm i optik-sol
 import { mount } from 'optik-sol';
 
 if (import.meta.env.DEV) {
-  mount({ theme: 'auto' });
+  mount();
 }
 ```
 

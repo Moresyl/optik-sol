@@ -1,6 +1,6 @@
 {
   "name": "optik-sol",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Optik Sol：移动端网页调试面板，一个 script 标签，零服务端，零运行时依赖。",
   "license": "MIT",
   "type": "module",

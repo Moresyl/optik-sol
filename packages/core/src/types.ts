@@ -6,12 +6,7 @@ export type LogLevel = 'debug' | 'log' | 'info' | 'warn' | 'error';
 
 /** Where an entry came from — drives filtering and the source badge in the UI. */
 export type LogOrigin =
-  | 'console'
-  | 'exception'
-  | 'unhandledrejection'
-  | 'resource-error'
-  | 'csp-violation'
-  | 'user';
+  'console' | 'exception' | 'unhandledrejection' | 'resource-error' | 'csp-violation' | 'user';
 
 export interface CallFrame {
   functionName: string;
@@ -57,7 +52,8 @@ export interface StyledPart {
 // Network
 // ---------------------------------------------------------------------------
 
-export type RequestInitiator = 'xhr' | 'fetch' | 'beacon' | 'websocket' | 'resource' | 'eventsource';
+export type RequestInitiator =
+  'xhr' | 'fetch' | 'beacon' | 'websocket' | 'resource' | 'eventsource';
 
 export type NetworkPhase = 'pending' | 'loading' | 'complete' | 'failed' | 'aborted';
 
