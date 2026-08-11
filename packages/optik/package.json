@@ -44,15 +44,15 @@
     "build": "vite build && cross-env OPTIK_TARGET=global vite build && tsc -p tsconfig.build.json && rollup -c rollup.types.config.mjs && rimraf dist/types"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "optik-core": "workspace:*",
     "optik-ui": "workspace:*",
     "rimraf": "^6.1.3",
     "rollup": "^4.62.4",
     "rollup-plugin-dts": "^6.5.1",
     "solid-js": "^1.9.14",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
     "vite-plugin-solid": "^2.11.14"
   }
 }
