@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover 是让 env(safe-area-inset-*) 拿到非零值的前提 -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+    <title>Optik 调试台</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+        background: #f5f5f7;
+        color: #1c1c1e;
+        -webkit-text-size-adjust: 100%;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #131315; color: #f2f2f7; }
+        section { background: #1c1c1e !important; }
+        button { background: #2c2c2e !important; color: #f2f2f7 !important; border-color: #3a3a3c !important; }
+      }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      p.lead { margin: 0 0 16px; font-size: 13px; opacity: 0.6; line-height: 1.5; }
+      section {
+        background: #fff;
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      h2 { font-size: 14px; margin: 0 0 8px; opacity: 0.7; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+      button {
+        min-height: 44px;
+        padding: 0 12px;
+        font-size: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        background: #fafafa;
+        color: inherit;
+        cursor: pointer;
+      }
+      button:active { opacity: 0.6; }
+
+      /* ---- 局域网地址 ---- */
+      #lan:empty { display: none; }
+      #lan { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+      #lan .qr {
+        flex: none;
+        width: 148px; height: 148px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 6px;
+        box-sizing: border-box;
+      }
+      #lan .qr svg { display: block; width: 100%; height: 100%; }
+      #lan .urls { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+      #lan .row { display: flex; gap: 8px; align-items: center; }
+      #lan .addr {
+        flex: 1; min-width: 0;
+        /* 16px 起步：低于这个值 Safari 会在聚焦时强制放大整页 */
+        font: 16px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        padding: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        background: #fafafa;
+        color: inherit;
+        text-overflow: ellipsis;
+      }
+      #lan .addr.active { border-color: #0a84ff; background: rgba(10, 132, 255, 0.08); }
+      #lan button.copy { min-height: 44px; flex: none; }
+      #lan .hint { font-size: 12px; opacity: 0.55; line-height: 1.5; }
+      @media (prefers-color-scheme: dark) {
+        #lan .addr { background: #2c2c2e !important; border-color: #3a3a3c !important; }
+        #lan .addr.active { border-color: #4aa3ff !important; background: rgba(74, 163, 255, 0.14) !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Optik 调试台</h1>
+    <p class="lead">
+      用手机访问下面的局域网地址，点击右下角悬浮按钮打开面板。
+      再下面每个按钮对应一类需要被正确捕获的场景。
+    </p>
+
+    <section>
+      <h2>用手机打开</h2>
+      <div id="lan"></div>
+    </section>
+
+    <section>
+      <h2>日志</h2>
+      <div class="grid" id="logs"></div>
+    </section>
+
+    <section>
+      <h2>复杂值（重点验证展开与复制）</h2>
+      <div class="grid" id="values"></div>
+    </section>
+
+    <section>
+      <h2>错误</h2>
+      <div class="grid" id="errors"></div>
+    </section>
+
+    <section>
+      <h2>网络</h2>
+      <div class="grid" id="network"></div>
+    </section>
+
+    <section>
+      <h2>存储</h2>
+      <div class="grid" id="storage"></div>
+    </section>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

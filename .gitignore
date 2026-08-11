@@ -1,0 +1,11 @@
+node_modules/
+dist/
+# UnoCSS 的产物，由 `pnpm --filter @optik/ui css` 生成，不进版本库
+packages/ui/src/generated/
+*.tsbuildinfo
+.DS_Store
+.firecrawl/
+.vite/
+coverage/
+*.local
+*.log
