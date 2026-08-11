@@ -19,10 +19,118 @@ const INITIATOR_LABELS: Record<RequestInitiator, string> = {
   xhr: 'XHR',
   fetch: 'Fetch',
   beacon: 'Beacon',
-  websocket: 'WS',
+  websocket: 'WebSocket',
   eventsource: 'SSE',
   resource: '资源',
 };
+
+/**
+ * 请求分类。
+ *
+ * 一个页面几十条请求里，真正在排查的通常只有几条接口，其余全是 JS/CSS/图片。
+ * 混在一起的列表等于没有列表——所以分类要同时做两件事：**能一键筛掉**，
+ * 以及**每行一眼能认出来**。
+ */
+export type RequestKind = 'api' | 'stream' | 'script' | 'style' | 'image' | 'font' | 'media' | 'doc' | 'other';
+
+const KIND_LABELS: Record<RequestKind, string> = {
+  api: '接口',
+  stream: '实时',
+  script: 'JS',
+  style: 'CSS',
+  image: '图片',
+  font: '字体',
+  media: '媒体',
+  doc: '文档',
+  other: '其他',
+};
+
+/** 扩展名 → 分类。Resource Timing 拿不到 Content-Type 时的兜底。 */
+const EXTENSION_KINDS: Record<string, RequestKind> = {
+  js: 'script', mjs: 'script', cjs: 'script', ts: 'script',
+  css: 'style',
+  png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
+  avif: 'image', svg: 'image', ico: 'image', bmp: 'image',
+  woff: 'font', woff2: 'font', ttf: 'font', otf: 'font', eot: 'font',
+  mp4: 'media', webm: 'media', mp3: 'media', wav: 'media', ogg: 'media', m3u8: 'media',
+  html: 'doc', htm: 'doc', json: 'api', xml: 'doc',
+};
+
+/** `initiatorType`（来自 Resource Timing）→ 分类。比猜扩展名可靠。 */
+const INITIATOR_TYPE_KINDS: Record<string, RequestKind> = {
+  script: 'script',
+  css: 'style',
+  link: 'style',
+  img: 'image',
+  image: 'image',
+  video: 'media',
+  audio: 'media',
+  track: 'media',
+  iframe: 'doc',
+  frame: 'doc',
+  navigation: 'doc',
+};
+
+function kindOf(record: NetworkRecord): RequestKind {
+  if (record.initiator === 'websocket' || record.initiator === 'eventsource') return 'stream';
+
+  // xhr / fetch / beacon 一律算接口：判据是「谁发起的」而不是「返回了什么」。
+  // 用 fetch 拉一张图确实会被算成接口，但那也确实是脚本主动发的请求，
+  // 按发起方分类的结果是可预期的，按响应类型分类则会让同一个接口忽此忽彼。
+  if (record.initiator !== 'resource') return 'api';
+
+  const byInitiatorType = record.responseType && INITIATOR_TYPE_KINDS[record.responseType];
+  if (byInitiatorType) return byInitiatorType;
+
+  const mime = record.responseBody?.mimeType;
+  if (mime) {
+    if (mime.startsWith('image/')) return 'image';
+    if (mime.startsWith('font/') || mime.includes('font')) return 'font';
+    if (mime.startsWith('audio/') || mime.startsWith('video/')) return 'media';
+    if (mime.includes('javascript') || mime.includes('ecmascript')) return 'script';
+    if (mime.includes('css')) return 'style';
+    if (mime.includes('json')) return 'api';
+    if (mime.includes('html')) return 'doc';
+  }
+
+  // 文件名里的扩展名。查询串已经在内核里被切走，这里拿到的是干净的最后一段。
+  const dot = record.name.lastIndexOf('.');
+  const extension = dot === -1 ? '' : record.name.slice(dot + 1).toLowerCase();
+  return EXTENSION_KINDS[extension] ?? 'other';
+}
+
+/**
+ * 紧凑模式的列宽。行和表头必须共用同一份，否则错开一两像素就再也对不齐。
+ * 分类列（36px）在任何宽度下都保留——它是这张表里最先被读的一列。
+ */
+const NARROW_COLUMNS = '36px minmax(0, 1fr) 44px';
+const WIDE_COLUMNS = '36px minmax(0, 1fr) 44px 72px 68px';
+
+/** 顶部筛选的三档。分类有九种，但手指要点的只该有三个。 */
+type KindFilter = 'all' | 'api' | 'resource' | 'stream';
+
+const FILTER_LABELS: Record<KindFilter, string> = {
+  all: '全部',
+  api: '接口',
+  resource: '资源',
+  stream: '实时',
+};
+
+function matchesFilter(kind: RequestKind, filter: KindFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'api') return kind === 'api';
+  if (filter === 'stream') return kind === 'stream';
+  return kind !== 'api' && kind !== 'stream';
+}
+
+/** 分类徽章。颜色由 CSS 的 data-kind 驱动——类名是数据拼的，Uno 的静态扫描看不见。 */
+function KindBadge(props: { kind: RequestKind }): JSX.Element {
+  return (
+    <span class="optik-kind not-selectable" data-kind={props.kind}>
+      {KIND_LABELS[props.kind]}
+    </span>
+  );
+}
 
 const OMITTED_REASONS: Record<string, string> = {
   'too-large': '内容过大，未保留',
@@ -272,7 +380,8 @@ function RequestDetail(props: {
               <span class="text-fg-tertiary">方法：</span>
               {props.record.method}
               <span class="text-fg-tertiary"> · 类型：</span>
-              {INITIATOR_LABELS[props.record.initiator]}
+              {KIND_LABELS[kindOf(props.record)]}
+              <span class="text-fg-tertiary">（{INITIATOR_LABELS[props.record.initiator]}）</span>
             </div>
             <div>
               <span class="text-fg-tertiary">状态：</span>
@@ -365,8 +474,9 @@ function RequestDetail(props: {
  */
 function RequestRow(props: {
   record: NetworkRecord;
+  kind: RequestKind;
   selected: boolean;
-  /** 详情已打开，左栏变窄，只留名称和状态两列。 */
+  /** 详情已打开，左栏变窄，只留分类、名称和状态三列。 */
   narrowColumns: boolean;
   dense: boolean;
   onSelect: () => void;
@@ -388,9 +498,7 @@ function RequestRow(props: {
           fallback={
             <>
               <div class="row-center gap-1.5 text-2xs">
-                <span class="px-1 rounded-sm bg-bg-sunken text-fg-secondary shrink-0">
-                  {INITIATOR_LABELS[props.record.initiator]}
-                </span>
+                <KindBadge kind={props.kind} />
                 <span class="font-mono text-fg-secondary shrink-0">{props.record.method}</span>
                 <span class={`font-mono shrink-0 ${statusClass(props.record)}`}>
                   {statusText(props.record)}
@@ -410,21 +518,16 @@ function RequestRow(props: {
         >
           <div
             class="grid items-center gap-2 font-mono text-xs h-6"
-            style={{
-              'grid-template-columns': props.narrowColumns
-                ? 'minmax(0, 1fr) 44px'
-                : 'minmax(0, 1fr) 44px 48px 72px 68px',
-            }}
+            style={{ 'grid-template-columns': props.narrowColumns ? NARROW_COLUMNS : WIDE_COLUMNS }}
           >
+            {/* 分类列打头且永不折叠：列表最先要回答的问题是「这条是不是接口」。 */}
+            <KindBadge kind={props.kind} />
             <span class="truncate">
               {props.record.name}
               <span class="text-fg-tertiary"> {props.record.origin}</span>
             </span>
             <span class={`truncate ${statusClass(props.record)}`}>{statusText(props.record)}</span>
             <Show when={!props.narrowColumns}>
-              <span class="truncate text-fg-tertiary">
-                {INITIATOR_LABELS[props.record.initiator]}
-              </span>
               <span class="truncate text-right text-fg-tertiary">
                 {props.record.fromCache ? '缓存' : formatBytes(props.record.responseBody?.size)}
               </span>
@@ -467,22 +570,49 @@ export function NetworkPanel(props: {
   const [selectedId, setSelectedId] = createSignal<string | null>(null);
   const [query, setQuery] = createSignal('');
   const [onlyFailed, setOnlyFailed] = createSignal(false);
+  const [kindFilter, setKindFilter] = createSignal<KindFilter>('all');
 
   const selected = createMemo(() => props.store.requests().find((r) => r.id === selectedId()) ?? null);
 
   /** 分栏且已选中时左栏很窄，多余的列会把名称挤没，此时收起它们。 */
   const narrowColumns = createMemo(() => layout.wide() && selected() !== null);
 
+  /** 分类只算一次，行、筛选、计数三处共用。 */
+  const classified = createMemo(() =>
+    props.store.requests().map((record) => ({ record, kind: kindOf(record) })),
+  );
+
+  /** 筛选条上的计数。空的档位直接不显示，390px 上每一个 chip 都占地方。 */
+  const counts = createMemo(() => {
+    const result: Record<KindFilter, number> = { all: 0, api: 0, resource: 0, stream: 0 };
+    for (const { kind } of classified()) {
+      result.all++;
+      if (kind === 'api') result.api++;
+      else if (kind === 'stream') result.stream++;
+      else result.resource++;
+    }
+    return result;
+  });
+
+  const availableFilters = createMemo(() =>
+    (['all', 'api', 'resource', 'stream'] as KindFilter[]).filter(
+      (filter) => filter === 'all' || filter === kindFilter() || counts()[filter] > 0,
+    ),
+  );
+
   const visible = createMemo(() => {
     const needle = query().toLowerCase();
-    return props.store.requests().filter((record) => {
-      if (onlyFailed()) {
-        const failed = record.phase === 'failed' || (record.status ?? 0) >= 400;
-        if (!failed) return false;
-      }
-      if (needle && !record.url.toLowerCase().includes(needle)) return false;
-      return true;
-    });
+    const filter = kindFilter();
+    return classified()
+      .filter(({ record, kind }) => {
+        if (!matchesFilter(kind, filter)) return false;
+        if (onlyFailed()) {
+          const failed = record.phase === 'failed' || (record.status ?? 0) >= 400;
+          if (!failed) return false;
+        }
+        if (needle && !record.url.toLowerCase().includes(needle)) return false;
+        return true;
+      });
   });
 
   const list = (
@@ -508,11 +638,29 @@ export function NetworkPanel(props: {
             仅失败
           </button>
         </div>
-        <div class="row-center gap-2 px-2 pb-1.5 text-2xs not-selectable">
-          <span class="text-fg-tertiary">
-            {visible().length}/{props.store.requests().length} 条
-          </span>
-          <button class="chip" onClick={props.store.clearRequests}>
+        {/*
+          分类筛选。一个页面几十条请求里真正在查的往往只有几条接口，
+          「接口」这一档是这个面板被打开时最常按的按钮，所以它必须在第一屏、
+          不能藏进任何菜单里。
+        */}
+        <div class="row-center gap-1 px-2 pb-1.5 overflow-x-auto no-scrollbar">
+          <For each={availableFilters()}>
+            {(filter) => (
+              <button
+                class="chip shrink-0 gap-1"
+                classList={{ 'bg-accent text-accent-fg': kindFilter() === filter }}
+                aria-pressed={kindFilter() === filter}
+                onClick={() => setKindFilter(filter)}
+              >
+                {FILTER_LABELS[filter]}
+                <span class="text-2xs" classList={{ 'text-fg-tertiary': kindFilter() !== filter }}>
+                  {counts()[filter]}
+                </span>
+              </button>
+            )}
+          </For>
+          <span class="flex-1 min-w-2" />
+          <button class="chip shrink-0" onClick={props.store.clearRequests}>
             清空
           </button>
         </div>
@@ -524,16 +672,12 @@ export function NetworkPanel(props: {
           <div class="optik-thead flex items-center h-6 text-2xs text-fg-tertiary not-selectable">
             <div
               class="flex-1 min-w-0 grid items-center gap-2 px-2"
-              style={{
-                'grid-template-columns': narrowColumns()
-                  ? 'minmax(0, 1fr) 44px'
-                  : 'minmax(0, 1fr) 44px 48px 72px 68px',
-              }}
+              style={{ 'grid-template-columns': narrowColumns() ? NARROW_COLUMNS : WIDE_COLUMNS }}
             >
+              <span>类型</span>
               <span>名称</span>
               <span>状态</span>
               <Show when={!narrowColumns()}>
-                <span>类型</span>
                 <span class="text-right">大小</span>
                 <span class="text-right">耗时</span>
               </Show>
@@ -552,9 +696,10 @@ export function NetworkPanel(props: {
           }
         >
           <For each={visible()}>
-            {(record) => (
+            {({ record, kind }) => (
               <RequestRow
                 record={record}
+                kind={kind}
                 selected={record.id === selectedId()}
                 narrowColumns={narrowColumns()}
                 dense={layout.dense()}

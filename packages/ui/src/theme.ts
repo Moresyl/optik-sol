@@ -165,6 +165,42 @@ button { cursor: pointer; }
   .optik-row[data-selected='true'] { background: var(--optik-bg-sunken); }
 }
 
+/* 请求分类徽章。
+   钩子是 data-kind 而不是原子类——类名由数据拼出，Uno 的静态扫描看不见，
+   拼成 text-加分类名 的写法只会静默失效。
+   「接口」是唯一填充实色的：一屏静态资源里要能一眼把它捞出来，
+   其余分类只用文字颜色区分，避免整个列表变成彩色斑点。 */
+.optik-kind {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: var(--optik-font);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  background: var(--optik-bg-sunken);
+  color: var(--optik-text-tertiary);
+}
+.optik-kind[data-kind='api'] {
+  background: var(--optik-accent);
+  color: var(--optik-accent-contrast);
+}
+.optik-kind[data-kind='stream'] {
+  background: var(--optik-level-info-text);
+  color: var(--optik-accent-contrast);
+}
+.optik-kind[data-kind='script'] { color: var(--optik-token-attr); }
+.optik-kind[data-kind='style']  { color: var(--optik-token-boolean); }
+.optik-kind[data-kind='image']  { color: var(--optik-token-function); }
+.optik-kind[data-kind='font']   { color: var(--optik-token-tag); }
+.optik-kind[data-kind='media']  { color: var(--optik-token-number); }
+.optik-kind[data-kind='doc']    { color: var(--optik-text-secondary); }
+
 /* 表头：紧凑模式下的列标题，滚动时钉在顶部 */
 .optik-thead {
   position: sticky;
