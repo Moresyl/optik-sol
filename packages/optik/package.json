@@ -1,3 +1,4 @@
+
 {
   "name": "optik-sol",
   "version": "0.1.0",
@@ -44,6 +45,7 @@
     "build": "vite build && cross-env OPTIK_TARGET=global vite build && tsc -p tsconfig.build.json && rollup -c rollup.types.config.mjs && rimraf dist/types"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "cross-env": "^7.0.3",
     "optik-core": "workspace:*",
     "optik-ui": "workspace:*",
@@ -56,3 +58,4 @@
     "vite-plugin-solid": "^2.11.14"
   }
 }
+
