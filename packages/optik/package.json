@@ -1,0 +1,48 @@
+{
+  "name": "@optik/debug",
+  "version": "0.1.0",
+  "description": "移动端网页调试面板：一个 script 标签，零服务端，零依赖。",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "keywords": [
+    "debug",
+    "console",
+    "devtools",
+    "mobile",
+    "inspector",
+    "webview"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/optik.cjs",
+  "module": "./dist/optik.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/optik.global.js",
+  "jsdelivr": "./dist/optik.global.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/optik.js",
+      "require": "./dist/optik.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build && cross-env OPTIK_TARGET=global vite build && tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@optik/core": "workspace:*",
+    "@optik/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "solid-js": "^1.9.14",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}
