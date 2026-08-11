@@ -48,7 +48,7 @@ export function parseStack(stack: string, skipFrames = 0): CallFrame[] {
 
 /** True for frames inside Optik itself, which must never be shown as a call site. */
 function isInternalFrame(frame: CallFrame): boolean {
-  return /\boptik\b|node_modules[\\/]@optik/.test(frame.url);
+  return /\boptik\b|node_modules[\\/]optik-/.test(frame.url);
 }
 
 /**

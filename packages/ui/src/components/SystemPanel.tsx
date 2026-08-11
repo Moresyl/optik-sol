@@ -8,7 +8,7 @@
  */
 
 import { createSignal, createMemo, For, Show, onCleanup, type JSX } from 'solid-js';
-import type { OptikKernel } from '@optik/core';
+import type { OptikKernel } from 'optik-core';
 import type { CopyController } from './Copy';
 
 const CAPABILITY_LABELS: Record<string, string> = {

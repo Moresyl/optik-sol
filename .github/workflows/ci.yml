@@ -20,12 +20,12 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
 
       # 构建同时也是一道回归检查：UnoCSS 产物由 build 重新生成，
       # 源码里新写的类名如果拼错，这一步会静默少生成规则而不是报错，
       # 所以下面额外核对一次产物非空。
       - run: pnpm build
+      - run: pnpm typecheck
 
       - name: 检查构建产物
         run: |

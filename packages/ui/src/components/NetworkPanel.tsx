@@ -8,7 +8,7 @@
  */
 
 import { createSignal, For, Show, createMemo, type JSX } from 'solid-js';
-import type { NetworkRecord, NetworkBody, OptikKernel, RequestInitiator } from '@optik/core';
+import type { NetworkRecord, NetworkBody, OptikKernel, RequestInitiator } from 'optik-core';
 import type { Store } from '../store';
 import type { CopyController } from './Copy';
 import { ValueView } from './Value';

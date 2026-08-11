@@ -9,7 +9,7 @@
  */
 
 import { createSignal, createEffect, For, Show, on, type JSX } from 'solid-js';
-import type { LogEntry, LogLevel, OptikKernel, RemoteObject } from '@optik/core';
+import type { LogEntry, LogLevel, OptikKernel, RemoteObject } from 'optik-core';
 import { ALL_LEVELS, LEVEL_LABELS, type Store } from '../store';
 import { ValueView } from './Value';
 import { onLongPress } from '../platform/gesture';

@@ -6,7 +6,7 @@
  */
 
 import { createSignal, createMemo, For, Show, type JSX } from 'solid-js';
-import type { OptikKernel, StorageArea, StorageItem } from '@optik/core';
+import type { OptikKernel, StorageArea, StorageItem } from 'optik-core';
 import type { CopyController } from './Copy';
 
 const AREA_LABELS: Record<StorageArea, string> = {
