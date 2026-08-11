@@ -1,0 +1,37 @@
+{
+  "name": "optik-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Optik 内核：CDP 形状的插桩与数据域，零依赖，不碰 DOM。",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "author": "Moresyl and contributors",
+  "keywords": ["debug", "console", "devtools", "mobile", "cdp", "instrumentation"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Moresyl/optik-sol.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/Moresyl/optik-sol#readme",
+  "bugs": "https://github.com/Moresyl/optik-sol/issues",
+  "files": ["dist"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "dev": "vite build --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}

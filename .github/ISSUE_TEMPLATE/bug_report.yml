@@ -1,0 +1,88 @@
+name: 报告问题
+description: 面板行为不符合预期
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这是个移动端调试工具，**同一段代码在不同机型上的行为可能完全不同**。
+        下面的环境信息不是走流程，缺任何一项都可能让问题无法复现。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 实际现象，以及你期望的现象
+      placeholder: |
+        点击网络面板某一行行尾的 cURL 按钮，提示复制成功，但粘贴出来是空的。
+        期望：粘贴出完整的 curl 命令。
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 有最小可复现页面（CodeSandbox / StackBlitz / 一个 HTML 文件）会快很多
+      placeholder: |
+        1. 用手机打开 http://192.168.1.10:5173
+        2. 点右下角圆形按钮打开面板
+        3. 切到「网络」，点任意一行行尾的 cURL
+        4. 到备忘录里长按粘贴
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Optik 版本
+      placeholder: '@optik/debug 0.1.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: entry
+    attributes:
+      label: 接入方式
+      options:
+        - script 标签（unpkg / jsDelivr）
+        - script 标签（自托管）
+        - 打包器 import
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scheme
+    attributes:
+      label: 页面协议
+      description: 剪贴板、部分存储接口只在安全上下文里存在，这一项直接决定走哪条代码路径
+      options:
+        - 'https://'
+        - 'http://（局域网 IP 或域名）'
+        - 'http://localhost（浏览器视为安全上下文）'
+        - 'file:// 或 WebView 自定义 scheme'
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: 机型与系统
+      placeholder: iPhone 13 / iOS 17.4，或 小米 14 / Android 14
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器或 WebView
+      description: 如果是 App 内的 WebView，请写清楚是哪个 App
+      placeholder: Safari 17.4 / Chrome 124 / 某 App 的 WebView
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充
+      description: 截图、录屏、宿主页面的特殊之处（比如用了 flexible.js、有全局 CSS 重置、CSP 很严）

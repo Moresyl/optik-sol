@@ -1,0 +1,40 @@
+name: 功能建议
+description: 提一个想要的能力
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这个项目的取舍标准是：**能不能解决一个具体的、在手机上真实卡住过你的场景**。
+        所以下面第一栏比第二栏重要得多。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你被什么卡住了
+      description: 描述具体场景，而不是直接描述解法
+      placeholder: |
+        线上偶发一个接口 500，只在某个用户的手机上出现。我需要把那次请求的完整上下文
+        （请求头、请求体、响应）一次性发给后端同事，现在只能一行一行复制。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你设想的做法
+      description: 可选。如果没想好，留空也完全可以
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 现在你是怎么绕过去的
+      description: 现有的临时办法能说明这个需求有多痛
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: 确认
+      options:
+        - label: 我知道界面文案一律是中文
+        - label: 我知道这个功能不应该让被调试的页面产生任何可观察的变化

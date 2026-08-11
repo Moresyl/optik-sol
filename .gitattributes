@@ -1,0 +1,6 @@
+# 仓库内一律 LF。不加这条的话，行尾取决于每个贡献者本地的 core.autocrlf——
+# Windows 上默认是 true，一次全量 checkout 就可能把所有文件标成已修改。
+* text=auto eol=lf
+
+# 锁文件由 pnpm 生成，在 diff 和评审里折叠起来
+pnpm-lock.yaml linguist-generated=true -diff

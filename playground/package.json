@@ -1,0 +1,19 @@
+{
+  "name": "playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "optik-sol": "workspace:*"
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.4",
+    "solid-js": "^1.9.14",
+    "vite": "^7.3.6",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}
