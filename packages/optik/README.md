@@ -1,29 +1,23 @@
 # optik-sol
 
-Optik Sol is a mobile-first in-page developer console for debugging real devices and WebViews.
-
-## Install
-
-```bash
-npm install optik-sol
-```
-
-```ts
-import { mount } from 'optik-sol';
-
-const optik = mount();
-```
-
-## Script tag
-
-The CDN build starts recording and mounts the panel automatically:
+移动端网页调试面板。一个 `<script>` 标签，零服务端，零运行时依赖。
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
 ```
 
-See the [GitHub repository](https://github.com/Moresyl/optik-sol#readme) for usage, API documentation, development instructions, and the security policy.
+```bash
+npm i optik-sol
+```
 
-## License
+```ts
+import { mount } from 'optik-sol';
+
+if (import.meta.env.DEV) {
+  mount({ theme: 'auto' });
+}
+```
+
+用法、API、开发说明与安全策略见 [GitHub 仓库](https://github.com/Moresyl/optik-sol#readme)。
 
 MIT

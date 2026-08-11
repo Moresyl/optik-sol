@@ -1,7 +1,7 @@
 {
   "name": "optik-sol-monorepo",
   "version": "0.1.0",
-  "description": "A mobile-first in-page developer console for debugging real devices and WebViews.",
+  "description": "Optik Sol 工作区：移动端网页调试面板。",
   "private": true,
   "type": "module",
   "license": "MIT",

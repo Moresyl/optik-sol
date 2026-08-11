@@ -2,7 +2,7 @@
   "name": "optik-ui",
   "version": "0.1.0",
   "private": true,
-  "description": "Optik 面板 UI —— Solid + Shadow DOM，专为移动端真机调试打磨。",
+  "description": "Optik Sol 面板 UI：Solid + Shadow DOM + UnoCSS，专为移动端真机调试打磨。",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
