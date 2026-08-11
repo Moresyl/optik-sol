@@ -80,4 +80,4 @@ jobs:
             echo "optik-sol@${version} is already published; skipping."
             exit 0
           fi
-          npm publish "artifacts/optik-sol-${version}.tgz" --access public --provenance
+          npm publish "./artifacts/optik-sol-${version}.tgz" --access public --provenance
