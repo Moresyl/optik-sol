@@ -1,0 +1,58 @@
+{
+  "name": "optik-sol",
+  "version": "0.1.0",
+  "description": "Optik Sol：移动端网页调试面板，一个 script 标签，零服务端，零运行时依赖。",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "keywords": [
+    "debug",
+    "console",
+    "devtools",
+    "mobile",
+    "inspector",
+    "webview"
+  ],
+  "author": "Moresyl and contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Moresyl/optik-sol.git",
+    "directory": "packages/optik"
+  },
+  "homepage": "https://github.com/Moresyl/optik-sol#readme",
+  "bugs": "https://github.com/Moresyl/optik-sol/issues",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/optik.cjs",
+  "module": "./dist/optik.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/optik.global.js",
+  "jsdelivr": "./dist/optik.global.js",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/optik.js",
+      "require": "./dist/optik.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build && cross-env OPTIK_TARGET=global vite build && tsc -p tsconfig.build.json && rollup -c rollup.types.config.mjs && rimraf dist/types"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "optik-core": "workspace:*",
+    "optik-ui": "workspace:*",
+    "rimraf": "^6.1.3",
+    "rollup": "^4.62.4",
+    "rollup-plugin-dts": "^6.5.1",
+    "solid-js": "^1.9.14",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}

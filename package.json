@@ -1,0 +1,35 @@
+{
+  "name": "optik-sol-monorepo",
+  "version": "0.1.0",
+  "description": "A mobile-first in-page developer console for debugging real devices and WebViews.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Moresyl and contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Moresyl/optik-sol.git"
+  },
+  "homepage": "https://github.com/Moresyl/optik-sol#readme",
+  "bugs": {
+    "url": "https://github.com/Moresyl/optik-sol/issues"
+  },
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/**\" build",
+    "dev": "pnpm --filter optik-ui css && pnpm --parallel --filter optik-ui --filter playground dev",
+    "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ui/tsconfig.json && tsc -p packages/optik/tsconfig.json",
+    "clean": "pnpm -r exec rimraf dist .turbo tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}
