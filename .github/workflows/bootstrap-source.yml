@@ -20,7 +20,7 @@ jobs:
           base64 --decode optik-sol-source.zip.b64 > optik-sol-source.zip
           unzip -o optik-sol-source.zip
           rm optik-sol-source.zip optik-sol-source.zip.b64
-          rm .github/workflows/bootstrap-source.yml
+          rm -f .github/workflows/ci.yml .github/workflows/publish.yml
       - name: Commit restored source
         run: |
           git config user.name Moresyl
