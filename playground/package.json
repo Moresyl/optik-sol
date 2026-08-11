@@ -8,7 +8,7 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "optik-debug": "workspace:*"
+    "optik-sol": "workspace:*"
   },
   "devDependencies": {
     "qrcode": "^1.5.4",

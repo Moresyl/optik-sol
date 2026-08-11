@@ -1,5 +1,5 @@
 {
-  "name": "optik-monorepo",
+  "name": "optik-sol-monorepo",
   "version": "0.1.0",
   "description": "A mobile-first in-page developer console for debugging real devices and WebViews.",
   "private": true,
@@ -8,11 +8,11 @@
   "author": "Moresyl and contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Moresyl/optik.git"
+    "url": "git+https://github.com/Moresyl/optik-sol.git"
   },
-  "homepage": "https://github.com/Moresyl/optik#readme",
+  "homepage": "https://github.com/Moresyl/optik-sol#readme",
   "bugs": {
-    "url": "https://github.com/Moresyl/optik/issues"
+    "url": "https://github.com/Moresyl/optik-sol/issues"
   },
   "packageManager": "pnpm@10.30.2",
   "engines": {

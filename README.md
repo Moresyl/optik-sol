@@ -1,8 +1,8 @@
-# Optik
+# Optik Sol
 
-[![npm](https://img.shields.io/npm/v/optik-debug.svg)](https://www.npmjs.com/package/optik-debug)
-[![CI](https://github.com/Moresyl/optik/actions/workflows/ci.yml/badge.svg)](https://github.com/Moresyl/optik/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/optik-debug.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/optik-sol.svg)](https://www.npmjs.com/package/optik-sol)
+[![CI](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml/badge.svg)](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/optik-sol.svg)](LICENSE)
 
 移动端网页调试面板。一个 `<script>` 标签，零服务端，零运行时依赖。
 
@@ -10,7 +10,7 @@
 Optik 的每一处设计都是冲着这些具体的失败场景去的。
 
 ```html
-<script src="https://unpkg.com/optik-debug"></script>
+<script src="https://unpkg.com/optik-sol"></script>
 ```
 
 就这一行。脚本一执行就开始记录——放在 `<head>` 里也不用等 `DOMContentLoaded`，
@@ -152,7 +152,7 @@ UI 库样式进不来，我们的样式也一个字节漏不出去。被调试�
 
 ```html
 <script
-  src="https://unpkg.com/optik-debug"
+  src="https://unpkg.com/optik-sol"
   data-theme="dark"
   data-max-logs="2000"
 ></script>
@@ -171,11 +171,11 @@ UI 库样式进不来，我们的样式也一个字节漏不出去。被调试�
 ### 打包器
 
 ```bash
-npm i optik-debug
+npm i optik-sol
 ```
 
 ```js
-import { mount } from 'optik-debug';
+import { mount } from 'optik-sol';
 
 // 建议只在非生产环境挂载
 if (import.meta.env.DEV) {
@@ -235,9 +235,9 @@ optik.use({
 
 | 包 | 说明 |
 | --- | --- |
-| `optik-debug` | 门面包，`<script>` 与 `import` 两种接入都从这里进 |
-| `optik-core` | 内核：插桩、值镜像、环形缓冲。**零依赖**，不碰 DOM |
-| `optik-ui` | 面板 UI（Solid + Shadow DOM + UnoCSS） |
+| `optik-sol` | 唯一公开包，`<script>` 与 `import` 两种接入都从这里进 |
+| `optik-core` | 内部包，不单独发布。负责插桩、值镜像与环形缓冲 |
+| `optik-ui` | 内部包，不单独发布。负责 Solid + Shadow DOM 面板 UI |
 
 内核与 UI 之间走的是 **CDP（Chrome DevTools Protocol）形状**的消息：
 `Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`，

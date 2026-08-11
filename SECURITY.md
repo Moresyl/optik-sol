@@ -14,7 +14,7 @@
 **请不要通过公开 Issue 报告安全问题。**
 
 优先使用 GitHub 的
-[私密漏洞报告](https://github.com/Moresyl/optik/security/advisories/new)，
+[私密漏洞报告](https://github.com/Moresyl/optik-sol/security/advisories/new)，
 或发送邮件至 **xd@biekanle.com**。
 
 请在报告里尽量包含：

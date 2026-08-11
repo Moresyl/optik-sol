@@ -11,7 +11,7 @@
  *  - 不透明跨域响应 → 浏览器不允许读 body，工具必须如实说明而不是显示空白
  */
 
-import { mount } from 'optik-debug';
+import { mount } from 'optik-sol';
 
 const optik = mount({ theme: 'auto' });
 
