@@ -1,9 +1,7 @@
 # optik-core
 
-The dependency-free instrumentation kernel behind [Optik Sol](https://github.com/Moresyl/optik-sol). It captures console output, errors, network activity, storage state, and system information without touching the DOM.
+[Optik Sol](https://github.com/Moresyl/optik-sol) 的插桩内核：采集控制台输出、错误、网络活动、存储状态与系统信息。零依赖，不碰 DOM。
 
-This is a private workspace package and is not published separately. Install [`optik-sol`](https://www.npmjs.com/package/optik-sol) for the complete in-page console.
-
-## License
+**内部包，不单独发布。** 请安装 [`optik-sol`](https://www.npmjs.com/package/optik-sol)。
 
 MIT
