@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 提问与讨论
-    url: https://github.com/zhanghaidong/optik/discussions
+    url: https://github.com/Moresyl/optik-sol/discussions
     about: 不确定是不是 bug、想问用法、想聊设计取舍，都到这里
   - name: 报告安全问题
-    url: https://github.com/zhanghaidong/optik/security/advisories/new
+    url: https://github.com/Moresyl/optik-sol/security/advisories/new
     about: 请勿通过公开 Issue 报告安全漏洞
