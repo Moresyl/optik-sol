@@ -76,7 +76,7 @@ export default defineConfig({
   resolve: {
     // 直接指向源码：改完面板代码保存即热更新，不用先构建。
     alias: {
-      'optik-debug': resolve('../packages/optik/src/index.ts'),
+      'optik-sol': resolve('../packages/optik/src/index.ts'),
       'optik-ui': resolve('../packages/ui/src/index.ts'),
       'optik-core': resolve('../packages/core/src/index.ts'),
     },

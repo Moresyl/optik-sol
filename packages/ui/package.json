@@ -1,6 +1,7 @@
 {
   "name": "optik-ui",
   "version": "0.1.0",
+  "private": true,
   "description": "Optik 面板 UI —— Solid + Shadow DOM，专为移动端真机调试打磨。",
   "license": "MIT",
   "type": "module",
@@ -9,11 +10,11 @@
   "keywords": ["debug", "console", "devtools", "mobile", "solid", "shadow-dom"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Moresyl/optik.git",
+    "url": "git+https://github.com/Moresyl/optik-sol.git",
     "directory": "packages/ui"
   },
-  "homepage": "https://github.com/Moresyl/optik#readme",
-  "bugs": "https://github.com/Moresyl/optik/issues",
+  "homepage": "https://github.com/Moresyl/optik-sol#readme",
+  "bugs": "https://github.com/Moresyl/optik-sol/issues",
   "files": [
     "dist"
   ],
@@ -26,10 +27,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "css": "unocss \"src/**/*.{ts,tsx}\" -c uno.config.ts -o src/generated/uno.css",

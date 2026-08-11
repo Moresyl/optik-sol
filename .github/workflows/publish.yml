@@ -50,19 +50,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
 
-          const manifests = [
-            'packages/core/package.json',
-            'packages/ui/package.json',
-            'packages/optik/package.json',
-          ].map((path) => JSON.parse(readFileSync(path, 'utf8')));
-          const versions = new Set(manifests.map(({ version }) => version));
-
-          if (versions.size !== 1) {
-            console.error('All published packages must use the same version.');
-            process.exit(1);
-          }
-
-          const [version] = versions;
+          const { version } = JSON.parse(readFileSync('packages/optik/package.json', 'utf8'));
           const expectedTag = `v${version}`;
           if (process.env.RELEASE_TAG !== expectedTag) {
             console.error(
@@ -83,17 +71,13 @@ jobs:
       - name: Pack npm packages
         run: |
           mkdir artifacts
-          pnpm --filter optik-core pack --pack-destination "$GITHUB_WORKSPACE/artifacts"
-          pnpm --filter optik-ui pack --pack-destination "$GITHUB_WORKSPACE/artifacts"
-          pnpm --filter optik-debug pack --pack-destination "$GITHUB_WORKSPACE/artifacts"
+          pnpm --filter optik-sol pack --pack-destination "$GITHUB_WORKSPACE/artifacts"
 
-      - name: Publish npm packages with provenance
+      - name: Publish npm package with provenance
         run: |
-          version="$(node -p "require('./packages/core/package.json').version")"
-          for package_name in optik-core optik-ui optik-debug; do
-            if npm view "${package_name}@${version}" version >/dev/null 2>&1; then
-              echo "${package_name}@${version} is already published; skipping."
-              continue
-            fi
-            npm publish "artifacts/${package_name}-${version}.tgz" --access public --provenance
-          done
+          version="$(node -p "require('./packages/optik/package.json').version")"
+          if npm view "optik-sol@${version}" version >/dev/null 2>&1; then
+            echo "optik-sol@${version} is already published; skipping."
+            exit 0
+          fi
+          npm publish "artifacts/optik-sol-${version}.tgz" --access public --provenance
