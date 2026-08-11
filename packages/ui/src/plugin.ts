@@ -9,7 +9,7 @@
  * 插件里展示的内容同样面临 iOS 上复制不出来的问题，让它们各自实现一遍毫无意义。
  */
 
-import type { OptikKernel, LogLevel } from '@optik/core';
+import type { OptikKernel, LogLevel } from 'optik-core';
 
 export interface PluginContext {
   /** 内核实例：读日志、读网络记录、执行表达式都从这里走。 */

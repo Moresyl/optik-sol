@@ -31,5 +31,5 @@
 - **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
 - 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
 
-[未发布]: https://github.com/zhanghaidong/optik/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/zhanghaidong/optik/releases/tag/v0.1.0
+[未发布]: https://github.com/Moresyl/optik/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Moresyl/optik/releases/tag/v0.1.0

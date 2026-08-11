@@ -1,5 +1,5 @@
 {
-  "name": "@optik/debug",
+  "name": "optik-debug",
   "version": "0.1.0",
   "description": "移动端网页调试面板：一个 script 标签，零服务端，零依赖。",
   "license": "MIT",
@@ -13,14 +13,14 @@
     "inspector",
     "webview"
   ],
-  "author": "zhanghaidong",
+  "author": "Moresyl and contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zhanghaidong/optik.git",
+    "url": "git+https://github.com/Moresyl/optik.git",
     "directory": "packages/optik"
   },
-  "homepage": "https://github.com/zhanghaidong/optik#readme",
-  "bugs": "https://github.com/zhanghaidong/optik/issues",
+  "homepage": "https://github.com/Moresyl/optik#readme",
+  "bugs": "https://github.com/Moresyl/optik/issues",
   "files": [
     "dist"
   ],
@@ -30,7 +30,8 @@
   "unpkg": "./dist/optik.global.js",
   "jsdelivr": "./dist/optik.global.js",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -43,8 +44,8 @@
     "build": "vite build && cross-env OPTIK_TARGET=global vite build && tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@optik/core": "workspace:*",
-    "@optik/ui": "workspace:*"
+    "optik-core": "workspace:*",
+    "optik-ui": "workspace:*"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

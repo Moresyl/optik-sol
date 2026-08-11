@@ -18,7 +18,7 @@ import {
   Show,
   type JSX,
 } from 'solid-js';
-import type { OptikKernel } from '@optik/core';
+import type { OptikKernel } from 'optik-core';
 import { BUILTIN_TABS, TAB_LABELS, type Store, type TabId } from './store';
 import { makeDraggable } from './platform/gesture';
 import { createCopyController, Toast, CopySheet } from './components/Copy';

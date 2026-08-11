@@ -17,10 +17,10 @@ pnpm dev          # 启动验证台，顶部直接给局域网地址和二维码
 
 ## 一个必须知道的坑：UnoCSS 不是 Vite 插件
 
-`@optik/ui` 的样式是 CLI 生成的，不是运行时按需生成的：
+`optik-ui` 的样式是 CLI 生成的，不是运行时按需生成的：
 
 ```bash
-pnpm --filter @optik/ui css     # 扫 src/**/*.{ts,tsx} → src/generated/uno.css
+pnpm --filter optik-ui css     # 扫 src/**/*.{ts,tsx} → src/generated/uno.css
 ```
 
 `packages/ui/src/index.ts` 里 `import unoStyles from './generated/uno.css?inline'`

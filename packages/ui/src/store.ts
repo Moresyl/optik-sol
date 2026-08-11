@@ -10,7 +10,7 @@
  */
 
 import { createSignal, createMemo, createRoot, type Accessor, type Setter } from 'solid-js';
-import type { LogEntry, LogLevel, NetworkRecord, OptikKernel } from '@optik/core';
+import type { LogEntry, LogLevel, NetworkRecord, OptikKernel } from 'optik-core';
 
 /** 内置标签页；插件标签用 `plugin:<id>` 形式，所以类型上留了字符串口子。 */
 export type BuiltinTabId = 'console' | 'network' | 'element' | 'storage' | 'system';

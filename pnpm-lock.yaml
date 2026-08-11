@@ -29,10 +29,10 @@ importers:
 
   packages/optik:
     dependencies:
-      '@optik/core':
+      optik-core:
         specifier: workspace:*
         version: link:../core
-      '@optik/ui':
+      optik-ui:
         specifier: workspace:*
         version: link:../ui
     devDependencies:
@@ -54,7 +54,7 @@ importers:
 
   packages/ui:
     dependencies:
-      '@optik/core':
+      optik-core:
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -82,7 +82,7 @@ importers:
 
   playground:
     dependencies:
-      '@optik/debug':
+      optik-debug:
         specifier: workspace:*
         version: link:../packages/optik
     devDependencies:

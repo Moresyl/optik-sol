@@ -8,7 +8,7 @@
  */
 
 import { render } from 'solid-js/web';
-import { OptikKernel, type KernelOptions } from '@optik/core';
+import { OptikKernel, type KernelOptions } from 'optik-core';
 import { App, type ThemeMode } from './App';
 import { createStore, type TabId } from './store';
 import { BASE_STYLES } from './theme';
@@ -120,7 +120,7 @@ export function instance(): OptikInstance | null {
   return current;
 }
 
-export { OptikKernel } from '@optik/core';
+export { OptikKernel } from 'optik-core';
 export type { MountOptions as OptikOptions };
 export type { OptikPlugin, PluginContext } from './plugin';
 export type { ThemeMode } from './App';

@@ -11,12 +11,12 @@
  *   否则 SSR 构建期就会去碰 `document`。
  */
 
-import { mount, instance, type MountOptions, type OptikInstance } from '@optik/ui';
+import { mount, instance, type MountOptions, type OptikInstance } from 'optik-ui';
 
 export { mount, instance };
 export type { MountOptions, OptikInstance };
-export type { OptikPlugin, PluginContext, ThemeMode, TabId } from '@optik/ui';
-export { OptikKernel, copyText } from '@optik/ui';
+export type { OptikPlugin, PluginContext, ThemeMode, TabId } from 'optik-ui';
+export { OptikKernel, copyText } from 'optik-ui';
 
 /**
  * 读取 script 标签上的配置：

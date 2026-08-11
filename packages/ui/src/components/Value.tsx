@@ -13,7 +13,7 @@
  */
 
 import { createSignal, For, Show, type JSX } from 'solid-js';
-import type { OptikKernel, PropertyDescriptor, RemoteObject } from '@optik/core';
+import type { OptikKernel, PropertyDescriptor, RemoteObject } from 'optik-core';
 
 export interface ValueProps {
   value: RemoteObject;
