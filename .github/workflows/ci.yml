@@ -1,0 +1,37 @@
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm 的版本取自根 package.json 的 packageManager 字段，不在这里写死
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # 构建同时也是一道回归检查：UnoCSS 产物由 build 重新生成，
+      # 源码里新写的类名如果拼错，这一步会静默少生成规则而不是报错，
+      # 所以下面额外核对一次产物非空。
+      - run: pnpm build
+      - run: pnpm typecheck
+
+      - name: 检查构建产物
+        run: |
+          test -s packages/optik/dist/optik.global.js
+          test -s packages/optik/dist/optik.js
+          test -s packages/optik/dist/index.d.ts
+
