@@ -1,32 +1,34 @@
-# 设计说明
+# Design Notes
 
-README 只讲「是什么」，这里讲「为什么是这样」。下面每一条都对应一个在真机上踩到过的具体失败场景。
+English | [简体中文](DESIGN.zh-CN.md)
 
-## 复制
+The README covers *what* Optik Sol is; this document covers *why it is built this way*. Every entry below maps to a concrete failure observed on a real device.
 
-真机调试基本跑在 `http://192.168.x.x:5173` 这种地址上，而**浏览器只在安全上下文里提供剪贴板接口**——`navigator.clipboard` 恰好在最需要它的场景里不存在。
+## Copy
 
-所以复制是三层降级：
+Real-device debugging usually happens on an address like `http://192.168.x.x:5173`, and **browsers only expose the Clipboard API on secure origins** — `navigator.clipboard` is missing in exactly the scenario that needs it most.
 
-1. `document.execCommand('copy')`，同步执行以保住用户手势
-2. 异步剪贴板接口（可用时）
-3. 都失败 → 弹出一个**内容已全选的文本框**，用户长按选「拷贝」
+So copying degrades through three layers:
 
-第三层不依赖任何 API，物理上不可能失败。
+1. `document.execCommand('copy')`, executed synchronously to preserve the user gesture
+2. The async Clipboard API, when available
+3. Both failed → show a **textarea with its content already selected**, so the user can long-press and pick *Copy*
 
-第一层有个坑：在 Shadow DOM 里 `execCommand('copy')` 读的是 *document* 的选区，而它看不见 shadow 内容。所以那个临时输入框必须放在明亮 DOM 里，还得有实际尺寸、不能是 `readonly`、字号 16px，并且同时设置 `Range` 和 `setSelectionRange`。少一样都不行。
+The third layer depends on no API at all; it is physically incapable of failing.
 
-## 复制入口的位置
+The first layer has a trap: inside a Shadow DOM, `execCommand('copy')` reads the *document* selection, which cannot see shadow content. The temporary input must therefore live in the light DOM, have real dimensions, not be `readonly`, use a 16 px font size, and set both a `Range` and `setSelectionRange`. Miss any one of these and it breaks.
 
-复制是这个工具存在的理由，所以它不该藏在任何一层下面。控制台和网络列表**每一行行尾都常驻一个按钮**，位置固定在同一个 x 上，一列扫下来手不用挪。
+## Where the copy action lives
 
-- 触屏下这一列宽 44px，鼠标下收窄到 40px 给内容让位
-- 控制台的按钮**贴顶对齐**——一条报错展开调用栈能有十几行高，按钮跟着居中就找不着了，但命中区仍是整行
-- WebSocket 行不给 cURL：curl 对 `ws://` 的支持是实验性的，给一条注定跑不通的命令比不给更糟。位置仍然占着，列不会错位
+Copying is the reason this tool exists, so it must not hide behind any layer of navigation. In the console and network lists, **every row carries a button at its trailing edge**, pinned to the same x position so a whole column can be scanned without moving your hand.
 
-往回翻历史时自动跟随会停掉，此时右下角出现「↓ 最新」。贴着底部时它不存在——底部常驻一排跳转按钮，是在为一个偶尔发生的需求永久收税。
+- On touch this column is 44 px wide; with a mouse it narrows to 40 px to give content room
+- Console buttons are **top-aligned** — one error with an expanded stack can be a dozen lines tall, and a vertically centred button would drift out of reach, though the hit area still covers the whole row
+- WebSocket rows get no cURL: curl's support for `ws://` is experimental, and handing out a command that is guaranteed to fail is worse than handing out nothing. The slot is still occupied, so the column stays aligned
 
-## 长按选中文字
+Auto-follow pauses while you scroll back through history, and a *↓ Latest* affordance appears in the bottom-right corner. It does not exist while you are pinned to the bottom — a permanent row of jump buttons would tax every session for an occasional need.
+
+## Long-press text selection
 
 ```css
 user-select: text;
@@ -34,62 +36,62 @@ user-select: text;
 -webkit-touch-callout: default;
 ```
 
-三行 CSS，但前提是**手势处理器不能在 `touchstart` 上调 `preventDefault()`**，否则原生长按选中直接失效。所以长按检测是纯观察型的，全程 `passive`，从不 `preventDefault`——在原生行为之上追加能力，而不是取代它。
+Three lines of CSS — but only if **gesture handlers never call `preventDefault()` on `touchstart`**, which would kill native long-press selection outright. Long-press detection is therefore purely observational: `passive` throughout, never calling `preventDefault`. It adds capability on top of native behaviour instead of replacing it.
 
-## 值镜像
+## Value mirroring
 
-日志产生时只做**一层浅预览**，真实对象留在注册表里由不透明句柄引用，用户点开哪一层才读哪一层。
+When a log is produced, only a **one-level shallow preview** is built. Real objects stay in a registry behind opaque handles, and a level is read only when the user opens it.
 
-| 场景 | 结果 |
+| Case | Result |
 | --- | --- |
-| 循环引用 | 标注 `[Circular]`，不栈溢出 |
-| 十万元素数组 | 即时展开，主线程不阻塞 |
-| `Map` / `Set` | 作为 `[[Entries]]` 展开 |
-| 函数 / `Symbol` / `BigInt` | 如实显示，不被丢弃 |
-| DOM 节点 | 显示为节点，不是 `{}` |
-| 带 getter 的对象 | 显示 `(...)`，**绝不触发求值** |
-| 跨 iframe 的对象 | 正确识别（不依赖 `instanceof`） |
+| Circular references | Marked `[Circular]`, no stack overflow |
+| 100k-element array | Expands instantly, main thread never blocks |
+| `Map` / `Set` | Expanded as `[[Entries]]` |
+| Function / `Symbol` / `BigInt` | Shown faithfully, never dropped |
+| DOM nodes | Rendered as nodes, not `{}` |
+| Objects with getters | Shown as `(...)`, **never evaluated** |
+| Cross-iframe objects | Identified correctly (no reliance on `instanceof`) |
 
-句柄的生命周期跟环形缓冲绑定：日志被挤出缓冲区，对应对象同时释放。内存有上界，长时间开着不会越用越卡。
+Handle lifetime is bound to the ring buffer: when a log is evicted, the objects it referenced are released with it. Memory has an upper bound, so leaving the panel open for hours does not degrade the page.
 
-## 布局
+## Layout
 
-- **`100dvh` 而不是 `100vh`**。iOS 的 `100vh` 把可折叠的地址栏算了进去，用 `vh` 会让面板底部的操作栏被永久遮住，怎么都点不到
-- 所有边缘带 `env(safe-area-inset-*)`
-- 触控目标不小于 44px（Apple HIG）
-- 输入框字号 **16px**——低于这个值 Safari 聚焦时会强制放大整个页面
-- 尺寸**全部用 px，不用 rem**。移动端项目普遍用 flexible.js / postcss-pxtorem 把 `html { font-size }` 改成 37.5px 之类的值，而 `rem` 在 Shadow DOM 里仍然相对根元素解析——用 rem 的面板注入这类页面会整体变形
+- **`100dvh`, not `100vh`.** On iOS, `100vh` includes the collapsible address bar; with `vh` the action bar at the bottom of the panel ends up permanently covered and unreachable
+- Every edge respects `env(safe-area-inset-*)`
+- Touch targets are never smaller than 44 px (Apple HIG)
+- Inputs use a **16 px** font size — below that, Safari force-zooms the entire page on focus
+- Sizes are **always in px, never rem**. Mobile projects routinely use flexible.js or postcss-pxtorem to set `html { font-size }` to something like 37.5 px, and `rem` inside a Shadow DOM still resolves against the root element — a rem-based panel injected into such a page comes out deformed
 
-## 响应式的两个维度
+## Two axes of responsiveness
 
-宽度和指针类型是**分开**判断的，因为它们真的会分开出现：
+Width and pointer type are evaluated **separately**, because they genuinely occur separately:
 
-- **宽度**决定分不分栏。≥ 640px 时列表在左、详情在右，中间一条可拖拽的分隔线，比例记在本地；窄屏保持钻入式，390px 上强行分栏两边都没法看
-- **指针类型**决定行高。横屏手机宽度能到 932px，够分栏了，但输入方式还是手指——所以紧凑排版由 `pointer: fine` 决定，触屏下所有行仍不低于 44px
+- **Width** decides whether the layout splits. At ≥ 640 px the list sits on the left and details on the right, with a draggable divider whose ratio is stored locally; narrow screens keep the drill-down flow, since forcing a split at 390 px makes both sides unreadable
+- **Pointer type** decides row height. A landscape phone can be 932 px wide — wide enough to split — but the input device is still a finger, so compact rows are gated on `pointer: fine` and touch keeps every row at ≥ 44 px
 
-量的是**面板自己的宽度**而不是视口，用 `ResizeObserver`。另外分栏且选中某一项时，左栏会自动收起「类型/大小/耗时」几列，不然名称会被挤得只剩几个字。
+What is measured is **the panel's own width**, not the viewport, via `ResizeObserver`. When the layout is split and an item is selected, the left column also drops its *type / size / duration* columns, otherwise names are squeezed down to a few characters.
 
-## 隔离与还原
+## Isolation and restoration
 
-整个面板活在 Shadow DOM 里，双向隔离：宿主页面的全局重置、`!important`、UI 库样式进不来，我们的样式也一个字节漏不出去。被调试的页面不该因为接了调试器而变样，否则调试本身就成了新的变量。
+The whole panel lives in a Shadow DOM, isolated in both directions: the host page's global resets, `!important` rules and UI-library styles cannot get in, and not one byte of our styling leaks out. A page under debugging should not change appearance because a debugger was attached — otherwise debugging becomes a new variable.
 
-所有插桩都是**可完整还原**的：始终透传原方法、带重入保护、从不向宿主抛异常，`destroy()` 时按原始属性描述符逐一还原。
+Every hook is **fully reversible**: it always passes through to the original method, guards against re-entry, never throws into the host, and is restored from its original property descriptor on `destroy()`.
 
-## 能力探测
+## Capability detection
 
-面板的一些行为会随环境降级（非 HTTPS 没有剪贴板接口、隐私模式没有本地存储）。「环境」标签把这些结论直接摆出来，用户遇到功能不生效时能立刻知道原因，而不是怀疑工具坏了。
+Some panel behaviour degrades with the environment — no Clipboard API outside HTTPS, no local storage in private mode. The *Environment* tab states these conclusions outright, so when a feature does not work the user knows why instead of suspecting the tool is broken.
 
-## 别人通常不采集的
+## What others usually do not capture
 
-- **资源加载失败**（`<img>` / `<script>` / CSS 404）。这类 error 事件**不冒泡**，只有捕获阶段能拿到
-- **CSP 违规报告**
-- **sendBeacon 的实际接受与否**——只记录调用而不报告浏览器是否接受，等于没记
-- **EventSource（SSE）**
-- **没有 JS API 的请求**（图片、字体、CSS），走 Resource Timing 捕获
-- **缓存命中标记**（`transferSize === 0 && decodedBodySize > 0`）
+- **Resource load failures** (`<img>` / `<script>` / CSS 404s). These error events **do not bubble**; only the capture phase sees them
+- **CSP violation reports**
+- **Whether `sendBeacon` was actually accepted** — recording the call without reporting the browser's answer is the same as not recording it
+- **EventSource (SSE)**
+- **Requests with no JavaScript API** (images, fonts, CSS), captured through Resource Timing
+- **Cache-hit markers** (`transferSize === 0 && decodedBodySize > 0`)
 
-## 内核与 UI 的边界
+## The kernel/UI boundary
 
-两者之间走 **CDP（Chrome DevTools Protocol）形状**的消息：`Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`，中间隔着一层 `Transport` 抽象。
+The two sides talk in **CDP-shaped** (Chrome DevTools Protocol) messages: `Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`, with a `Transport` abstraction in between.
 
-今天这层跑在进程内。换成 WebSocket 就是远程调试，内核一行不用改。这也是为什么内核里不许出现任何 DOM 引用，UI 也不许绕过 Transport 直接摸内核内部状态。
+Today that layer runs in-process. Swap it for a WebSocket and you have remote debugging, without changing a line of the kernel. That is also why no DOM reference is allowed anywhere in the kernel, and why the UI may never bypass `Transport` to reach kernel internals directly.

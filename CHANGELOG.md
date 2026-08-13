@@ -1,54 +1,45 @@
-# 更新日志
+# Changelog
 
-本文件记录值得使用者关注的变更。格式参考
-[Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
-版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+English | [简体中文](CHANGELOG.zh-CN.md)
 
-## [未发布]
+All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
 
 ## [0.2.0] - 2026-08-11
 
-### 新增
+### Added
 
-- **控制台**：新增常用调试命令面板、表达式结果自动展开、JSON 字符串结构化浏览，
-  以及对象深层复制与选中日志批量复制
-- **网络**：扩展请求类型识别、状态统计和详情展示，支持请求与响应内容格式化、
-  分段耗时查看及更完整的复制文本
-- **存储**：新增 JSON 格式化编辑、条目展开、容量展示、一键导出和危险操作二次确认
-- **对象查看器**：支持按所属数据域惰性展开对象，并正确管理临时对象句柄的生命周期
+- **Console**: a palette of common debugging commands, auto-expansion of expression results, structured browsing of JSON strings, deep copy of objects, and batch copy of selected logs
+- **Network**: broader request-type detection, status statistics and richer detail views, formatting of request and response payloads, a timing breakdown, and more complete copy output
+- **Storage**: JSON-formatted editing, entry expansion, quota display, one-click export, and confirmation for destructive actions
+- **Object viewer**: lazy expansion scoped to the owning data domain, with correct lifetime management for temporary object handles
 
-### 改进
+### Changed
 
-- 重构面板布局、触控尺寸、标签导航、复制反馈和各功能页的信息层级
-- 丰富元素样式分组、系统环境信息和网络连接信息的展示
-- 默认使用浅色主题，不再自动跟随宿主系统主题
-- 增强异常环境下的兼容处理，包括跨域响应、浏览器能力读取和调用栈采集
+- Reworked panel layout, touch target sizing, tab navigation, copy feedback, and the information hierarchy of every page
+- Enriched element style grouping, system environment details, and network connection information
+- Light theme is now the default; the panel no longer follows the host system theme automatically
+- Hardened behaviour in hostile environments, covering cross-origin responses, browser capability probing, and stack collection
 
 ## [0.1.0]
 
-首个版本。
+First release.
 
-### 新增
+### Added
 
-- **控制台**：各级别日志、分组、重复合并、`%c` 样式、正则搜索与命中高亮、
-  勾选批量复制、表达式求值（`$_` 引用上次结果）
-- **网络**：XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，
-  请求响应头与体、DNS·TCP·TLS·等待·下载分段耗时、WebSocket 逐帧记录
-- **元素**：DOM 树惰性浏览、页面内拾取、高亮、盒模型、计算样式、复制选择器
-- **存储**：localStorage / sessionStorage / Cookie / IndexedDB 的增删改查
-- **环境**：设备、视口、安全区、内存、加载时序、能力探测
-- **每行行尾常驻复制列**：控制台复制整行（含时间戳与调用栈），网络复制 cURL 命令。
-  位置固定在同一个 x 上，不随内容长短漂移
-- **三层降级的复制策略**：`execCommand` → 异步剪贴板接口 → 全选文本框兜底。
-  最后一层不依赖任何 API，在 `http://192.168.x.x` 这类非安全上下文下同样可用
-- **惰性值镜像**：只做一层浅预览，真实对象由不透明句柄引用。十万元素数组即时展开，
-  循环引用标注 `[Circular]`，带 getter 的对象显示 `(...)` 且绝不触发求值
-- **响应式布局**：面板宽度 ≥ 640px 分栏（比例记在本地），`pointer: fine` 下切紧凑排版，
-  触屏下所有行不低于 44px
-- **插件机制**：`use()` / `eject()`，插件返回原生 DOM 节点即可，不需要依赖 Solid
-- **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
-- 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
+- **Console**: logs at every level, groups, repeat collapsing, `%c` styling, regex search with match highlighting, checkbox batch copy, expression evaluation (`$_` refers to the previous result)
+- **Network**: XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources, request and response headers and bodies, DNS · TCP · TLS · waiting · download timing breakdown, per-frame WebSocket records
+- **Elements**: lazy DOM tree browsing, in-page picking, highlighting, box model, computed styles, selector copy
+- **Storage**: full read-write access to localStorage / sessionStorage / Cookie / IndexedDB
+- **A persistent copy column at the end of every row**: the console copies the whole row (timestamp and stack included), the network copies a cURL command. Both sit at a fixed x position and never drift with content length
+- **Three-layer copy fallback**: `execCommand` → async Clipboard API → pre-selected textarea. The last layer depends on no API and works on non-secure origins such as `http://192.168.x.x`
+- **Lazy value mirroring**: only a one-level shallow preview, with real objects behind opaque handles. A 100k-element array expands instantly, cycles are marked `[Circular]`, and objects with getters render as `(...)` and are never evaluated
+- **Responsive layout**: the panel splits at a width ≥ 640 px (ratio stored locally), `pointer: fine` switches to compact rows, and touch keeps every row at ≥ 44 px
+- **Plugin system**: `use()` / `eject()`; a plugin returns a plain DOM node and needs no dependency on Solid
+- **Full restoration**: `destroy()` restores every hook from its original property descriptor
+- Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Moresyl/optik-sol/releases/tag/v0.1.0

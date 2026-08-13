@@ -1,6 +1,8 @@
 # optik-sol
 
-移动端网页调试面板。一个 `<script>` 标签，零服务端，零运行时依赖。
+A mobile web debugging console. One `<script>` tag, no server, no runtime dependencies.
+
+English | [简体中文](https://github.com/Moresyl/optik-sol/blob/main/README.zh-CN.md)
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -18,6 +20,10 @@ if (import.meta.env.DEV) {
 }
 ```
 
-用法、API、开发说明与安全策略见 [GitHub 仓库](https://github.com/Moresyl/optik-sol#readme)。
+Console, Network, Elements, Storage and Environment panels, in a single file of roughly 46 KB gzipped. Recording starts the moment the script executes, and `destroy()` restores every hook it installed.
+
+> Do not mount unconditionally in production: the panel reads request headers, request bodies and local storage, and is reachable by any script on the page.
+
+Usage, API, development notes and the security policy are in the [GitHub repository](https://github.com/Moresyl/optik-sol#readme).
 
 MIT

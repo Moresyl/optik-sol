@@ -1,62 +1,72 @@
+<div align="center">
+
 # Optik Sol
+
+**A mobile web debugging console. One `<script>` tag, no server, no runtime dependencies.**
 
 [![npm](https://img.shields.io/npm/v/optik-sol.svg)](https://www.npmjs.com/package/optik-sol)
 [![CI](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml/badge.svg)](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/optik-sol.svg)](LICENSE)
 
-移动端网页调试面板。一个 `<script>` 标签，零服务端，零运行时依赖，单文件 gzip 约 46 KB。
+English | [简体中文](README.zh-CN.md)
+
+</div>
+
+---
+
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 46 KB gzipped.
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
 ```
 
-脚本一执行就开始记录，放在 `<head>` 里也不用等 `DOMContentLoaded`，页面启动阶段的报错和请求一条都不会丢。
+Recording starts the moment the script executes. Drop it in `<head>` and there is no wait for `DOMContentLoaded`: errors and requests fired during page startup are all captured.
 
-## 面板
+## Panels
 
-| 标签 | 内容 |
+| Panel | What it shows |
 | --- | --- |
-| **控制台** | 各级别日志、分组、重复合并、`%c` 样式、正则搜索与高亮、勾选批量复制、表达式求值（`$_` 引用上次结果） |
-| **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，请求响应头与体、分段耗时、WebSocket 逐帧记录 |
-| **元素** | DOM 树惰性浏览、页面内拾取、高亮、盒模型、计算样式、复制选择器 |
-| **存储** | localStorage / sessionStorage / Cookie / IndexedDB，可增删改查 |
-| **环境** | 设备、视口、安全区、内存、加载时序、能力探测 |
+| **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
+| **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — request and response headers and bodies, timing breakdown, per-frame WebSocket records |
+| **Elements** | Lazy DOM tree browsing, in-page picking, highlighting, box model, computed styles, selector copy |
+| **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access |
+| **Environment** | Device, viewport, safe area, memory, load timing, capability detection |
 
-## 特点
+## Design highlights
 
-| | |
+| Behaviour | Detail |
 | --- | --- |
-| **复制不会失败** | 三层降级：`execCommand` → 异步剪贴板接口 → 全选文本框兜底。最后一层不依赖任何 API，`http://192.168.x.x` 这类非安全上下文下同样可用 |
-| **复制常驻行尾** | 控制台每行「复制」（含时间戳与调用栈），网络每行「cURL」。位置固定在同一个 x 上，不随内容长短漂移 |
-| **展开大对象不卡** | 只做一层浅预览，真实对象由句柄引用。十万元素数组即时展开，循环引用标注 `[Circular]`，getter 显示 `(...)` 且绝不求值 |
-| **长按能选中文字** | 手势检测全程 `passive`，从不 `preventDefault`，不夺走原生长按选中 |
-| **按移动端规则布局** | `100dvh`、`env(safe-area-inset-*)`、触控目标 ≥ 44px、输入框 16px、尺寸只用 px 不用 rem |
-| **宽了分栏，窄了钻入** | 面板宽度 ≥ 640px 分栏（比例记在本地），`pointer: fine` 下切紧凑排版，触屏下行高不变 |
-| **不污染宿主页面** | 整个面板活在 Shadow DOM 里双向隔离；所有插桩透传原方法，`destroy()` 按原始属性描述符逐一还原 |
+| **Copy never fails** | Three fallback layers: `execCommand` → async Clipboard API → a pre-selected textarea. The last layer depends on no API at all, so it works on non-secure origins such as `http://192.168.x.x` |
+| **Copy lives at the end of every row** | Every console row has a *Copy* button (timestamp and stack included); every network row has *cURL*. They sit at a fixed x position and never drift with content length |
+| **Large objects expand instantly** | Only a one-level shallow preview is produced; real objects stay behind opaque handles. A 100k-element array expands immediately, cycles are marked `[Circular]`, and getters render as `(...)` and are never invoked |
+| **Long-press still selects text** | Gesture detection is `passive` throughout and never calls `preventDefault()`, so native long-press selection is left intact |
+| **Laid out by mobile rules** | `100dvh`, `env(safe-area-inset-*)`, touch targets ≥ 44 px, 16 px inputs, sizes in px only — never rem |
+| **Split when wide, drill down when narrow** | At a panel width ≥ 640 px the layout splits (the ratio is remembered locally); `pointer: fine` switches to compact rows, while touch keeps full row height |
+| **Never leaks into the host page** | The whole panel lives in a Shadow DOM, isolated in both directions; every hook passes through to the original method, and `destroy()` restores each one from its original property descriptor |
 
-还捕获一些常被漏掉的信号：资源加载失败（`<img>` / `<script>` / CSS 404，这类事件不冒泡）、CSP 违规、sendBeacon 的实际接受与否、EventSource、没有 JS API 的请求（走 Resource Timing）、缓存命中。
+It also captures signals that debugging tools commonly miss: resource load failures (`<img>` / `<script>` / CSS 404s — these events do not bubble), CSP violations, whether `sendBeacon` was actually accepted, EventSource streams, requests with no JavaScript API (via Resource Timing), and cache hits.
 
-设计取舍的完整来由见 [DESIGN.md](DESIGN.md)。
+The full reasoning behind these trade-offs is in [DESIGN.md](DESIGN.md).
 
-## 用法
+## Usage
 
-### script 标签
+### Script tag
 
 ```html
 <script src="https://unpkg.com/optik-sol" data-theme="dark" data-max-logs="2000"></script>
 ```
 
-| 属性 | 说明 |
+| Attribute | Description |
 | --- | --- |
-| `data-theme` | `light`（默认）/ `dark` |
-| `data-open` | 存在则默认展开面板 |
-| `data-max-logs` | 日志条数上限，默认 1000 |
-| `data-max-requests` | 请求条数上限，默认 300 |
-| `data-optik-manual` | 存在则**不**自动挂载，由你自己调 `Optik.mount()` |
+| `data-theme` | `light` (default) / `dark` |
+| `data-open` | If present, the panel starts expanded |
+| `data-max-logs` | Maximum log entries, default 1000 |
+| `data-max-requests` | Maximum request records, default 300 |
+| `data-optik-manual` | If present, the panel does **not** auto-mount; call `Optik.mount()` yourself |
 
-挂载后可用 `window.Optik`。
+Once mounted, `window.Optik` is available.
 
-### 打包器
+### Bundler
 
 ```bash
 npm i optik-sol
@@ -70,7 +80,7 @@ if (import.meta.env.DEV) {
 }
 ```
 
-> 不要在生产环境无条件挂载：面板会读取请求头、请求体与本地存储，并对页面上任何脚本可达。
+> Do not mount unconditionally in production: the panel reads request headers, request bodies and local storage, and is reachable by any script on the page.
 
 ### API
 
@@ -82,7 +92,7 @@ const optik = mount({
   log: { maxEntries: 1000 },
   network: { maxRecords: 300 },
   capture: { console: true, errors: true, network: true },
-  passthrough: true,       // 是否继续调用原生 console，默认 true
+  passthrough: true,       // keep calling the native console, default true
   maxBodyBytes: 512 * 1024,
 });
 
@@ -90,12 +100,12 @@ optik.show('network');
 optik.hide();
 optik.use(plugin);
 optik.eject('plugin-id');
-optik.destroy();           // 完整还原所有插桩
+optik.destroy();           // fully restores every hook
 ```
 
-### 插件
+### Plugins
 
-插件不需要依赖 Solid，返回一个原生 DOM 节点即可。
+A plugin does not need to depend on Solid — returning a plain DOM node is enough.
 
 ```js
 optik.use({
@@ -113,33 +123,35 @@ optik.use({
 });
 ```
 
-`context` 提供 `kernel` / `copy` / `reveal` / `log` / `theme`。
+`context` exposes `kernel` / `copy` / `reveal` / `log` / `theme`.
 
-## 结构
+> Panel copy is Chinese by design — see [Hard constraints](CONTRIBUTING.md#hard-constraints).
 
-| 包 | 说明 |
+## Packages
+
+| Package | Description |
 | --- | --- |
-| `optik-sol` | 唯一发布包，`<script>` 与 `import` 两种接入都从这里进 |
-| `optik-core` | 内部包。插桩、值镜像、环形缓冲，零依赖，不碰 DOM |
-| `optik-ui` | 内部包。Solid + Shadow DOM + UnoCSS 面板 UI |
+| `optik-sol` | The only published package; both `<script>` and `import` entry points come from here |
+| `optik-core` | Internal. Instrumentation, value mirroring, ring buffers. Zero dependencies, never touches the DOM |
+| `optik-ui` | Internal. The panel UI: Solid + Shadow DOM + UnoCSS |
 
-内核与 UI 之间走 CDP 形状的消息，中间隔着一层 `Transport`。今天跑在进程内，换成 WebSocket 就是远程调试，内核一行不用改。
+The kernel and the UI talk over CDP-shaped messages with a `Transport` layer in between. Today that transport runs in-process; swapping it for a WebSocket turns this into a remote debugger without changing a line of the kernel.
 
-## 开发
+## Development
 
 ```bash
 pnpm install
-pnpm dev          # 启动验证台，页面顶部给出局域网地址和二维码
+pnpm dev          # starts the playground; the page header shows a LAN address and QR code
 pnpm typecheck
 pnpm build
 ```
 
-验证台里每个按钮都对应一个已知会让调试工具出问题的场景。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+Every button in the playground maps to a scenario that is known to break debugging tools. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## 文档
+## Documentation
 
-[贡献指南](CONTRIBUTING.md) · [设计说明](DESIGN.md) · [安全策略](SECURITY.md) · [行为准则](CODE_OF_CONDUCT.md) · [更新日志](CHANGELOG.md)
+[Contributing](CONTRIBUTING.md) · [Design notes](DESIGN.md) · [Security policy](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
 
-## 许可
+## License
 
-MIT，见 [LICENSE](LICENSE)。
+MIT — see [LICENSE](LICENSE).

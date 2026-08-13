@@ -1,55 +1,50 @@
-# 贡献者行为准则
+# Contributor Code of Conduct
 
-本准则改写自 [Contributor Covenant](https://www.contributor-covenant.org) v2.1。
+English | [简体中文](CODE_OF_CONDUCT.zh-CN.md)
 
-## 我们的承诺
+This code of conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
 
-为营造开放友好的环境，我们作为贡献者与维护者承诺：无论年龄、体型、可见或不可见的身心
-障碍、族裔、性征、性别认同与表达、经验水平、教育程度、社会经济地位、国籍、外貌、
-种族、宗教信仰、性取向如何，参与本项目都不会遭遇骚扰。
+## Our pledge
 
-## 行为标准
+In the interest of an open and welcoming environment, we as contributors and maintainers pledge that participating in this project will be free of harassment for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-有助于营造良好环境的行为包括：
+## Our standards
 
-- 对他人抱有同理心与善意
-- 尊重不同的观点与经验
-- 得体地给出与接受建设性反馈
-- 承担责任、向受影响的人致歉并从中学习
-- 着眼于整个社区的最佳利益，而不只是个人利益
+Behaviour that contributes to a positive environment includes:
 
-不可接受的行为包括：
+- Showing empathy and kindness toward other people
+- Being respectful of differing opinions and experiences
+- Giving and gracefully accepting constructive feedback
+- Accepting responsibility, apologising to those affected, and learning from the experience
+- Focusing on what is best for the community as a whole, not just for ourselves
 
-- 使用性化的语言或意象，以及任何形式的性关注或性骚扰
-- 挑衅、侮辱或贬损性言论，以及人身或政治攻击
-- 公开或私下的骚扰
-- 未经明确许可公开他人的私人信息，例如实际住址或电子邮箱
-- 其他在专业场合中可以合理地被认定为不当的行为
+Unacceptable behaviour includes:
 
-## 执行责任
+- Sexualised language or imagery, and sexual attention or advances of any kind
+- Trolling, insulting or derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or email address, without explicit permission
+- Other conduct that could reasonably be considered inappropriate in a professional setting
 
-维护者有责任阐明并执行上述标准，对任何他们认为不当、具威胁性、冒犯性或有害的行为，
-采取适当且公平的纠正措施，包括删除、编辑或拒绝不符合本准则的评论、提交、代码、
-Issue 及其他贡献，并在适当时说明理由。
+## Enforcement responsibilities
 
-## 适用范围
+Maintainers are responsible for clarifying and enforcing these standards, and will take appropriate and fair corrective action in response to any behaviour they deem inappropriate, threatening, offensive or harmful. This includes removing, editing or rejecting comments, commits, code, issues and other contributions that do not align with this code of conduct, with reasons communicated when appropriate.
 
-本准则适用于本项目的所有社区空间，也适用于个人在公开场合代表本项目时的行为，
-例如使用项目的官方邮箱、通过官方社交账号发言，或作为指定代表参加线上线下活动。
+## Scope
 
-## 举报
+This code of conduct applies within all community spaces of this project, and also applies when an individual is officially representing the project in public spaces — for example using an official project email address, posting via an official social media account, or acting as an appointed representative at an online or offline event.
 
-遭遇辱骂、骚扰或其他不可接受的行为，请发送邮件至 **xd@biekanle.com**。
-所有举报都会被及时、公正地审阅与处理。维护者有义务为举报人保守秘密。
+## Reporting
 
-## 处理指引
+Instances of abusive, harassing or otherwise unacceptable behaviour may be reported by email to **xd@biekanle.com**. All reports will be reviewed and investigated promptly and fairly. Maintainers are obliged to respect the privacy and security of the reporter.
 
-维护者将依据以下阶梯判断违规行为的后果：
+## Enforcement guidelines
 
-1. **纠正** —— 私下书面警告，说明违规性质，必要时要求公开致歉。
-2. **警告** —— 就单次事件给出警告并附带后续行为要求；在指定期限内不得与相关人员互动，
-   违反者将升级处理。
-3. **临时封禁** —— 在一定期限内禁止与社区进行任何形式的互动或公开交流。
-4. **永久封禁** —— 永久禁止参与本项目社区。
+Maintainers will follow these guidelines in determining the consequences of any violation:
+
+1. **Correction** — a private, written warning explaining the nature of the violation, with a public apology requested if appropriate.
+2. **Warning** — a warning with consequences for continued behaviour, including no interaction with the people involved for a specified period. Violating these terms leads to escalation.
+3. **Temporary ban** — a temporary ban on any form of interaction or public communication with the community.
+4. **Permanent ban** — a permanent ban from participating in this project's community.
 
 [homepage]: https://www.contributor-covenant.org
