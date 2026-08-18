@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.5"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
