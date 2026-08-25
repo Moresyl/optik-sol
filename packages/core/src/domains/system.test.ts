@@ -119,6 +119,34 @@ describe('SystemDomain', () => {
     }
   });
 
+  it('keeps the environment report when optional metric getters throw', () => {
+    const connection = Object.getOwnPropertyDescriptor(navigator, 'connection');
+    const memory = Object.getOwnPropertyDescriptor(performance, 'memory');
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      get: () => {
+        throw new Error('connection blocked');
+      },
+    });
+    Object.defineProperty(performance, 'memory', {
+      configurable: true,
+      get: () => {
+        throw new Error('memory blocked');
+      },
+    });
+    try {
+      const info = new SystemDomain().info();
+      expect(info.network).toBeUndefined();
+      expect(info.memory).toBeUndefined();
+      expect(info.viewport.width).toBeTypeOf('number');
+    } finally {
+      if (connection) Object.defineProperty(navigator, 'connection', connection);
+      else Reflect.deleteProperty(navigator, 'connection');
+      if (memory) Object.defineProperty(performance, 'memory', memory);
+      else Reflect.deleteProperty(performance, 'memory');
+    }
+  });
+
   it('reads safe-area values and removes its probe', () => {
     const original = globalThis.getComputedStyle;
     globalThis.getComputedStyle = vi.fn().mockReturnValue({

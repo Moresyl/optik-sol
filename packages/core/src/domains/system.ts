@@ -87,32 +87,40 @@ export function readSafeArea(): SystemInfo['safeArea'] {
 }
 
 function readConnection(): SystemInfo['network'] {
-  const connection = (
-    globalThis.navigator as Navigator & {
-      connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean };
-    }
-  )?.connection;
-  if (!connection) return undefined;
-  return {
-    effectiveType: connection.effectiveType,
-    downlink: connection.downlink,
-    rtt: connection.rtt,
-    saveData: connection.saveData,
-  };
+  try {
+    const connection = (
+      globalThis.navigator as Navigator & {
+        connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean };
+      }
+    )?.connection;
+    if (!connection) return undefined;
+    return {
+      effectiveType: connection.effectiveType,
+      downlink: connection.downlink,
+      rtt: connection.rtt,
+      saveData: connection.saveData,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 function readMemory(): SystemInfo['memory'] {
-  const memory = (
-    performance as Performance & {
-      memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
-    }
-  ).memory;
-  if (!memory) return undefined;
-  return {
-    usedJSHeapSize: memory.usedJSHeapSize,
-    totalJSHeapSize: memory.totalJSHeapSize,
-    jsHeapSizeLimit: memory.jsHeapSizeLimit,
-  };
+  try {
+    const memory = (
+      globalThis.performance as (Performance & {
+        memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+      }) | undefined
+    )?.memory;
+    if (!memory) return undefined;
+    return {
+      usedJSHeapSize: memory.usedJSHeapSize,
+      totalJSHeapSize: memory.totalJSHeapSize,
+      jsHeapSizeLimit: memory.jsHeapSizeLimit,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 function readNavigationTiming(): Record<string, number> {
