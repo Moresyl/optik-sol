@@ -673,7 +673,9 @@ export function getProperties(
 
   const { ownProperties = true, includeNonEnumerable = false, invokeGetters = false } = options;
   const out: PropertyDescriptor[] = [];
-  const seenNames = new Set<string>();
+  // Symbols with the same description are still distinct property keys. Tracking their
+  // rendered text (`Symbol(name)`) silently dropped all but the first one.
+  const seenNames = new Set<PropertyKey>();
 
   const subtype = subtypeOf(target);
 
@@ -714,8 +716,8 @@ export function getProperties(
 
     for (const name of names) {
       const key = typeof name === 'symbol' ? name.toString() : name;
-      if (seenNames.has(key)) continue; // Shadowed by a nearer prototype.
-      seenNames.add(key);
+      if (seenNames.has(name)) continue; // Shadowed by a nearer prototype.
+      seenNames.add(name);
 
       let descriptor: globalThis.PropertyDescriptor | undefined;
       try {

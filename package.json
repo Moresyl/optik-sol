@@ -21,15 +21,22 @@
   "scripts": {
     "build": "pnpm -r --filter \"./packages/**\" build",
     "dev": "pnpm --filter optik-ui css && pnpm --parallel --filter optik-ui --filter playground dev",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ui/tsconfig.json && tsc -p packages/optik/tsconfig.json",
     "clean": "pnpm -r exec rimraf dist .turbo tsconfig.tsbuildinfo"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.11",
+    "happy-dom": "20.11.6",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.2",
-    "vite": "^7.1.5"
+    "vite": "^7.1.5",
+    "vitest": "4.1.11"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

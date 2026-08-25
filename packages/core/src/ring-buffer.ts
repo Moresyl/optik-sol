@@ -16,8 +16,7 @@ export class RingBuffer<T> {
   #onEvict?: (item: T) => void;
 
   constructor(capacity: number, onEvict?: (item: T) => void) {
-    if (capacity < 1) throw new RangeError('RingBuffer capacity must be >= 1');
-    this.#capacity = Math.floor(capacity);
+    this.#capacity = normalizeCapacity(capacity);
     this.#items = new Array(this.#capacity);
     this.#onEvict = onEvict;
   }
@@ -76,8 +75,7 @@ export class RingBuffer<T> {
    * oldest overflow through the normal eviction callback.
    */
   resize(capacity: number): void {
-    if (capacity < 1) throw new RangeError('RingBuffer capacity must be >= 1');
-    capacity = Math.floor(capacity);
+    capacity = normalizeCapacity(capacity);
     if (capacity === this.#capacity) return;
 
     const existing = this.toArray();
@@ -94,4 +92,11 @@ export class RingBuffer<T> {
     this.#size = kept.length;
     for (let i = 0; i < kept.length; i++) this.#items[i] = kept[i];
   }
+}
+
+function normalizeCapacity(capacity: number): number {
+  if (!Number.isFinite(capacity) || capacity < 1) {
+    throw new RangeError('RingBuffer capacity must be a finite number >= 1');
+  }
+  return Math.floor(capacity);
 }

@@ -33,10 +33,19 @@ export function byteLengthOf(text: string): number {
     const code = text.charCodeAt(i);
     if (code < 0x80) bytes += 1;
     else if (code < 0x800) bytes += 2;
-    else if (code >= 0xd800 && code <= 0xdbff) {
+    else if (
+      code >= 0xd800 &&
+      code <= 0xdbff &&
+      i + 1 < text.length &&
+      text.charCodeAt(i + 1) >= 0xdc00 &&
+      text.charCodeAt(i + 1) <= 0xdfff
+    ) {
       bytes += 4; // surrogate pair
       i++;
-    } else bytes += 3;
+    } else {
+      // Lone surrogates are encoded as the three-byte replacement character.
+      bytes += 3;
+    }
   }
   return bytes;
 }
@@ -123,13 +132,45 @@ export function truncateText(
   const size = byteLengthOf(text);
   if (size <= maxBytes) return { text, mimeType: mime, size };
   return {
-    // Keep a usable head so the shape of the payload is still visible.
-    text: text.slice(0, Math.floor(maxBytes / 2)),
+    // Keep the largest complete UTF-8 prefix that fits the configured memory bound.
+    text: sliceUtf8(text, Math.max(0, maxBytes)),
     mimeType: mime,
     size,
     omitted: true,
     omittedReason: 'too-large',
   };
+}
+
+function sliceUtf8(text: string, maxBytes: number): string {
+  let bytes = 0;
+  let end = 0;
+
+  while (end < text.length) {
+    const code = text.charCodeAt(end);
+    let width: number;
+    let units = 1;
+
+    if (code < 0x80) width = 1;
+    else if (code < 0x800) width = 2;
+    else if (
+      code >= 0xd800 &&
+      code <= 0xdbff &&
+      end + 1 < text.length &&
+      text.charCodeAt(end + 1) >= 0xdc00 &&
+      text.charCodeAt(end + 1) <= 0xdfff
+    ) {
+      width = 4;
+      units = 2;
+    } else {
+      width = 3;
+    }
+
+    if (bytes + width > maxBytes) break;
+    bytes += width;
+    end += units;
+  }
+
+  return text.slice(0, end);
 }
 
 export function splitUrl(rawUrl: string): {
