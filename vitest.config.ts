@@ -13,17 +13,28 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
-      include: ['packages/core/src/**/*.ts'],
+      // Measure every shipped package. Keeping only core here made an excellent core
+      // score hide completely untested UI entry points from CI.
+      include: ['packages/*/src/**/*.{ts,tsx}'],
       exclude: [
-        'packages/core/src/**/*.test.ts',
+        'packages/**/*.test.{ts,tsx}',
+        'packages/**/*.d.ts',
         'packages/core/src/index.ts',
         'packages/core/src/types.ts',
       ],
       thresholds: {
-        statements: 90,
-        branches: 80,
-        functions: 90,
-        lines: 90,
+        // Whole product: prevent a well-tested core from masking UI regressions.
+        statements: 80,
+        branches: 70,
+        functions: 75,
+        lines: 85,
+        // The framework-independent engine keeps its stricter established gate.
+        'packages/core/src/**/*.ts': {
+          statements: 90,
+          branches: 80,
+          functions: 90,
+          lines: 90,
+        },
       },
     },
   },
