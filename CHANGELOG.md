@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Added enforceable coverage thresholds and broad edge/error/lifecycle regression tests
-- Hardened instrumentation teardown, bounded response capture, transactional/automatic mounting, plugin cleanup, object-handle release, clipboard feedback, runtime buffer resizing, background-page state delivery, live element-tree selectors/highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, and legacy layout observers
+- Hardened instrumentation and transport teardown, bounded response capture, transactional/automatic mounting, plugin cleanup, object-handle release, clipboard feedback, runtime buffer resizing, background-page state delivery, live element-tree selectors/highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, and legacy layout observers
 
 ## [0.2.0] - 2026-08-11
 

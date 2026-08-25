@@ -197,4 +197,33 @@ describe('protocol transport orchestration', () => {
     await vi.advanceTimersByTimeAsync(1);
     await pendingAssertion;
   });
+
+  it('finishes client and router cleanup when a third-party transport teardown throws', async () => {
+    let handler: ((message: Message) => void) | undefined;
+    const transport = {
+      send: vi.fn(),
+      onMessage: vi.fn((next: (message: Message) => void) => {
+        handler = next;
+        return () => {
+          throw new Error('unsubscribe failed');
+        };
+      }),
+      close: vi.fn(() => {
+        throw new Error('close failed');
+      }),
+    };
+    const client = new ProtocolClient(transport);
+    const pending = client.request('Never.responds', undefined, { timeoutMs: 0 });
+
+    expect(() => client.close()).not.toThrow();
+    await expect(pending).rejects.toMatchObject({ code: ErrorCode.TransportClosed });
+    expect(transport.close).toHaveBeenCalledOnce();
+    expect(handler).toBeTypeOf('function');
+
+    const router = new ProtocolRouter(transport);
+    router.register('Test.method', () => 'value');
+    expect(() => router.dispose()).not.toThrow();
+    handler!({ id: 1, method: 'Test.method' });
+    expect(transport.send).toHaveBeenCalledTimes(1); // The client's request only.
+  });
 });

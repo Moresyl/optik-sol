@@ -67,7 +67,11 @@ export class ProtocolRouter {
   dispose(): void {
     if (this.#disposed) return;
     this.#disposed = true;
-    this.#off();
+    try {
+      this.#off();
+    } catch {
+      // Third-party transports can fail while detaching after a disconnect.
+    }
     this.#handlers.clear();
   }
 
@@ -199,8 +203,16 @@ export class ProtocolClient {
   close(): void {
     if (this.#closed) return;
     this.#closed = true;
-    this.#off();
-    this.transport.close();
+    try {
+      this.#off();
+    } catch {
+      // Cleanup must continue so pending requests are always rejected.
+    }
+    try {
+      this.transport.close();
+    } catch {
+      // A transport is already unusable at this point; its close error is not actionable.
+    }
     const error = closedError();
     for (const id of [...this.#pending.keys()]) this.#settle(id, false, error);
     this.#events.clear();
