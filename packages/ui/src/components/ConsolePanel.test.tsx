@@ -109,7 +109,7 @@ describe('ConsolePanel REPL history', () => {
     const kernel = new OptikKernel({ capture: NO_CAPTURE });
     kernel.log.ingest({ level: 'log', origin: 'user', args: ['detached'] });
     const store = createStore(kernel);
-    const copy = vi.fn(() => true);
+    const copy = vi.fn((_text: string, _label?: string) => true);
     const copier: CopyController = {
       copy,
       reveal: vi.fn(),
@@ -167,6 +167,94 @@ describe('ConsolePanel REPL history', () => {
     expect(document.activeElement).toBe(close);
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(input.ownerDocument.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('requires an in-place second click before running a destructive command', () => {
+    const input = renderPanel();
+    localStorage.setItem('keep-until-confirmed', 'yes');
+    [...input.ownerDocument.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '指令')!
+      .click();
+    [...input.ownerDocument.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '点选指令…')!
+      .click();
+    const dialog = input.ownerDocument.querySelector<HTMLElement>('[role="dialog"]')!;
+    const clear = [...dialog.querySelectorAll('button')].find((candidate) =>
+      candidate.textContent?.trim().startsWith('清空本地存储'),
+    )!;
+
+    clear.click();
+    expect(localStorage.getItem('keep-until-confirmed')).toBe('yes');
+    expect(clear.textContent).toContain('再点一次确认');
+    clear.click();
+    expect(localStorage.getItem('keep-until-confirmed')).toBeNull();
+    expect(input.ownerDocument.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('fills parameterized commands and places the caret inside the empty quotes', async () => {
+    const input = renderPanel();
+    [...input.ownerDocument.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '指令')!
+      .click();
+    [...input.ownerDocument.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '点选指令…')!
+      .click();
+    const dialog = input.ownerDocument.querySelector<HTMLElement>('[role="dialog"]')!;
+    [...dialog.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim().startsWith('读某个键'))!
+      .click();
+
+    const repl = input.ownerDocument.querySelector<HTMLInputElement>(
+      'input[placeholder="表达式，回车执行"]',
+    )!;
+    expect(repl.value).toBe("localStorage.getItem('')");
+    await vi.waitFor(() => expect(document.activeElement).toBe(repl));
+    expect(repl.selectionStart).toBe("localStorage.getItem('".length);
+    expect(repl.selectionEnd).toBe(repl.selectionStart);
+  });
+
+  it('highlights literal matches, contains invalid regexes, and copies only checked rows', () => {
+    const kernel = new OptikKernel({ capture: NO_CAPTURE });
+    kernel.log.ingest({ level: 'warn', origin: 'user', args: ['Alpha [one]'] });
+    kernel.log.ingest({ level: 'error', origin: 'user', args: ['Beta'] });
+    const store = createStore(kernel);
+    const copy = vi.fn((_text: string, _label?: string) => true);
+    const copier: CopyController = {
+      copy,
+      reveal: vi.fn(),
+      toast: () => null,
+      sheet: () => null,
+      closeSheet: vi.fn(),
+    };
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    cleanups.push(
+      render(() => <ConsolePanel store={store} kernel={kernel} copier={copier} />, host),
+      () => store.dispose(),
+      () => kernel.dispose(),
+      () => host.remove(),
+    );
+
+    const search = host.querySelector<HTMLInputElement>('input[type="search"]')!;
+    inputValue(search, 'alpha');
+    expect(host.querySelector('mark')?.textContent).toBe('Alpha');
+    host.querySelector<HTMLButtonElement>('[title="区分大小写"]')!.click();
+    expect(host.textContent).toContain('没有匹配的日志');
+    host.querySelector<HTMLButtonElement>('[title="区分大小写"]')!.click();
+    host.querySelector<HTMLButtonElement>('[title="正则匹配"]')!.click();
+    inputValue(search, '[');
+    expect(host.textContent).toContain('Alpha [one]');
+    inputValue(search, '^');
+    expect(host.querySelector('mark')).toBeNull();
+
+    inputValue(search, '');
+    [...host.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '勾选')!
+      .click();
+    host.querySelector<HTMLButtonElement>('[aria-label="选择"]')!.click();
+    host.querySelector<HTMLButtonElement>('[title^="复制勾选的 1 条日志"]')!.click();
+    expect(copy).toHaveBeenCalledWith(expect.stringContaining('Alpha [one]'), '勾选的 1 条日志');
+    expect(String(copy.mock.calls[0]?.[0])).not.toContain('Beta');
   });
 
   it('walks all history entries and restores the unfinished draft', () => {
