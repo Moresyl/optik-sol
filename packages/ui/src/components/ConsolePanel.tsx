@@ -467,7 +467,6 @@ export function ConsolePanel(props: {
   copier: CopyController;
 }): JSX.Element {
   const [input, setInput] = createSignal('');
-  const [history, setHistory] = createSignal<string[]>([]);
   /** -1 代表当前草稿，0 开始依次指向由新到旧的历史。 */
   const [historyCursor, setHistoryCursor] = createSignal(-1);
   const [historyDraft, setHistoryDraft] = createSignal('');
@@ -509,9 +508,7 @@ export function ConsolePanel(props: {
     const expression = (source ?? input()).trim();
     if (!expression) return;
 
-    setHistory((previous) =>
-      [expression, ...previous.filter((item) => item !== expression)].slice(0, 50),
-    );
+    props.store.recordReplCommand(expression);
     setInput('');
     setHistoryDraft('');
     setHistoryCursor(-1);
@@ -571,7 +568,7 @@ export function ConsolePanel(props: {
   };
 
   const browseHistory = (direction: 'older' | 'newer') => {
-    const entries = history();
+    const entries = props.store.replHistory();
     if (entries.length === 0) return;
 
     const current = historyCursor();
@@ -791,7 +788,7 @@ export function ConsolePanel(props: {
               if (event.key === 'Enter') {
                 event.preventDefault();
                 run();
-              } else if (event.key === 'ArrowUp' && history().length > 0) {
+              } else if (event.key === 'ArrowUp' && props.store.replHistory().length > 0) {
                 event.preventDefault();
                 browseHistory('older');
               } else if (event.key === 'ArrowDown' && historyCursor() !== -1) {
@@ -808,7 +805,7 @@ export function ConsolePanel(props: {
 
       <Show when={picker()}>
         <CommandSheet
-          history={history()}
+          history={props.store.replHistory()}
           onClose={() => setPicker(false)}
           onPick={useCommand}
           onPickHistory={(expression) => {

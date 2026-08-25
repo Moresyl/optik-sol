@@ -58,6 +58,45 @@ function renderPanel(): HTMLInputElement {
   return host.querySelector('input[placeholder="表达式，回车执行"]')!;
 }
 
+function renderWithStore(): {
+  input: HTMLInputElement;
+  rerender: () => HTMLInputElement;
+} {
+  const kernel = new OptikKernel({ capture: NO_CAPTURE });
+  const store = createStore(kernel);
+  const copier: CopyController = {
+    copy: vi.fn(() => true),
+    reveal: vi.fn(),
+    toast: () => null,
+    sheet: () => null,
+    closeSheet: vi.fn(),
+  };
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  let disposePanel: (() => void) | undefined;
+  const mount = () => {
+    disposePanel = render(() => <ConsolePanel store={store} kernel={kernel} copier={copier} />, host);
+    [...host.querySelectorAll('button')]
+      .find((button) => button.textContent?.trim() === '输入框')!
+      .click();
+    return host.querySelector<HTMLInputElement>('input[placeholder="表达式，回车执行"]')!;
+  };
+  cleanups.push(
+    () => disposePanel?.(),
+    () => store.dispose(),
+    () => kernel.dispose(),
+    () => host.remove(),
+  );
+  return {
+    input: mount(),
+    rerender: () => {
+      disposePanel?.();
+      host.replaceChildren();
+      return mount();
+    },
+  };
+}
+
 describe('ConsolePanel REPL history', () => {
   it('walks all history entries and restores the unfinished draft', () => {
     const input = renderPanel();
@@ -93,5 +132,15 @@ describe('ConsolePanel REPL history', () => {
     key(input, 'Enter');
     key(input, 'ArrowUp');
     expect(input.value).toBe('2');
+  });
+
+  it('keeps history when the console tab is unmounted and mounted again', () => {
+    const panel = renderWithStore();
+    inputValue(panel.input, 'kept across tabs');
+    key(panel.input, 'Enter');
+
+    const input = panel.rerender();
+    key(input, 'ArrowUp');
+    expect(input.value).toBe('kept across tabs');
   });
 });

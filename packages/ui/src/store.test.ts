@@ -73,6 +73,17 @@ describe('createStore', () => {
     store.dispose();
   });
 
+  it('retains a bounded, deduplicated REPL history for the mounted session', () => {
+    const store = createStore(kernel);
+    for (let index = 0; index < 52; index++) store.recordReplCommand(String(index));
+    store.recordReplCommand('40');
+
+    expect(store.replHistory()).toHaveLength(50);
+    expect(store.replHistory().slice(0, 3)).toEqual(['40', '51', '50']);
+    expect(store.replHistory().filter((item) => item === '40')).toHaveLength(1);
+    store.dispose();
+  });
+
   it('cancels a pending refresh and unsubscribes on dispose', () => {
     const store = createStore(kernel);
     kernel.log.ingest({ level: 'log', origin: 'user', args: ['queued'] });

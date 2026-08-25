@@ -50,6 +50,10 @@ export interface Store {
   visibleLogs: Accessor<LogEntry[]>;
   errorCount: Accessor<number>;
 
+  /** 当前挂载会话内的 REPL 历史；不落盘，避免长期保存可能含凭证的表达式。 */
+  replHistory: Accessor<string[]>;
+  recordReplCommand: (expression: string) => void;
+
   activeTab: Accessor<TabId>;
   setActiveTab: Setter<TabId>;
 
@@ -97,6 +101,7 @@ function buildStore(kernel: OptikKernel): Store {
   const [activeTab, setActiveTab] = createSignal<TabId>('console');
   const [selection, setSelection] = createSignal<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = createSignal(false);
+  const [replHistory, setReplHistory] = createSignal<string[]>([]);
 
   const [filter, setFilter] = createSignal<FilterState>({
     levels: new Set(ALL_LEVELS),
@@ -231,6 +236,12 @@ function buildStore(kernel: OptikKernel): Store {
     requests,
     visibleLogs,
     errorCount,
+    replHistory,
+    recordReplCommand(expression) {
+      setReplHistory((previous) =>
+        [expression, ...previous.filter((item) => item !== expression)].slice(0, 50),
+      );
+    },
     activeTab,
     setActiveTab,
     filter,
