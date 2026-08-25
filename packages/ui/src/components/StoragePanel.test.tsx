@@ -104,4 +104,17 @@ describe('StoragePanel', () => {
     clickButton(host, '确认清空本地存储');
     expect(reveal).toHaveBeenCalledWith(expect.stringContaining('blocked'), '清空失败');
   });
+
+  it('opens editing as an Escape-closeable modal and focuses the first field', () => {
+    const { host } = panel();
+    clickButton(host, '新增');
+
+    const dialog = host.querySelector<HTMLElement>('[role="dialog"]')!;
+    const keyInput = dialog.querySelector<HTMLInputElement>('[name="optik-storage-key"]')!;
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.getAttribute('aria-label')).toBe('新增存储项');
+    expect(document.activeElement).toBe(keyInput);
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(host.querySelector('[role="dialog"]')).toBeNull();
+  });
 });

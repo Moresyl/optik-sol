@@ -9,7 +9,16 @@
  * 所以这里做了三件事：值自动格式化、值单独成块、长值折叠而不是套一层滚动条。
  */
 
-import { createSignal, createMemo, createEffect, onCleanup, For, Show, type JSX } from 'solid-js';
+import {
+  createSignal,
+  createMemo,
+  createEffect,
+  onCleanup,
+  onMount,
+  For,
+  Show,
+  type JSX,
+} from 'solid-js';
 import type { OptikKernel, StorageArea, StorageItem } from 'optik-core';
 import { CopyButton, type CopyController } from './Copy';
 
@@ -194,6 +203,14 @@ function EditSheet(props: {
   onCancel: () => void;
   onSave: () => void;
 }): JSX.Element {
+  let initialControl: HTMLInputElement | HTMLTextAreaElement | undefined;
+  onMount(() => {
+    try {
+      initialControl?.focus({ preventScroll: true });
+    } catch {
+      initialControl?.focus();
+    }
+  });
   const format = () => {
     const pretty = prettify(props.draft.value);
     if (pretty.json) props.onChange({ ...props.draft, value: pretty.text });
@@ -202,7 +219,15 @@ function EditSheet(props: {
   const canFormat = createMemo(() => prettify(props.draft.value).json);
 
   return (
-    <div class="absolute inset-0 z-20 flex flex-col bg-bg">
+    <div
+      class="absolute inset-0 z-20 flex flex-col bg-bg"
+      role="dialog"
+      aria-modal="true"
+      aria-label={props.draft.isNew ? '新增存储项' : `编辑 ${props.draft.key}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') props.onCancel();
+      }}
+    >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
         <button class="chip shrink-0" onClick={props.onCancel}>
           ‹ 取消
@@ -236,6 +261,7 @@ function EditSheet(props: {
           }
         >
           <input
+            ref={(element) => (initialControl = element)}
             class="field font-mono"
             name="optik-storage-key"
             aria-label="存储键"
@@ -259,6 +285,9 @@ function EditSheet(props: {
           </Show>
         </div>
         <textarea
+          ref={(element) => {
+            if (!initialControl) initialControl = element;
+          }}
           class="flex-1 min-h-40 px-2.5 py-2 rounded-md bg-bg border border-line
  font-mono text-input leading-5 resize-none selectable"
           name="optik-storage-value"

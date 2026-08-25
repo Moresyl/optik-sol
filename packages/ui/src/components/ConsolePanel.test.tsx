@@ -98,6 +98,26 @@ function renderWithStore(): {
 }
 
 describe('ConsolePanel REPL history', () => {
+  it('opens the command picker as an Escape-closeable modal with initial focus', () => {
+    const input = renderPanel();
+    [...input.ownerDocument.querySelectorAll('button')]
+      .find((button) => button.textContent?.trim() === '指令')!
+      .click();
+    const pickerButton = [...input.ownerDocument.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === '点选指令…',
+    );
+    pickerButton!.click();
+
+    const dialog = input.ownerDocument.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    const close = [...dialog.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === '关闭',
+    )!;
+    expect(document.activeElement).toBe(close);
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(input.ownerDocument.querySelector('[role="dialog"]')).toBeNull();
+  });
+
   it('walks all history entries and restores the unfinished draft', () => {
     const input = renderPanel();
     inputValue(input, '1 + 1');

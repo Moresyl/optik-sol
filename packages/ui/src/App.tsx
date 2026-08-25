@@ -339,6 +339,7 @@ export function App(props: AppProps): JSX.Element {
       <Show when={open()}>
         <div
           ref={layout.observe}
+          inert={copier.sheet() !== null}
           class="fixed left-0 right-0 bottom-0 flex flex-col bg-bg border-t border-line
  rounded-t-xl overflow-hidden [box-shadow:0_-4px_24px_rgba(0,0,0,0.18)]"
           style={{

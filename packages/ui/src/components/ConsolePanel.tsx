@@ -10,7 +10,7 @@
  * 复制出去的是**展开后的完整数据**而不是屏幕上那行带省略号的预览，见 deep-text.ts。
  */
 
-import { createSignal, createEffect, For, Show, on, type JSX } from 'solid-js';
+import { createSignal, createEffect, For, Show, on, onMount, type JSX } from 'solid-js';
 import type { LogEntry, LogLevel, OptikKernel, RemoteObject } from 'optik-core';
 import { ALL_LEVELS, LEVEL_LABELS, type Store } from '../store';
 import { ValueView } from './Value';
@@ -825,6 +825,14 @@ function CommandSheet(props: {
   onPick: (command: Command) => void;
   onPickHistory: (expression: string) => void;
 }): JSX.Element {
+  let closeButton: HTMLButtonElement | undefined;
+  onMount(() => {
+    try {
+      closeButton?.focus({ preventScroll: true });
+    } catch {
+      closeButton?.focus();
+    }
+  });
   /**
    * 破坏性指令的二次确认，存的是待确认那一条的 expression。
    *
@@ -852,10 +860,18 @@ function CommandSheet(props: {
   };
 
   return (
-    <div class="absolute inset-0 z-20 flex flex-col bg-bg">
+    <div
+      class="absolute inset-0 z-20 flex flex-col bg-bg"
+      role="dialog"
+      aria-modal="true"
+      aria-label="内置指令"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') props.onClose();
+      }}
+    >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
         <span class="flex-1 min-w-0 not-selectable">内置指令</span>
-        <button class="chip shrink-0" onClick={props.onClose}>
+        <button ref={closeButton} class="chip shrink-0" onClick={props.onClose}>
           关闭
         </button>
       </div>
