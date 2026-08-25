@@ -69,7 +69,10 @@ export class Highlighter {
   #root: HTMLDivElement | null = null;
 
   #ensure(): HTMLDivElement | null {
-    if (this.#root) return this.#root;
+    if (this.#root?.isConnected) return this.#root;
+    // Host routers and DOM sanitizers can remove nodes they did not create. Do not
+    // keep painting into a detached overlay forever; rebuild it on the next highlight.
+    this.#root = null;
     const parent = document.body ?? document.documentElement;
     if (!parent) return null;
     const root = document.createElement('div');

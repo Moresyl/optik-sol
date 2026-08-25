@@ -90,8 +90,14 @@ describe('Highlighter', () => {
     expect(root.style.display).toBe('block');
     expect(root.textContent).toContain('div#target · 100 × 50');
 
+    root.remove();
+    highlighter.show(node);
+    const rebuilt = document.querySelector<HTMLElement>('[data-optik-highlight]')!;
+    expect(rebuilt).not.toBe(root);
+    expect(rebuilt.style.display).toBe('block');
+
     highlighter.hide();
-    expect(root.style.display).toBe('none');
+    expect(rebuilt.style.display).toBe('none');
     highlighter.dispose();
     expect(document.querySelector('[data-optik-highlight]')).toBeNull();
   });
