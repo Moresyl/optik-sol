@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot } from 'solid-js';
 import { render } from 'solid-js/web';
-import { CopySheet, createCopyController } from './Copy';
+import { CopyButton, CopySheet, Toast, createCopyController } from './Copy';
 
 const cleanups: Array<() => void> = [];
 
@@ -63,5 +63,117 @@ describe('copy UI lifecycle', () => {
     expect(dialog.getAttribute('aria-label')).toBe('手动复制日志');
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('reports synchronous success, handles empty input, and clears the toast', () => {
+    vi.useFakeTimers();
+    const descriptor = Object.getOwnPropertyDescriptor(document, 'execCommand');
+    Object.defineProperty(document, 'execCommand', { configurable: true, value: () => true });
+    cleanups.push(
+      () => vi.useRealTimers(),
+      () => {
+        if (descriptor) Object.defineProperty(document, 'execCommand', descriptor);
+        else Reflect.deleteProperty(document, 'execCommand');
+      },
+    );
+
+    let controller!: ReturnType<typeof createCopyController>;
+    let dispose!: () => void;
+    createRoot((rootDispose) => {
+      dispose = rootDispose;
+      controller = createCopyController();
+    });
+    cleanups.push(dispose);
+
+    expect(controller.copy('')).toBe(false);
+    expect(controller.toast()).toBe('没有可复制的内容');
+    expect(controller.copy('x'.repeat(1200), '日志')).toBe(true);
+    expect(controller.toast()).toBe('已复制日志（1.2k 字）');
+    vi.advanceTimersByTime(1800);
+    expect(controller.toast()).toBeNull();
+  });
+
+  it('opens and closes the direct reveal fallback', () => {
+    let controller!: ReturnType<typeof createCopyController>;
+    let dispose!: () => void;
+    createRoot((rootDispose) => {
+      dispose = rootDispose;
+      controller = createCopyController();
+    });
+    cleanups.push(dispose);
+
+    controller.reveal('raw', '响应体');
+    expect(controller.sheet()).toEqual({ text: 'raw', title: '响应体' });
+    controller.closeSheet();
+    expect(controller.sheet()).toBeNull();
+  });
+
+  it('keeps row clicks isolated and resets CopyButton feedback', () => {
+    vi.useFakeTimers();
+    cleanups.push(() => vi.useRealTimers());
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    cleanups.push(() => host.remove());
+    const parentClick = vi.fn();
+    const copier = {
+      copy: vi.fn(() => true),
+      reveal: vi.fn(),
+      toast: () => null,
+      sheet: () => null,
+      closeSheet: vi.fn(),
+    };
+    cleanups.push(
+      render(
+        () => (
+          <div onClick={parentClick}>
+            <CopyButton copier={copier} text={() => 'value'} />
+          </div>
+        ),
+        host,
+      ),
+    );
+
+    const copy = host.querySelector('button')!;
+    copy.click();
+    expect(parentClick).not.toHaveBeenCalled();
+    expect(copier.copy).toHaveBeenCalledWith('value', undefined);
+    expect(copy.querySelectorAll('.invisible')[0]?.textContent).toBe('复制');
+    vi.advanceTimersByTime(1400);
+    expect(copy.querySelectorAll('.invisible')[0]?.textContent).toBe('已复制');
+  });
+
+  it('falls back to a timer when animation-frame scheduling throws', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', () => {
+      throw new Error('broken frame shim');
+    });
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    cleanups.push(
+      () => vi.useRealTimers(),
+      render(
+        () => <CopySheet data={{ text: 'fallback', title: '复制' }} onClose={vi.fn()} />,
+        host,
+      ),
+      () => host.remove(),
+    );
+
+    const textarea = host.querySelector('textarea')!;
+    expect(document.activeElement).not.toBe(textarea);
+    vi.advanceTimersByTime(16);
+    expect(document.activeElement).toBe(textarea);
+    expect(textarea.selectionStart).toBe(0);
+    expect(textarea.selectionEnd).toBe(textarea.value.length);
+  });
+
+  it('renders live-region status only while a message exists', () => {
+    const empty = document.createElement('div');
+    const filled = document.createElement('div');
+    cleanups.push(
+      render(() => <Toast message={null} />, empty),
+      render(() => <Toast message="已复制" />, filled),
+    );
+    expect(empty.querySelector('[role="status"]')).toBeNull();
+    expect(filled.querySelector('[role="status"]')?.textContent).toBe('已复制');
   });
 });

@@ -186,7 +186,11 @@ export function CopySheet(props: {
   let selectionTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => {
     if (selectionFrame !== null && typeof cancelAnimationFrame === 'function') {
-      cancelAnimationFrame(selectionFrame);
+      try {
+        cancelAnimationFrame(selectionFrame);
+      } catch {
+        // Broken WebView shims must not make dialog teardown throw.
+      }
     }
     clearTimeout(selectionTimer);
   });
@@ -256,13 +260,18 @@ export function CopySheet(props: {
                 textarea = element;
                 // 等一帧，确保元素已完成布局，否则 iOS 上设置选区不生效。
                 if (typeof requestAnimationFrame === 'function') {
-                  selectionFrame = requestAnimationFrame(() => {
-                    selectionFrame = null;
-                    selectAll();
-                  });
-                } else {
-                  selectionTimer = setTimeout(selectAll, 16);
+                  try {
+                    selectionFrame = requestAnimationFrame(() => {
+                      selectionFrame = null;
+                      selectAll();
+                    });
+                    return;
+                  } catch {
+                    // Some embedded browsers expose requestAnimationFrame as a
+                    // throwing stub. The timer below is the reliable fallback.
+                  }
                 }
+                selectionTimer = setTimeout(selectAll, 16);
               }}
             />
             <div class="row-center justify-end gap-2">
