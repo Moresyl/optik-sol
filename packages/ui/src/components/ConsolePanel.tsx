@@ -486,7 +486,19 @@ export function ConsolePanel(props: {
   const [autoScroll, setAutoScroll] = createSignal(true);
   let scroller: HTMLDivElement | undefined;
   let cancelAutoScroll: (() => void) | undefined;
-  onCleanup(() => cancelAutoScroll?.());
+  let cancelFocus: (() => void) | undefined;
+  onCleanup(() => {
+    cancelAutoScroll?.();
+    cancelFocus?.();
+  });
+
+  const afterFrame = (callback: () => void) => {
+    cancelFocus?.();
+    cancelFocus = scheduleFrame(() => {
+      cancelFocus = undefined;
+      callback();
+    });
+  };
 
   /**
    * 只有当用户本来就贴在底部时才自动滚动。否则用户往回翻看历史时
@@ -545,7 +557,7 @@ export function ConsolePanel(props: {
   const toggleMode = () => {
     const next = mode() === 'command' ? 'input' : 'command';
     setMode(next);
-    if (next === 'input') scheduleFrame(() => inputRef?.focus());
+    if (next === 'input') afterFrame(() => inputRef?.focus());
   };
 
   const useCommand = (command: Command) => {
@@ -559,7 +571,7 @@ export function ConsolePanel(props: {
     setInput(command.expression);
     setHistoryDraft(command.expression);
     setHistoryCursor(-1);
-    scheduleFrame(() => {
+    afterFrame(() => {
       if (!inputRef) return;
       inputRef.focus();
       const quotes = command.expression.indexOf("''");

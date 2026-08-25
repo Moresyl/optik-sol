@@ -3,9 +3,17 @@ export function scheduleFrame(callback: () => void, fallbackDelay = 16): () => v
   let active = true;
   let frame: number | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let scheduling = false;
+  let firedSynchronously = false;
 
   const run = () => {
     if (!active) return;
+    // requestAnimationFrame is specified as asynchronous, but host pages can replace
+    // it. Preserve our own async contract so callers may safely store the canceler.
+    if (scheduling) {
+      firedSynchronously = true;
+      return;
+    }
     active = false;
     frame = null;
     timer = undefined;
@@ -29,11 +37,14 @@ export function scheduleFrame(callback: () => void, fallbackDelay = 16): () => v
 
   if (typeof requestAnimationFrame === 'function') {
     try {
+      scheduling = true;
       const id = requestAnimationFrame(run);
-      // A test shim may invoke synchronously; do not retain an already-fired id.
-      if (active) frame = id;
+      scheduling = false;
+      if (firedSynchronously) timer = setTimeout(run, 0);
+      else frame = id;
       return cancel;
     } catch {
+      scheduling = false;
       // Fall through to a timer in incomplete WebViews.
     }
   }

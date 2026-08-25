@@ -40,6 +40,7 @@ describe('scheduleFrame', () => {
   });
 
   it('contains cancellation errors and supports synchronous shims', () => {
+    vi.useFakeTimers();
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       callback(0);
       return 3;
@@ -50,6 +51,8 @@ describe('scheduleFrame', () => {
     const work = vi.fn();
     const cancel = scheduleFrame(work, Number.NaN);
 
+    expect(work).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(0);
     expect(work).toHaveBeenCalledOnce();
     expect(cancel).not.toThrow();
   });
