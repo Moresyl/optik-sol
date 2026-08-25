@@ -10,7 +10,10 @@ const context = {
   theme: () => 'light' as const,
 } satisfies PluginContext;
 
-function plugin(id: string, onDispose = vi.fn()): OptikPlugin {
+function plugin(
+  id: string,
+  onDispose: NonNullable<OptikPlugin['onDispose']> = vi.fn(),
+): OptikPlugin {
   return { id, label: id, render: () => document.createElement('div'), onDispose };
 }
 
@@ -101,6 +104,35 @@ describe('safely', () => {
       }),
     ).toBeUndefined();
     expect(warn).toHaveBeenCalledWith('[optik] 插件测试时出错：', expect.any(Error));
+    warn.mockRestore();
+  });
+
+  it('contains plugin and diagnostic failures at the same time', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      throw new Error('hostile console');
+    });
+    expect(() =>
+      safely('测试', () => {
+        throw new Error('broken plugin');
+      }),
+    ).not.toThrow();
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  it('finishes registry disposal when both plugin cleanup and warning throw', () => {
+    const registry = new PluginRegistry();
+    registry.register(
+      plugin('broken', () => {
+        throw new Error('cleanup');
+      }),
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      throw new Error('hostile console');
+    });
+
+    expect(() => registry.disposeAll(context)).not.toThrow();
+    expect(registry.list()).toEqual([]);
     warn.mockRestore();
   });
 });

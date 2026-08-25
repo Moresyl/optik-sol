@@ -11,6 +11,15 @@
 
 import type { OptikKernel, LogLevel } from 'optik-core';
 
+/** Host pages may replace console methods with throwing shims; diagnostics stay best-effort. */
+function warn(...args: unknown[]): void {
+  try {
+    console.warn(...args);
+  } catch {
+    // Never let a diagnostic path undo plugin isolation.
+  }
+}
+
 export interface PluginContext {
   /** 内核实例：读日志、读网络记录、执行表达式都从这里走。 */
   kernel: OptikKernel;
@@ -94,7 +103,7 @@ export class PluginRegistry {
         plugin.onDispose?.(context);
       } catch (error) {
         // 插件的清理逻辑出错不能拖垮面板自身的销毁流程。
-        console.warn('[optik] 插件销毁失败：', error);
+        warn('[optik] 插件销毁失败：', error);
       }
     }
     this.#retired = [];
@@ -110,11 +119,7 @@ export class PluginRegistry {
       try {
         listener();
       } catch (error) {
-        try {
-          console.warn('[optik] 插件注册表监听器出错：', error);
-        } catch {
-          // A hostile page can replace or freeze console methods.
-        }
+        warn('[optik] 插件注册表监听器出错：', error);
       }
     }
   }
@@ -125,7 +130,7 @@ export function safely<T>(what: string, run: () => T): T | undefined {
   try {
     return run();
   } catch (error) {
-    console.warn(`[optik] 插件${what}时出错：`, error);
+    warn(`[optik] 插件${what}时出错：`, error);
     return undefined;
   }
 }
