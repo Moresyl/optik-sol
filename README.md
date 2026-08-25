@@ -14,7 +14,7 @@ English | [简体中文](README.zh-CN.md)
 
 ---
 
-Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 64 KB gzipped.
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 67 KB gzipped.
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>

@@ -20,7 +20,7 @@ if (import.meta.env.DEV) {
 }
 ```
 
-Console, Network, Elements, Storage and Environment panels, in a single file of roughly 59 KB gzipped. Recording starts the moment the script executes, and `destroy()` restores every hook it installed. Network captures can be copied as a safe-mode HAR 1.2 archive with credentials redacted and payload bodies omitted by default.
+Console, Network, Elements, Storage and Environment panels, in a single file of roughly 67 KB gzipped. Recording starts the moment the script executes, and `destroy()` restores every hook it installed. Network captures can be copied as a safe-mode HAR 1.2 archive with credentials redacted and payload bodies omitted by default.
 
 > Do not mount unconditionally in production: the panel reads request headers, request bodies and local storage, and is reachable by any script on the page.
 
