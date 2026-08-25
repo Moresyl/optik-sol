@@ -122,7 +122,11 @@ describe('OptikKernel', () => {
     });
     kernel.start();
     kernel.dispose();
+    const added = vi.fn();
+    kernel.events.on('logAdded', added);
     kernel.start();
+    const entry = kernel.log.ingest({ level: 'log', origin: 'user', args: ['after restart'] });
     expect(kernel.started).toBe(true);
+    expect(added).toHaveBeenCalledWith(entry);
   });
 });

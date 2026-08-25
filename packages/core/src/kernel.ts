@@ -107,6 +107,7 @@ export class OptikKernel {
 
   #instrumentation: Instrumentation[] = [];
   #consoleInstrumentation?: ConsoleInstrumentation;
+  #domainUnsubscribes: Array<() => void> = [];
   #started = false;
   #capture: Required<CaptureOptions>;
   #options: KernelOptions;
@@ -118,14 +119,7 @@ export class OptikKernel {
     this.#capture = { ...DEFAULT_CAPTURE, ...options.capture };
     this.log = new LogDomain(options.log);
     this.network = new NetworkDomain(options.network);
-
-    // Re-emit domain events on the kernel so a client subscribes in one place.
-    this.log.events.on('entryAdded', (entry) => this.events.emit('logAdded', entry));
-    this.log.events.on('entryUpdated', (entry) => this.events.emit('logUpdated', entry));
-    this.log.events.on('cleared', () => this.events.emit('logCleared', undefined));
-    this.network.events.on('requestStarted', (r) => this.events.emit('networkStarted', r));
-    this.network.events.on('requestUpdated', (r) => this.events.emit('networkUpdated', r));
-    this.network.events.on('cleared', () => this.events.emit('networkCleared', undefined));
+    this.#wireDomains();
   }
 
   get started(): boolean {
@@ -134,6 +128,7 @@ export class OptikKernel {
 
   start(): void {
     if (this.#started) return;
+    this.#wireDomains();
     this.#started = true;
 
     const capture = this.#capture;
@@ -260,9 +255,28 @@ export class OptikKernel {
     }
     this.#consoleInstrumentation = undefined;
 
+    for (const unsubscribe of this.#domainUnsubscribes) unsubscribe();
+    this.#domainUnsubscribes = [];
     this.log.dispose();
     this.network.dispose();
     this.events.clear();
     this.#started = false;
+  }
+
+  /** Rebuilds the domain event bridge after a dispose/start cycle. */
+  #wireDomains(): void {
+    if (this.#domainUnsubscribes.length > 0) return;
+    this.#domainUnsubscribes = [
+      this.log.events.on('entryAdded', (entry) => this.events.emit('logAdded', entry)),
+      this.log.events.on('entryUpdated', (entry) => this.events.emit('logUpdated', entry)),
+      this.log.events.on('cleared', () => this.events.emit('logCleared', undefined)),
+      this.network.events.on('requestStarted', (record) =>
+        this.events.emit('networkStarted', record),
+      ),
+      this.network.events.on('requestUpdated', (record) =>
+        this.events.emit('networkUpdated', record),
+      ),
+      this.network.events.on('cleared', () => this.events.emit('networkCleared', undefined)),
+    ];
   }
 }

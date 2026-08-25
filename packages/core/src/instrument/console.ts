@@ -123,6 +123,7 @@ export function instrumentConsole(
   const target = globalThis.console as unknown as Record<string, unknown>;
   const original: Record<string, (...args: unknown[]) => void> = {};
   const descriptors = new Map<string, PropertyDescriptor | undefined>();
+  const wrappers = new Map<string, (...args: unknown[]) => void>();
 
   // `console.count` / `console.time` keep their own state in the browser, but the
   // browser's counters are invisible to us. We mirror them so our rendering matches.
@@ -130,6 +131,7 @@ export function instrumentConsole(
   const timers = new Map<string, number>();
 
   let reentrant = false;
+  let active = true;
 
   const emit = (record: ConsoleRecord) => {
     if (reentrant) return;
@@ -157,18 +159,21 @@ export function instrumentConsole(
     const level = LEVEL_BY_METHOD[method] ?? 'log';
 
     const wrapper = (...args: unknown[]): void => {
-      try {
-        handle(method, level, args, {
-          counters,
-          timers,
-          emit,
-          shouldCaptureStack,
-        });
-      } catch {
-        // Never let instrumentation break the call.
+      if (active) {
+        try {
+          handle(method, level, args, {
+            counters,
+            timers,
+            emit,
+            shouldCaptureStack,
+          });
+        } catch {
+          // Never let instrumentation break the call.
+        }
       }
       if (passthrough) original[method]!(...args);
     };
+    wrappers.set(method, wrapper);
 
     // Preserve `fn.name`/`fn.length` so code that feature-detects the console
     // (surprisingly common in analytics SDKs) sees something plausible.
@@ -189,8 +194,10 @@ export function instrumentConsole(
   return {
     original,
     dispose() {
+      active = false;
       for (const [method, descriptor] of descriptors) {
         try {
+          if (target[method] !== wrappers.get(method)) continue;
           if (descriptor) Object.defineProperty(globalThis.console, method, descriptor);
           else delete (globalThis.console as unknown as Record<string, unknown>)[method];
         } catch {
@@ -198,6 +205,7 @@ export function instrumentConsole(
         }
       }
       descriptors.clear();
+      wrappers.clear();
       counters.clear();
       timers.clear();
     },

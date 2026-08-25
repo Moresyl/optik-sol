@@ -26,12 +26,14 @@ export function instrumentSendBeacon(
 ): Instrumentation {
   const original = globalThis.navigator?.sendBeacon;
   if (typeof original !== 'function') return { dispose() {} };
+  let active = true;
 
   const wrapped = function sendBeacon(
     this: Navigator,
     rawUrl: string | URL,
     data?: BodyInit | null,
   ): boolean {
+    if (!active) return original.call(globalThis.navigator, rawUrl, data);
     const id = options.nextId();
     const startTime = performance.now();
     const { url, name, origin, query } = splitUrl(String(rawUrl));
@@ -81,7 +83,8 @@ export function instrumentSendBeacon(
   globalThis.navigator.sendBeacon = wrapped;
   return {
     dispose() {
-      globalThis.navigator.sendBeacon = original;
+      active = false;
+      if (globalThis.navigator.sendBeacon === wrapped) globalThis.navigator.sendBeacon = original;
     },
   };
 }
@@ -94,10 +97,13 @@ export function instrumentWebSocket(
   if (typeof Original !== 'function') return { dispose() {} };
 
   const { maxFrames = 500, maxFramePayload = 8 * 1024 } = options;
+  let active = true;
 
   class OptikWebSocket extends Original {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
+
+      if (!active) return;
 
       const id = options.nextId();
       const startTime = performance.now();
@@ -105,6 +111,7 @@ export function instrumentWebSocket(
       const frames: WebSocketFrame[] = [];
 
       const pushFrame = (frame: WebSocketFrame) => {
+        if (!active) return;
         frames.push(frame);
         // Bound retention: a chatty socket must not grow without limit.
         if (frames.length > maxFrames) frames.splice(0, frames.length - maxFrames);
@@ -142,6 +149,7 @@ export function instrumentWebSocket(
       }
 
       this.addEventListener('open', () => {
+        if (!active) return;
         const now = performance.now();
         try {
           sink.onUpdate(id, {
@@ -160,6 +168,7 @@ export function instrumentWebSocket(
       });
 
       this.addEventListener('close', (event: CloseEvent) => {
+        if (!active) return;
         const endTime = performance.now();
         pushFrame({
           direction: 'receive',
@@ -182,6 +191,7 @@ export function instrumentWebSocket(
       });
 
       this.addEventListener('error', () => {
+        if (!active) return;
         try {
           sink.onUpdate(id, { phase: 'failed', error: 'WebSocket error' });
         } catch {
@@ -192,10 +202,12 @@ export function instrumentWebSocket(
       // Wrap `send` per-instance so outbound frames are captured too.
       const originalSend = this.send.bind(this);
       this.send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-        try {
-          pushFrame(describeFrame('send', data, maxFramePayload));
-        } catch {
-      // Ignore.
+        if (active) {
+          try {
+            pushFrame(describeFrame('send', data, maxFramePayload));
+          } catch {
+            // Ignore.
+          }
         }
         originalSend(data);
       };
@@ -207,7 +219,10 @@ export function instrumentWebSocket(
 
   return {
     dispose() {
-      globalThis.WebSocket = Original;
+      active = false;
+      if (globalThis.WebSocket === (OptikWebSocket as unknown as typeof WebSocket)) {
+        globalThis.WebSocket = Original;
+      }
     },
   };
 }
@@ -265,10 +280,12 @@ export function instrumentEventSource(
   if (typeof Original !== 'function') return { dispose() {} };
 
   const { maxFrames = 500, maxFramePayload = 8 * 1024 } = options;
+  let active = true;
 
   class OptikEventSource extends Original {
     constructor(url: string | URL, init?: EventSourceInit) {
       super(url, init);
+      if (!active) return;
       const id = options.nextId();
       const startTime = performance.now();
       const { url: fullUrl, name, origin, query } = splitUrl(String(url));
@@ -294,6 +311,7 @@ export function instrumentEventSource(
       }
 
       this.addEventListener('open', () => {
+        if (!active) return;
         try {
           sink.onUpdate(id, {
             phase: 'loading',
@@ -306,6 +324,7 @@ export function instrumentEventSource(
       });
 
       this.addEventListener('message', (event: MessageEvent) => {
+        if (!active) return;
         frames.push(describeFrame('receive', event.data, maxFramePayload));
         if (frames.length > maxFrames) frames.splice(0, frames.length - maxFrames);
         try {
@@ -316,6 +335,7 @@ export function instrumentEventSource(
       });
 
       this.addEventListener('error', () => {
+        if (!active) return;
         try {
           sink.onUpdate(id, {
             phase: this.readyState === 2 ? 'failed' : 'loading',
@@ -331,7 +351,10 @@ export function instrumentEventSource(
   globalThis.EventSource = OptikEventSource as unknown as typeof EventSource;
   return {
     dispose() {
-      globalThis.EventSource = Original;
+      active = false;
+      if (globalThis.EventSource === (OptikEventSource as unknown as typeof EventSource)) {
+        globalThis.EventSource = Original;
+      }
     },
   };
 }

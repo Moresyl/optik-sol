@@ -11,9 +11,12 @@ import {
 } from './body';
 
 describe('network body helpers', () => {
-  it.each(['ascii', '中文', '😀', '\ud800x', 'x\udc00'])('matches UTF-8 encoding for %j', (text) => {
-    expect(byteLengthOf(text)).toBe(new TextEncoder().encode(text).byteLength);
-  });
+  it.each(['ascii', '中文', '😀', '\ud800x', 'x\udc00', '\ud800\u0800'])(
+    'matches UTF-8 encoding for %j',
+    (text) => {
+      expect(byteLengthOf(text)).toBe(new TextEncoder().encode(text).byteLength);
+    },
+  );
 
   it('normalizes MIME types and detects textual formats', () => {
     expect(mimeTypeOf(' Application/Problem+JSON; Charset=UTF-8 ')).toBe(

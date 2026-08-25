@@ -59,13 +59,15 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
   const originalOpen = Original.prototype.open;
   const originalSend = Original.prototype.send;
   const originalSetRequestHeader = Original.prototype.setRequestHeader;
+  let active = true;
 
-  Original.prototype.open = function open(
+  const wrappedOpen = function open(
     this: XMLHttpRequest,
     method: string,
     url: string | URL,
     ...rest: unknown[]
   ) {
+    if (!active) return (originalOpen as Function).call(this, method, url, ...rest);
     states.set(this, {
       id: nextId(),
       method: String(method || 'GET').toUpperCase(),
@@ -76,20 +78,24 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
     });
     return (originalOpen as Function).call(this, method, url, ...rest);
   } as typeof originalOpen;
+  Original.prototype.open = wrappedOpen;
 
-  Original.prototype.setRequestHeader = function setRequestHeader(
+  const wrappedSetRequestHeader = function setRequestHeader(
     this: XMLHttpRequest,
     name: string,
     value: string,
   ) {
+    if (!active) return originalSetRequestHeader.call(this, name, value);
     states.get(this)?.requestHeaders.push([String(name), String(value)]);
     return originalSetRequestHeader.call(this, name, value);
   };
+  Original.prototype.setRequestHeader = wrappedSetRequestHeader;
 
-  Original.prototype.send = function send(
+  const wrappedSend = function send(
     this: XMLHttpRequest,
     body?: Document | XMLHttpRequestBodyInit | null,
   ) {
+    if (!active) return originalSend.call(this, body as XMLHttpRequestBodyInit);
     const state = states.get(this);
     if (!state || state.internal) return originalSend.call(this, body as XMLHttpRequestBodyInit);
 
@@ -123,26 +129,19 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
       // Never block the request on our bookkeeping.
     }
 
-    const onReadyStateChange = () => {
-      try {
-        if (this.readyState === 2 /* HEADERS_RECEIVED */) {
-          state.responseStart = performance.now();
-          sink.onUpdate(state.id, {
-            phase: 'loading',
-            status: this.status,
-            statusText: this.statusText,
-            responseHeaders: parseHeaderString(safeAllResponseHeaders(this)),
-            timing: { startTime: state.startTime, responseStart: state.responseStart },
-          });
-        } else if (this.readyState === 4 /* DONE */) {
-          finish(this, state);
-        }
-      } catch {
-        // Ignore.
-      }
+    let settled = false;
+
+    const cleanup = () => {
+      this.removeEventListener('readystatechange', onReadyStateChange);
+      this.removeEventListener('error', onRequestError);
+      this.removeEventListener('abort', onAbort);
+      this.removeEventListener('timeout', onTimeout);
     };
 
-    const onError = (phase: 'failed' | 'aborted', message: string) => () => {
+    const settleFailure = (phase: 'failed' | 'aborted', message: string) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
       const endTime = performance.now();
       try {
         sink.onUpdate(state.id, {
@@ -159,6 +158,32 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
         // Ignore.
       }
     };
+
+    const onReadyStateChange = () => {
+      if (settled) return;
+      try {
+        if (this.readyState === 2 /* HEADERS_RECEIVED */) {
+          state.responseStart = performance.now();
+          sink.onUpdate(state.id, {
+            phase: 'loading',
+            status: this.status,
+            statusText: this.statusText,
+            responseHeaders: parseHeaderString(safeAllResponseHeaders(this)),
+            timing: { startTime: state.startTime, responseStart: state.responseStart },
+          });
+        } else if (this.readyState === 4 /* DONE */) {
+          settled = true;
+          cleanup();
+          finish(this, state);
+        }
+      } catch {
+        // Ignore.
+      }
+    };
+
+    const onRequestError = () => settleFailure('failed', 'Request failed');
+    const onAbort = () => settleFailure('aborted', 'Request aborted');
+    const onTimeout = () => settleFailure('failed', 'Request timed out');
 
     const finish = (xhr: XMLHttpRequest, s: State) => {
       const endTime = performance.now();
@@ -182,18 +207,31 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
     };
 
     this.addEventListener('readystatechange', onReadyStateChange);
-    this.addEventListener('error', onError('failed', 'Request failed'));
-    this.addEventListener('abort', onError('aborted', 'Request aborted'));
-    this.addEventListener('timeout', onError('failed', 'Request timed out'));
+    this.addEventListener('error', onRequestError);
+    this.addEventListener('abort', onAbort);
+    this.addEventListener('timeout', onTimeout);
 
-    return originalSend.call(this, body as XMLHttpRequestBodyInit);
+    try {
+      return originalSend.call(this, body as XMLHttpRequestBodyInit);
+    } catch (error) {
+      const message =
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      settleFailure('failed', message);
+      throw error;
+    }
   };
+  Original.prototype.send = wrappedSend;
 
   return {
     dispose() {
-      Original.prototype.open = originalOpen;
-      Original.prototype.send = originalSend;
-      Original.prototype.setRequestHeader = originalSetRequestHeader;
+      active = false;
+      // Do not overwrite an instrumentor installed after Optik. If another wrapper is
+      // chained above ours, it can keep calling this now-inert pass-through safely.
+      if (Original.prototype.open === wrappedOpen) Original.prototype.open = originalOpen;
+      if (Original.prototype.send === wrappedSend) Original.prototype.send = originalSend;
+      if (Original.prototype.setRequestHeader === wrappedSetRequestHeader) {
+        Original.prototype.setRequestHeader = originalSetRequestHeader;
+      }
     },
   };
 }

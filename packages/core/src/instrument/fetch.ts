@@ -33,12 +33,15 @@ export function instrumentFetch(
   const { maxBodyBytes = DEFAULT_MAX_BODY_BYTES, nextId } = options;
   const originalFetch = globalThis.fetch;
   if (typeof originalFetch !== 'function') return { dispose() {} };
+  let active = true;
+  const readers = new Set<ReadableStreamDefaultReader<Uint8Array>>();
 
   const wrapped = function fetch(
     this: unknown,
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> {
+    if (!active) return originalFetch.call(globalThis, input as RequestInfo, init);
     const id = nextId();
     const startTime = performance.now();
 
@@ -106,6 +109,7 @@ export function instrumentFetch(
 
     return promise.then(
       (response) => {
+        if (!active) return response;
         const responseStart = performance.now();
         const responseHeaders = safeHeaderEntries(response.headers);
         const mime = mimeTypeOf(findHeader(responseHeaders, 'content-type'));
@@ -161,23 +165,24 @@ export function instrumentFetch(
         }
 
         // Detached: the app gets its Response immediately, we catch up whenever.
-        clone
-          .text()
-          .then((text) => {
-            finalize(sink, id, startTime, responseStart, truncateText(text, mime, maxBodyBytes));
+        readBoundedBody(clone, mime, maxBodyBytes, declaredLength, readers)
+          .then((body) => {
+            if (active) finalize(sink, id, startTime, responseStart, body);
           })
           .catch(() => {
-            finalize(sink, id, startTime, responseStart, {
-              mimeType: mime,
-              omitted: true,
-              omittedReason: 'unavailable',
-            });
+            if (active) {
+              finalize(sink, id, startTime, responseStart, {
+                mimeType: mime,
+                omitted: true,
+                omittedReason: 'unavailable',
+              });
+            }
           });
 
         return response;
       },
       (error: unknown) => {
-        reportFailure(sink, id, startTime, error);
+        if (active) reportFailure(sink, id, startTime, error);
         throw error;
       },
     );
@@ -191,9 +196,84 @@ export function instrumentFetch(
 
   return {
     dispose() {
-      globalThis.fetch = originalFetch;
+      active = false;
+      for (const reader of readers) {
+        // Do not await: tee cancellation may wait for the application's original
+        // response branch. The pending read settles and removes itself from the set.
+        void reader.cancel().catch(() => undefined);
+      }
+      // Preserve wrappers installed after Optik. A later wrapper may still close over
+      // ours, so the inactive branch above remains as a transparent pass-through.
+      if (globalThis.fetch === wrapped) globalThis.fetch = originalFetch;
     },
   };
+}
+
+/**
+ * Read a cloned response with a hard byte ceiling even when Content-Length is absent
+ * or dishonest. `Response.text()` would buffer the entire clone before we could
+ * truncate it, which is precisely the failure mode this limit exists to prevent.
+ */
+async function readBoundedBody(
+  response: Response,
+  mime: string | undefined,
+  maxBytes: number,
+  declaredLength: number,
+  activeReaders: Set<ReadableStreamDefaultReader<Uint8Array>>,
+): Promise<NetworkRecord['responseBody']> {
+  const stream = response.body;
+  if (!stream || typeof stream.getReader !== 'function') {
+    // Legacy/fake Response implementations have no readable stream. Only fall back
+    // to text() when a trustworthy upper bound is available.
+    if (!Number.isFinite(declaredLength) || declaredLength > maxBytes) {
+      return { mimeType: mime, omitted: true, omittedReason: 'unavailable' };
+    }
+    return truncateText(await response.text(), mime, maxBytes);
+  }
+
+  const reader = stream.getReader();
+  activeReaders.add(reader);
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let bytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        parts.push(decoder.decode());
+        const text = parts.join('');
+        return { text, mimeType: mime, size: bytes };
+      }
+
+      const remaining = Math.max(0, maxBytes - bytes);
+      if (remaining > 0) {
+        parts.push(decoder.decode(value.subarray(0, remaining), { stream: true }));
+      }
+      bytes += value.byteLength;
+
+      if (bytes > maxBytes) {
+        parts.push(decoder.decode());
+        // Do not await: cancelling one branch of a cloned/teed response can wait for
+        // the application's branch, and instrumentation must never delay it.
+        void reader.cancel().catch(() => undefined);
+        return {
+          text: parts.join(''),
+          mimeType: mime,
+          size: Number.isFinite(declaredLength) ? declaredLength : undefined,
+          omitted: true,
+          omittedReason: 'too-large',
+        };
+      }
+    }
+  } finally {
+    activeReaders.delete(reader);
+    try {
+      reader.releaseLock();
+    } catch {
+      // Already released or cancelled by disposal.
+    }
+  }
 }
 
 function finalize(
@@ -211,7 +291,7 @@ function finalize(
       timing: { startTime, responseStart, endTime, duration: endTime - startTime },
     });
   } catch {
-          // Ignore.
+    // Ignore.
   }
 }
 
@@ -226,7 +306,7 @@ function reportFailure(sink: NetworkSink, id: string, startTime: number, error: 
       timing: { startTime, endTime, duration: endTime - startTime },
     });
   } catch {
-          // Ignore.
+    // Ignore.
   }
 }
 
