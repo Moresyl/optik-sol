@@ -30,8 +30,10 @@
     "@vitest/coverage-v8": "4.1.11",
     "happy-dom": "20.11.6",
     "rimraf": "^6.0.1",
+    "solid-js": "1.9.14",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
+    "vite-plugin-solid": "2.11.14",
     "vitest": "4.1.11"
   },
   "pnpm": {

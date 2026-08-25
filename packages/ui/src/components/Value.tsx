@@ -126,6 +126,8 @@ export function ValueView(props: ValueProps): JSX.Element {
   const [children, setChildren] = createSignal<PropertyDescriptor[] | null>(null);
   const [released, setReleased] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
+  let pendingFrame: number | undefined;
+  let disposed = false;
 
   const depth = () => props.depth ?? 0;
   const domain = (): ValueDomain => props.domain ?? props.kernel.log;
@@ -146,8 +148,20 @@ export function ValueView(props: ValueProps): JSX.Element {
     return toRemoteObject(parsed, domain().registry);
   })();
 
+  /** 归还 getProperties 为这一层每个描述符借来的句柄。 */
+  const releaseProperties = (properties: PropertyDescriptor[] | null): void => {
+    for (const property of properties ?? []) {
+      for (const child of [property.value, property.get, property.set]) {
+        if (child?.objectId !== undefined) domain().registry.release(child.objectId);
+      }
+    }
+  };
+
   // 这份句柄是这个组件自己借的（解析出来的副本没有别人引用），谁借谁还。
   onCleanup(() => {
+    disposed = true;
+    if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
+    releaseProperties(children());
     if (jsonMirror?.objectId !== undefined) domain().registry.release(jsonMirror.objectId);
   });
 
@@ -159,7 +173,9 @@ export function ValueView(props: ValueProps): JSX.Element {
     if (children() !== null || released()) return;
     setLoading(true);
     // 取属性可能触发 getter 求值，放到下一帧避免阻塞本次点击的视觉反馈。
-    requestAnimationFrame(() => {
+    pendingFrame = requestAnimationFrame(() => {
+      pendingFrame = undefined;
+      if (disposed) return;
       // 不展开原型链、也不调用 getter：在调试器里触发副作用是不可接受的，
       // getter 会以 `(...)` 占位显示，用户想看再单独求值。
       const result = domain().getProperties(target().objectId!, {
@@ -167,6 +183,10 @@ export function ValueView(props: ValueProps): JSX.Element {
         includeNonEnumerable: true,
         invokeGetters: false,
       });
+      if (disposed) {
+        releaseProperties(result);
+        return;
+      }
       setLoading(false);
       if (result === null) setReleased(true);
       else setChildren(result);
