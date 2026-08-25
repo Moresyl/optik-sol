@@ -11,7 +11,13 @@
  *   否则 SSR 构建期就会去碰 `document`。
  */
 
-import { mount, instance, type MountOptions, type OptikInstance } from 'optik-ui';
+import {
+  MAX_RING_BUFFER_CAPACITY,
+  mount,
+  instance,
+  type MountOptions,
+  type OptikInstance,
+} from 'optik-ui';
 
 export { mount, instance };
 export type { MountOptions, OptikInstance };
@@ -27,6 +33,7 @@ export {
   createHar,
   createInProcessTransportPair,
   KernelProtocolMethods,
+  MAX_RING_BUFFER_CAPACITY,
   isError,
   isEvent,
   isRequest,
@@ -80,17 +87,21 @@ function readScriptOptions(): MountOptions {
   if (script.dataset['open'] !== undefined) options.defaultOpen = true;
 
   const maxLogs = Number(script.dataset['maxLogs']);
-  if (Number.isFinite(maxLogs) && maxLogs > 0) options.log = { maxEntries: maxLogs };
+  if (validCapacity(maxLogs)) options.log = { maxEntries: maxLogs };
 
   const maxRequests = Number(script.dataset['maxRequests']);
-  if (Number.isFinite(maxRequests) && maxRequests > 0)
+  if (validCapacity(maxRequests))
     options.network = { maxRecords: maxRequests };
 
   const maxLongTasks = Number(script.dataset['maxLongTasks']);
-  if (Number.isFinite(maxLongTasks) && maxLongTasks > 0)
+  if (validCapacity(maxLongTasks))
     options.performance = { maxLongTasks };
 
   return options;
+}
+
+function validCapacity(value: number): boolean {
+  return Number.isFinite(value) && value >= 1 && value <= MAX_RING_BUFFER_CAPACITY;
 }
 
 /** 由 IIFE 构建在加载时调用。ESM 构建不会走到这里。 */
@@ -111,5 +122,15 @@ export function autoMount(): void {
    * 先挂到 documentElement 上，插桩随之立即生效——等到 DOM 就绪再挂载，
    * 会白白丢掉页面启动阶段的日志和请求，而那恰恰是最需要看的一段。
    */
-  mount({ ...options, container: document.body ?? document.documentElement });
+  try {
+    mount({ ...options, container: document.body ?? document.documentElement });
+  } catch (error) {
+    // A diagnostic helper must never prevent later host-page scripts from running.
+    // mount() is transactional, so all instrumentation and DOM have already rolled back.
+    try {
+      console.warn('[optik] automatic mount failed:', error);
+    } catch {
+      // Hardened pages can freeze or replace console methods.
+    }
+  }
 }

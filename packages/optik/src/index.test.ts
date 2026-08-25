@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { autoMount, instance } from './index';
 
 afterEach(() => {
@@ -40,5 +40,34 @@ describe('autoMount script configuration', () => {
     addScript({ 'data-max-long-tasks': 'NaN', 'data-optik-manual': '' });
     autoMount();
     expect(instance()).toBeNull();
+  });
+
+  it('ignores declarative capacities above the allocation safety ceiling', () => {
+    addScript({ 'data-max-long-tasks': '1000001' });
+    autoMount();
+    const domain = instance()!.kernel.performance;
+    for (let index = 0; index < 201; index++) {
+      domain.onLongTask({
+        id: `task:${index}`,
+        startTime: index,
+        duration: 50,
+        name: 'self',
+        attribution: [],
+      });
+    }
+    expect(domain.longTasks()).toHaveLength(200);
+  });
+
+  it('contains automatic mount failures after transactional rollback', () => {
+    addScript();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const attach = vi.spyOn(Element.prototype, 'attachShadow').mockImplementation(() => {
+      throw new Error('Shadow DOM blocked');
+    });
+    expect(() => autoMount()).not.toThrow();
+    expect(instance()).toBeNull();
+    expect(warn).toHaveBeenCalledWith('[optik] automatic mount failed:', expect.any(Error));
+    attach.mockRestore();
+    warn.mockRestore();
   });
 });

@@ -14,7 +14,7 @@
  * 面板自身的宿主节点会被过滤掉——调试器不应该在树里看到自己。
  */
 
-import { createSignal, createMemo, For, Show, onCleanup, type JSX } from 'solid-js';
+import { createSignal, createMemo, createEffect, For, Show, onCleanup, type JSX } from 'solid-js';
 import { CopyButton, type CopyController } from './Copy';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
@@ -267,9 +267,29 @@ function isOwnNode(node: Element): boolean {
   return node.hasAttribute('data-optik-root') || node.hasAttribute('data-optik-highlight');
 }
 
+const OWN_NODE_SELECTOR = '[data-optik-root],[data-optik-highlight]';
+
+function isInsideOwnTree(node: Node): boolean {
+  const element = node instanceof Element ? node : node.parentElement;
+  return Boolean(element?.closest(OWN_NODE_SELECTOR));
+}
+
+/**
+ * MutationObserver 的 childList 记录以父节点作为 target。Optik 根节点挂到 body
+ * 时 target 因而是页面节点，必须继续检查 addedNodes / removedNodes，避免面板把自己
+ * 的挂载、高亮层和文本更新误判成宿主页面变化并不断刷新。
+ */
+function isOwnMutation(record: MutationRecord): boolean {
+  if (isInsideOwnTree(record.target)) return true;
+  if (record.type !== 'childList') return false;
+  const changedNodes = [...record.addedNodes, ...record.removedNodes];
+  return changedNodes.length > 0 && changedNodes.every(isInsideOwnTree);
+}
+
 function TreeNode(props: {
   node: Element;
   depth: number;
+  version: () => number;
   selected: () => Element | null;
   onSelect: (node: Element) => void;
 }): JSX.Element {
@@ -277,17 +297,22 @@ function TreeNode(props: {
 
   const children = createMemo(() => {
     if (!expanded()) return [];
+    props.version();
     return [...props.node.children].filter((child) => !isOwnNode(child));
   });
 
   /** 只有一个文本子节点时直接内联显示，省掉一层无意义的展开。 */
   const inlineText = createMemo(() => {
+    props.version();
     if (props.node.children.length > 0) return null;
     const text = props.node.textContent?.trim() ?? '';
     return text.length > 0 && text.length <= 80 ? text : null;
   });
 
-  const hasChildren = () => [...props.node.children].some((child) => !isOwnNode(child));
+  const hasChildren = () => {
+    props.version();
+    return [...props.node.children].some((child) => !isOwnNode(child));
+  };
   const isSelected = () => props.selected() === props.node;
 
   return (
@@ -343,6 +368,7 @@ function TreeNode(props: {
             <TreeNode
               node={child}
               depth={props.depth + 1}
+              version={props.version}
               selected={props.selected}
               onSelect={props.onSelect}
             />
@@ -358,12 +384,22 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const [selected, setSelected] = createSignal<Element | null>(null);
   const [picking, setPicking] = createSignal(false);
   const [tab, setTab] = createSignal<'tree' | 'style' | 'attrs'>('tree');
+  const [domVersion, setDomVersion] = createSignal(0);
 
   const highlighter = new Highlighter();
   let highlightTimer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => {
     clearTimeout(highlightTimer);
     highlighter.dispose();
+  });
+
+  createEffect(() => {
+    domVersion();
+    const node = selected();
+    if (node && !node.isConnected) {
+      setSelected(null);
+      highlighter.hide();
+    }
   });
 
   const select = (node: Element) => {
@@ -423,7 +459,43 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   onCleanup(stopPicking);
 
+  let mutationFrame: number | null = null;
+  let mutationObserver: MutationObserver | undefined;
+  if (typeof MutationObserver === 'function') {
+    try {
+      mutationObserver = new MutationObserver((records) => {
+        if (records.every(isOwnMutation)) return;
+        if (mutationFrame !== null) return;
+        const update = () => {
+          mutationFrame = null;
+          setDomVersion((version) => version + 1);
+        };
+        mutationFrame =
+          typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame(update)
+            : (setTimeout(update, 16) as unknown as number);
+      });
+      mutationObserver.observe(document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true,
+      });
+    } catch {
+      mutationObserver = undefined;
+    }
+  }
+  onCleanup(() => {
+    mutationObserver?.disconnect();
+    if (mutationFrame !== null) {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(mutationFrame);
+      else clearTimeout(mutationFrame);
+      mutationFrame = null;
+    }
+  });
+
   const attributes = createMemo(() => {
+    domVersion();
     const node = selected();
     if (!node) return [];
     return [...node.attributes].map(
@@ -432,6 +504,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   });
 
   const styles = createMemo(() => {
+    domVersion();
     const node = selected();
     if (!node) return [];
     let computed: CSSStyleDeclaration;
@@ -451,6 +524,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   });
 
   const boxModel = createMemo(() => {
+    domVersion();
     const node = selected();
     if (!node) return null;
     let rect: DOMRect;
@@ -507,6 +581,9 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
         >
           {picking() ? '拾取中…点击页面' : '拾取元素'}
         </button>
+        <button class="chip shrink-0" onClick={() => setDomVersion((version) => version + 1)}>
+          刷新
+        </button>
         {/* 分栏时结构和样式同屏，不需要用标签互斥切换 */}
         <Show when={!layout.wide()}>
           <For
@@ -532,7 +609,13 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
       </div>
 
       <div class="flex-1 min-h-0 overflow-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">
-        <TreeNode node={document.documentElement} depth={0} selected={selected} onSelect={select} />
+        <TreeNode
+          node={document.documentElement}
+          depth={0}
+          version={domVersion}
+          selected={selected}
+          onSelect={select}
+        />
       </div>
     </div>
   );

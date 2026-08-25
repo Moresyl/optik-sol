@@ -182,6 +182,7 @@ export {
   createHar,
   createInProcessTransportPair,
   KernelProtocolMethods,
+  MAX_RING_BUFFER_CAPACITY,
   isError,
   isEvent,
   isRequest,

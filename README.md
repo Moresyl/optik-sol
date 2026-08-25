@@ -28,7 +28,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | --- | --- |
 | **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
 | **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — request and response headers and bodies, timing breakdown, per-frame WebSocket records, privacy-safe HAR 1.2 export |
-| **Elements** | Lazy DOM tree browsing, in-page picking, highlighting, box model, computed styles, selector copy |
+| **Elements** | Live, lazily expanded DOM tree, in-page picking, highlighting, box model, computed styles, selector copy |
 | **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access |
 | **Environment** | Device, viewport, safe area, memory, load timing, bounded main-thread long-task evidence, capability detection |
 

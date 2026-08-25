@@ -131,6 +131,55 @@ describe('OptikKernel', () => {
     expect(kernel.evaluate('throw 123')).toMatchObject({ threw: true, error: 123 });
   });
 
+  it('does not execute a runtime SyntaxError twice', () => {
+    const kernel = create({ capture: { console: false } });
+    (globalThis as Record<string, unknown>)['__optikSyntaxRuns'] = 0;
+    const result = kernel.evaluate(
+      '(() => { globalThis.__optikSyntaxRuns++; throw new SyntaxError("runtime"); })()',
+    );
+    expect(result).toMatchObject({ threw: true, error: expect.any(SyntaxError) });
+    expect((globalThis as Record<string, unknown>)['__optikSyntaxRuns']).toBe(1);
+    delete (globalThis as Record<string, unknown>)['__optikSyntaxRuns'];
+  });
+
+  it('restores the exact page-owned $_ descriptor without invoking accessors', () => {
+    const kernel = create({ capture: { console: false } });
+    const getter = vi.fn(() => 'host');
+    const setter = vi.fn();
+    Object.defineProperty(globalThis, '$_', {
+      configurable: true,
+      enumerable: false,
+      get: getter,
+      set: setter,
+    });
+    const before = Object.getOwnPropertyDescriptor(globalThis, '$_');
+    try {
+      expect(kernel.evaluate('2 + 3')).toMatchObject({ value: 5, threw: false });
+      expect(getter).not.toHaveBeenCalled();
+      expect(setter).not.toHaveBeenCalled();
+      expect(Object.getOwnPropertyDescriptor(globalThis, '$_')).toEqual(before);
+    } finally {
+      delete (globalThis as Record<string, unknown>)['$_'];
+    }
+  });
+
+  it('preserves an own undefined $_ property instead of deleting it', () => {
+    const kernel = create({ capture: { console: false } });
+    Object.defineProperty(globalThis, '$_', {
+      configurable: true,
+      enumerable: false,
+      value: undefined,
+      writable: false,
+    });
+    const before = Object.getOwnPropertyDescriptor(globalThis, '$_');
+    try {
+      kernel.evaluate('1');
+      expect(Object.getOwnPropertyDescriptor(globalThis, '$_')).toEqual(before);
+    } finally {
+      delete (globalThis as Record<string, unknown>)['$_'];
+    }
+  });
+
   it('can be restarted after disposal', () => {
     const kernel = create({
       passthrough: false,

@@ -245,25 +245,64 @@ export class OptikKernel {
     const indirectEval = eval;
 
     // Expose `$_` (last result) the way DevTools does.
-    const previous = (globalThis as Record<string, unknown>)['$_'];
-    (globalThis as Record<string, unknown>)['$_'] = this.#lastEvaluation;
+    const target = globalThis as Record<string, unknown>;
+    let previousDescriptor: PropertyDescriptor | undefined;
+    let installedLastResult = false;
+    try {
+      previousDescriptor = Object.getOwnPropertyDescriptor(globalThis, '$_');
+      if (!previousDescriptor || previousDescriptor.configurable) {
+        Object.defineProperty(globalThis, '$_', {
+          value: this.#lastEvaluation,
+          configurable: true,
+          enumerable: previousDescriptor?.enumerable ?? true,
+          writable: true,
+        });
+        installedLastResult = true;
+      } else if ('value' in previousDescriptor && previousDescriptor.writable) {
+        target['$_'] = this.#lastEvaluation;
+        installedLastResult = true;
+      }
+    } catch {
+      // A hardened page can reserve $_. Evaluation still works without last-result sugar.
+    }
 
     try {
       let value: unknown;
       try {
+        // Parse the expression form without executing it. Catching a SyntaxError from
+        // the real evaluation is wrong: user code can throw SyntaxError at runtime,
+        // and retrying it as a statement would execute side effects twice.
+        indirectEval(`false && (${expression}\n)`);
         value = indirectEval(`(${expression}\n)`);
-      } catch (wrapError) {
-        // Statements (`let x = 1`, `if (...) {}`) fail when parenthesised; retry raw.
-        if (wrapError instanceof SyntaxError) value = indirectEval(expression);
-        else throw wrapError;
+      } catch (parseOrRuntimeError) {
+        if (!(parseOrRuntimeError instanceof SyntaxError)) throw parseOrRuntimeError;
+
+        // Determine whether the SyntaxError came from parsing or user execution.
+        // A second parse-only pass of the same expression succeeds for runtime errors.
+        try {
+          indirectEval(`false && (${expression}\n)`);
+          throw parseOrRuntimeError;
+        } catch (verificationError) {
+          if (!(verificationError instanceof SyntaxError) || verificationError === parseOrRuntimeError) {
+            throw verificationError;
+          }
+        }
+        // Statements (`let x = 1`, `if (...) {}`) fail only the expression parse.
+        value = indirectEval(expression);
       }
       this.#lastEvaluation = value;
       return { value, threw: false, duration: performance.now() - started };
     } catch (error) {
       return { error, threw: true, duration: performance.now() - started };
     } finally {
-      if (previous === undefined) delete (globalThis as Record<string, unknown>)['$_'];
-      else (globalThis as Record<string, unknown>)['$_'] = previous;
+      if (installedLastResult) {
+        try {
+          if (previousDescriptor) Object.defineProperty(globalThis, '$_', previousDescriptor);
+          else delete target['$_'];
+        } catch {
+          // User code may have made the temporary property non-configurable.
+        }
+      }
     }
   }
 

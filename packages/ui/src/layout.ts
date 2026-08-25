@@ -36,33 +36,57 @@ export const useLayout = (): Layout => useContext(LayoutContext);
  */
 export function createLayout(): Layout & { observe: (element: HTMLElement) => void } {
   const [width, setWidth] = createSignal(0);
+  let stopObservation: (() => void) | undefined;
+  onCleanup(() => stopObservation?.());
 
-  const media = typeof matchMedia === 'function' ? matchMedia('(pointer: fine)') : null;
+  let media: MediaQueryList | null = null;
+  try {
+    media = typeof matchMedia === 'function' ? matchMedia('(pointer: fine)') : null;
+  } catch {
+    // Some embedded browsers expose matchMedia but throw for unsupported queries.
+  }
   const [fine, setFine] = createSignal(media?.matches ?? false);
   if (media) {
     const onChange = (event: MediaQueryListEvent) => setFine(event.matches);
-    media.addEventListener('change', onChange);
-    onCleanup(() => media.removeEventListener('change', onChange));
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange);
+      onCleanup(() => media?.removeEventListener('change', onChange));
+    } else if (typeof media.addListener === 'function') {
+      // Safari < 14 and older Android WebViews only implement the legacy pair.
+      media.addListener(onChange);
+      onCleanup(() => media?.removeListener(onChange));
+    }
   }
 
   const observe = (element: HTMLElement) => {
+    stopObservation?.();
+    stopObservation = undefined;
     const measure = () => setWidth(element.clientWidth);
     measure();
 
     if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeObserver(measure);
-      observer.observe(element);
-      onCleanup(() => observer.disconnect());
-      return;
+      let observer: ResizeObserver | undefined;
+      try {
+        observer = new ResizeObserver(measure);
+        observer.observe(element);
+        stopObservation = () => observer?.disconnect();
+        return;
+      } catch {
+        try {
+          observer?.disconnect();
+        } catch {
+          // Fall through to window events.
+        }
+      }
     }
 
     // 旧 WebView 没有 ResizeObserver；面板是全宽的，视口变化足以覆盖。
-    addEventListener('resize', measure);
-    addEventListener('orientationchange', measure);
-    onCleanup(() => {
-      removeEventListener('resize', measure);
-      removeEventListener('orientationchange', measure);
-    });
+    globalThis.addEventListener('resize', measure);
+    globalThis.addEventListener('orientationchange', measure);
+    stopObservation = () => {
+      globalThis.removeEventListener('resize', measure);
+      globalThis.removeEventListener('orientationchange', measure);
+    };
   };
 
   const wide = () => width() >= SPLIT_MIN_WIDTH;

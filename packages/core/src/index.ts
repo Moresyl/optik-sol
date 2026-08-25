@@ -16,7 +16,7 @@ export { SystemDomain, readSafeArea } from './domains/system';
 
 export { Emitter } from './emitter';
 export type { Listener, Unsubscribe } from './emitter';
-export { RingBuffer } from './ring-buffer';
+export { RingBuffer, MAX_RING_BUFFER_CAPACITY } from './ring-buffer';
 
 export {
   ObjectRegistry,
