@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Privacy-safe HAR 1.2 export with explicit payload and raw-value opt-ins
+- Bounded main-thread Long Tasks capture, attribution, Environment-panel diagnostics, and declarative script configuration
+- A protocol client/router, isolated in-process transport, and trusted-transport kernel bridge with pagination and borrowed-object cleanup for logs, network records, performance data, and live events
+
+### Changed
+
+- Added enforceable coverage thresholds and broad edge/error/lifecycle regression tests
+- Hardened instrumentation teardown, bounded response capture, transactional mounting, plugin cleanup, object-handle release, clipboard feedback, and runtime buffer resizing
+
 ## [0.2.0] - 2026-08-11
 
 ### Added

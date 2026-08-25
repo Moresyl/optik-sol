@@ -94,9 +94,14 @@ export class RingBuffer<T> {
   }
 }
 
+/** Hard safety ceiling: large enough for diagnostics, bounded before Array allocation. */
+export const MAX_RING_BUFFER_CAPACITY = 1_000_000;
+
 function normalizeCapacity(capacity: number): number {
-  if (!Number.isFinite(capacity) || capacity < 1) {
-    throw new RangeError('RingBuffer capacity must be a finite number >= 1');
+  if (!Number.isFinite(capacity) || capacity < 1 || capacity > MAX_RING_BUFFER_CAPACITY) {
+    throw new RangeError(
+      `RingBuffer capacity must be a finite number between 1 and ${MAX_RING_BUFFER_CAPACITY}`,
+    );
   }
   return Math.floor(capacity);
 }

@@ -96,6 +96,6 @@ user-select: text;
 
 ## 内核与 UI 的边界
 
-两者之间走 **CDP（Chrome DevTools Protocol）形状**的消息：`Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`，中间隔着一层 `Transport` 抽象。
+核心提供 **CDP（Chrome DevTools Protocol）形状**的消息：`Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`，中间隔着一层 `Transport` 抽象。内置 UI 为避免序列化高频本地事件，直接使用同一套域门面；远程或 Worker 客户端可用 `attachKernelProtocol()` 把域门面绑定到可信 transport。
 
 今天这层跑在进程内。换成 WebSocket 就是远程调试，域 API 不用改。核心插桩可以调用浏览器 API（系统域也会短暂创建安全区探针），但它不持有、不渲染面板 UI。

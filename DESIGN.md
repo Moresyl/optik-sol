@@ -101,7 +101,7 @@ URLs are stripped of credentials, query parameters, and fragments before copying
 
 ## The kernel/UI boundary
 
-The two sides talk in **CDP-shaped** (Chrome DevTools Protocol) messages: `Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`, with a `Transport` abstraction in between.
+Core exposes **CDP-shaped** (Chrome DevTools Protocol) messages: `Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`, with a `Transport` abstraction in between. The built-in UI uses the same domain facade directly to avoid serializing high-frequency local events; `attachKernelProtocol()` binds that facade to a trusted transport for remote or worker clients.
 
 Today that layer runs in-process. Swap it for a WebSocket and you have remote debugging,
 without changing the domain APIs. Core instrumentation may use browser APIs (and the

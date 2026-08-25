@@ -5,10 +5,9 @@
  * either a `Request` (id + method + params -> Response) or a server-pushed `Event`
  * (method + params). Domains are namespaced with `Domain.command`.
  *
- * Why this matters: the in-page panel and a future remote debugger speak the *same*
- * language. Swapping `InProcessTransport` for a WebSocket transport turns Optik into a
- * remote debugging agent with zero changes to the domains or the UI. It also means we
- * can proxy a real Chrome DevTools frontend later without rewriting the kernel.
+ * The built-in UI uses the same domain facade directly to avoid serializing high-volume
+ * local events. `attachKernelProtocol` binds that facade to a trusted transport for a
+ * worker or remote client without changing domain implementations.
  */
 
 export interface Request<P = unknown> {
@@ -51,22 +50,54 @@ export const ErrorCode = {
   InternalError: -32603,
   /** The object id referenced by the request has been evicted from the registry. */
   ObjectReleased: -32000,
+  RequestTimeout: -32001,
+  TransportClosed: -32002,
 } as const;
 
-export function isResponse(msg: Message): msg is Response {
-  return 'id' in msg && !('method' in msg);
+export function isResponse(msg: unknown): msg is Response {
+  if (!isRecord(msg) || !validId(msg['id']) || 'method' in msg) return false;
+  if ('result' in msg) return !('error' in msg);
+  return !('result' in msg) && isProtocolError(msg['error']);
 }
 
-export function isRequest(msg: Message): msg is Request {
-  return 'id' in msg && 'method' in msg;
+export function isRequest(msg: unknown): msg is Request {
+  return (
+    isRecord(msg) &&
+    validId(msg['id']) &&
+    validMethod(msg['method']) &&
+    !('result' in msg) &&
+    !('error' in msg)
+  );
 }
 
-export function isEvent(msg: Message): msg is Event {
-  return !('id' in msg) && 'method' in msg;
+export function isEvent(msg: unknown): msg is Event {
+  return isRecord(msg) && !('id' in msg) && validMethod(msg['method']) && 'params' in msg;
 }
 
-export function isError(res: Response): res is ErrorResponse {
-  return 'error' in res;
+export function isError(res: unknown): res is ErrorResponse {
+  return isResponse(res) && 'error' in res;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function validId(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function validMethod(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 256;
+}
+
+function isProtocolError(value: unknown): value is ProtocolError {
+  return (
+    isRecord(value) &&
+    typeof value['code'] === 'number' &&
+    Number.isSafeInteger(value['code']) &&
+    typeof value['message'] === 'string' &&
+    (value['data'] === undefined || typeof value['data'] === 'string')
+  );
 }
 
 /**
@@ -76,6 +107,6 @@ export function isError(res: Response): res is ErrorResponse {
  */
 export interface Transport {
   send(message: Message): void;
-  onMessage(handler: (message: Message) => void): void;
+  onMessage(handler: (message: Message) => void): () => void;
   close(): void;
 }

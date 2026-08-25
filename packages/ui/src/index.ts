@@ -172,8 +172,26 @@ export function instance(): OptikInstance | null {
   return current;
 }
 
-export { OptikKernel, createHar, serializeHar } from 'optik-core';
+export {
+  OptikKernel,
+  ErrorCode,
+  ProtocolClient,
+  ProtocolRequestError,
+  ProtocolRouter,
+  attachKernelProtocol,
+  createHar,
+  createInProcessTransportPair,
+  KernelProtocolMethods,
+  isError,
+  isEvent,
+  isRequest,
+  isResponse,
+  sendEvent,
+  serializeHar,
+} from 'optik-core';
 export type {
+  ErrorResponse,
+  Event as ProtocolEvent,
   HarArchive,
   HarContent,
   HarEntry,
@@ -187,6 +205,18 @@ export type {
   LongTaskRecord,
   PerformanceDomainEvents,
   PerformanceDomainOptions,
+  KernelProtocolServer,
+  LogEntriesResult,
+  LongTasksResult,
+  Message as ProtocolMessage,
+  ProtocolError,
+  ProtocolRequestOptions,
+  ProtocolPageParams,
+  Request as ProtocolRequest,
+  Response as ProtocolResponse,
+  SuccessResponse,
+  NetworkRecordsResult,
+  Transport,
 } from 'optik-core';
 export type { MountOptions as OptikOptions };
 export type { OptikPlugin, PluginContext } from './plugin';

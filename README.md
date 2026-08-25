@@ -14,7 +14,7 @@ English | [简体中文](README.zh-CN.md)
 
 ---
 
-Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 60 KB gzipped.
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 63 KB gzipped.
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -128,6 +128,31 @@ JSON and form fields are then redacted too. Raw export additionally requires
 The Environment panel also keeps a bounded history of browser-reported main-thread
 long tasks (50ms or longer), including cumulative/maximum duration and available
 browsing-context attribution. Set `capture.longTasks: false` to disable collection.
+
+### Protocol transport
+
+The public protocol layer can expose bounded logs, network records, long tasks, system
+information, and their live events to a worker or remote client. Only attach it to a
+trusted or authenticated transport because captured diagnostics may contain secrets.
+
+```ts
+const [clientSide, kernelSide] = createInProcessTransportPair();
+const server = attachKernelProtocol(optik.kernel, kernelSide);
+const client = new ProtocolClient(clientSide);
+
+const { entries, total } = await client.request(KernelProtocolMethods.LogEntries, {
+  offset: 0,
+  limit: 100,
+});
+
+client.close();
+server.dispose();
+```
+
+List commands are paginated and capped at 1000 items per response. Object expansions
+borrow child handles from the kernel; call the matching `Log.releaseObject` or
+`Network.releaseObject` command when finished. Server disposal releases every remaining
+handle borrowed by that session.
 
 ### Plugins
 

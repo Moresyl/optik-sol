@@ -14,7 +14,7 @@
 
 ---
 
-Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 60 KB。
+Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 63 KB。
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -125,6 +125,28 @@ JSON/表单字段仍会脱敏。还需额外传入 `{ redactSensitive: false }` 
 
 环境面板还会保留浏览器报告的主线程长任务（至少 50ms），显示累计/最长耗时及可用的
 浏览上下文归因。记录有固定上限，可用 `capture.longTasks: false` 关闭采集。
+
+### 协议传输
+
+公开协议层可把有上限的日志、网络记录、长任务、系统信息及其实时事件提供给 Worker
+或远程客户端。采集内容可能含敏感信息，因此只能绑定可信或已认证的 transport。
+
+```ts
+const [clientSide, kernelSide] = createInProcessTransportPair();
+const server = attachKernelProtocol(optik.kernel, kernelSide);
+const client = new ProtocolClient(clientSide);
+
+const { entries, total } = await client.request(KernelProtocolMethods.LogEntries, {
+  offset: 0,
+  limit: 100,
+});
+
+client.close();
+server.dispose();
+```
+
+列表命令支持分页，每次响应最多 1000 项。对象展开会向内核借用子句柄，用完后应调用对应的
+`Log.releaseObject` 或 `Network.releaseObject` 命令；服务端会在会话销毁时释放全部遗留借用。
 
 ### 插件
 

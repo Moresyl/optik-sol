@@ -40,6 +40,8 @@ export { flattenToText, remoteObjectToText, sanitizeCss, hasFormatSpecifier } fr
 
 export * from './types';
 export * from './protocol';
+export * from './transport';
+export * from './kernel-protocol';
 
 export { instrumentConsole } from './instrument/console';
 export type { ConsoleMethod, ConsoleRecord, ConsoleSink } from './instrument/console';

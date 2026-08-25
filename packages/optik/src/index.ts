@@ -16,8 +16,39 @@ import { mount, instance, type MountOptions, type OptikInstance } from 'optik-ui
 export { mount, instance };
 export type { MountOptions, OptikInstance };
 export type { OptikPlugin, PluginContext, ThemeMode, TabId } from 'optik-ui';
-export { OptikKernel, copyText, createHar, serializeHar } from 'optik-ui';
+export {
+  OptikKernel,
+  ErrorCode,
+  ProtocolClient,
+  ProtocolRequestError,
+  ProtocolRouter,
+  attachKernelProtocol,
+  copyText,
+  createHar,
+  createInProcessTransportPair,
+  KernelProtocolMethods,
+  isError,
+  isEvent,
+  isRequest,
+  isResponse,
+  sendEvent,
+  serializeHar,
+} from 'optik-ui';
 export type {
+  ErrorResponse,
+  KernelProtocolServer,
+  LogEntriesResult,
+  LongTasksResult,
+  NetworkRecordsResult,
+  ProtocolError,
+  ProtocolEvent,
+  ProtocolMessage,
+  ProtocolPageParams,
+  ProtocolRequest,
+  ProtocolRequestOptions,
+  ProtocolResponse,
+  SuccessResponse,
+  Transport,
   HarArchive,
   HarContent,
   HarEntry,

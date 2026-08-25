@@ -47,7 +47,7 @@ describe('RingBuffer', () => {
     expect(onEvict.mock.calls).toEqual([['a'], ['b']]);
   });
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+  it.each([0, -1, 1_000_001, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects an invalid capacity: %s',
     (capacity) => {
       expect(() => new RingBuffer(capacity)).toThrow(/capacity must be/i);
