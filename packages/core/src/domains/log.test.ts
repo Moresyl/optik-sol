@@ -59,6 +59,48 @@ describe('LogDomain', () => {
     expect(updated).toHaveBeenCalledWith(first);
   });
 
+  it('does not collapse distinct objects that share the same shallow preview', () => {
+    const domain = new LogDomain();
+    const first = domain.ingest({ level: 'log', origin: 'console', args: [{}] });
+    const second = domain.ingest({ level: 'log', origin: 'console', args: [{}] });
+
+    expect(first?.text).toBe('Object');
+    expect(second?.text).toBe('Object');
+    expect(domain.size).toBe(2);
+    expect(domain.registry.size).toBe(2);
+  });
+
+  it('coalesces equal primitives only at the same call site', () => {
+    const domain = new LogDomain();
+    const firstStack = [
+      { functionName: 'run', url: 'app.js', lineNumber: 10, columnNumber: 2 },
+    ];
+    const secondStack = [
+      { functionName: 'run', url: 'app.js', lineNumber: 11, columnNumber: 2 },
+    ];
+    const first = domain.ingest({
+      level: 'log',
+      origin: 'console',
+      args: ['same', Number.NaN],
+      stackTrace: firstStack,
+    });
+    domain.ingest({
+      level: 'log',
+      origin: 'console',
+      args: ['same', Number.NaN],
+      stackTrace: firstStack.map((frame) => ({ ...frame })),
+    });
+    domain.ingest({
+      level: 'log',
+      origin: 'console',
+      args: ['same', Number.NaN],
+      stackTrace: secondStack,
+    });
+
+    expect(first?.repeatCount).toBe(2);
+    expect(domain.size).toBe(2);
+  });
+
   it('does not coalesce entries from different levels, channels, or groups', () => {
     const domain = new LogDomain();
     domain.ingest({ level: 'log', origin: 'console', args: ['same'] });

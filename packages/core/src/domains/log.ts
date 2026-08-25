@@ -205,8 +205,39 @@ export class LogDomain {
       a.channel === b.channel &&
       a.groupDepth === b.groupDepth &&
       a.text === b.text &&
-      a.args.length === b.args.length
+      a.args.length === b.args.length &&
+      a.args.every((argument, index) => this.#isSameArgument(argument, b.args[index])) &&
+      this.#isSameStack(a.stackTrace, b.stackTrace)
     );
+  }
+
+  #isSameArgument(a: RemoteObject, b: RemoteObject | undefined): boolean {
+    if (!b) return false;
+    // Object descriptions are deliberately shallow (`Object`, `Array(3)`). Only the
+    // retained handle can prove two messages reference the same live value.
+    if (a.objectId !== undefined || b.objectId !== undefined) return a.objectId === b.objectId;
+    return (
+      a.type === b.type &&
+      a.subtype === b.subtype &&
+      Object.is(a.value, b.value) &&
+      a.unserializableValue === b.unserializableValue &&
+      a.description === b.description
+    );
+  }
+
+  #isSameStack(a: CallFrame[] | undefined, b: CallFrame[] | undefined): boolean {
+    if (a === b) return true;
+    if (!a || !b || a.length !== b.length) return false;
+    return a.every((frame, index) => {
+      const other = b[index];
+      return (
+        other !== undefined &&
+        frame.functionName === other.functionName &&
+        frame.url === other.url &&
+        frame.lineNumber === other.lineNumber &&
+        frame.columnNumber === other.columnNumber
+      );
+    });
   }
 
   #releaseEntry(entry: LogEntry): void {
