@@ -72,7 +72,17 @@ export function readSafeArea(): SystemInfo['safeArea'] {
   } catch {
     return zero;
   } finally {
-    probe.remove();
+    try {
+      probe.remove();
+    } catch {
+      // Host pages can patch Element.prototype.remove. Fall back to the older API so
+      // a best-effort diagnostic probe neither escapes an error nor stays in the DOM.
+      try {
+        probe.parentNode?.removeChild(probe);
+      } catch {
+        // The document may itself be tearing down; cleanup remains best-effort.
+      }
+    }
   }
 }
 

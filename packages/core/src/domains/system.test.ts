@@ -147,4 +147,17 @@ describe('SystemDomain', () => {
       globalThis.getComputedStyle = original;
     }
   });
+
+  it('contains hostile probe removal and falls back to removeChild', () => {
+    const remove = vi.spyOn(Element.prototype, 'remove').mockImplementation(() => {
+      throw new Error('host patched remove');
+    });
+    const before = document.body.childElementCount;
+    try {
+      expect(() => readSafeArea()).not.toThrow();
+      expect(document.body.childElementCount).toBe(before);
+    } finally {
+      remove.mockRestore();
+    }
+  });
 });
