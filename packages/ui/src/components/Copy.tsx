@@ -29,17 +29,23 @@ export function createCopyController(): CopyController {
   const [sheet, setSheet] = createSignal<{ text: string; title: string } | null>(null);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let disposed = false;
 
   const showToast = (message: string) => {
+    if (disposed) return;
     setToast(message);
     clearTimeout(timer);
     timer = setTimeout(() => setToast(null), 1800);
   };
 
-  onCleanup(() => clearTimeout(timer));
+  onCleanup(() => {
+    disposed = true;
+    clearTimeout(timer);
+  });
 
   return {
     copy(text, label = '内容') {
+      if (disposed) return false;
       if (!text) {
         showToast('没有可复制的内容');
         return false;
@@ -47,6 +53,7 @@ export function createCopyController(): CopyController {
       // 必须同步调用，才能保留用户手势。
       const result = copyText(text, {
         onAsyncResult(outcome) {
+          if (disposed) return;
           if (outcome.ok) showToast(`已复制${label}（${formatSize(text.length)}）`);
           else {
             setToast(null);
@@ -65,12 +72,15 @@ export function createCopyController(): CopyController {
     },
 
     reveal(text, title = '原文') {
+      if (disposed) return;
       setSheet({ text, title });
     },
 
     toast,
     sheet,
-    closeSheet: () => setSheet(null),
+    closeSheet: () => {
+      if (!disposed) setSheet(null);
+    },
   };
 }
 
@@ -172,6 +182,14 @@ export function CopySheet(props: {
   onClose: () => void;
 }): JSX.Element {
   let textarea: HTMLTextAreaElement | undefined;
+  let selectionFrame: number | null = null;
+  let selectionTimer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => {
+    if (selectionFrame !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(selectionFrame);
+    }
+    clearTimeout(selectionTimer);
+  });
 
   /**
    * 打开即全选。这样用户只要长按一下就能看到系统的「拷贝」菜单，少一步操作。
@@ -191,8 +209,14 @@ export function CopySheet(props: {
     <Show when={props.data}>
       {(data) => (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={data().title}
           class="fixed inset-0 row-center justify-center p-4 bg-[rgba(0,0,0,0.45)]"
           style={{ 'z-index': 'calc(var(--optik-z) + 30)' }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') props.onClose();
+          }}
           onClick={(event) => {
             // 只有点在遮罩本身（而非弹层内部）才关闭。
             if (event.target === event.currentTarget) props.onClose();
@@ -231,7 +255,14 @@ export function CopySheet(props: {
               ref={(element) => {
                 textarea = element;
                 // 等一帧，确保元素已完成布局，否则 iOS 上设置选区不生效。
-                requestAnimationFrame(selectAll);
+                if (typeof requestAnimationFrame === 'function') {
+                  selectionFrame = requestAnimationFrame(() => {
+                    selectionFrame = null;
+                    selectAll();
+                  });
+                } else {
+                  selectionTimer = setTimeout(selectAll, 16);
+                }
               }}
             />
             <div class="row-center justify-end gap-2">
