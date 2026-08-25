@@ -192,4 +192,107 @@ describe('instrumentXhr', () => {
     expect(FakeXMLHttpRequest.prototype.send).toBe(send);
     expect(FakeXMLHttpRequest.prototype.setRequestHeader).toBe(setRequestHeader);
   });
+
+  it.each([
+    [
+      'json',
+      'application/json',
+      { answer: 42 },
+      { text: '{"answer":42}', mimeType: 'application/json' },
+    ],
+    [
+      'document',
+      'text/html',
+      { documentElement: { outerHTML: '<html><body>ok</body></html>' } },
+      { text: '<html><body>ok</body></html>', mimeType: 'text/html' },
+    ],
+    ['arraybuffer', 'application/octet-stream', new ArrayBuffer(7), { size: 7, omittedReason: 'binary' }],
+    ['blob', 'text/plain', { size: 9 }, { size: 9, omittedReason: 'unavailable' }],
+  ] as const)('captures or describes a %s response', (responseType, mime, response, expected) => {
+    const instrumentation = instrumentXhr(sink, { nextId: () => `net:${next++}` });
+    const xhr = new XMLHttpRequest() as unknown as FakeXMLHttpRequest;
+    xhr.open('GET', 'https://example.test/typed');
+    xhr.send();
+    xhr.responseType = responseType;
+    xhr.response = response;
+    xhr.responseHeaders = `Content-Type: ${mime}`;
+    xhr.transition(4);
+
+    expect(updates).toHaveBeenLastCalledWith(
+      'net:1',
+      expect.objectContaining({ responseBody: expect.objectContaining(expected) }),
+    );
+    instrumentation.dispose();
+  });
+
+  it('degrades response access failures without breaking the host request', () => {
+    const instrumentation = instrumentXhr(sink, { nextId: () => `net:${next++}` });
+    const xhr = new XMLHttpRequest() as unknown as FakeXMLHttpRequest;
+    Object.defineProperty(xhr, 'responseText', {
+      configurable: true,
+      get() {
+        throw new DOMException('blocked', 'InvalidStateError');
+      },
+    });
+    xhr.getAllResponseHeaders = () => {
+      throw new Error('blocked headers');
+    };
+    xhr.getResponseHeader = () => {
+      throw new Error('blocked header');
+    };
+    xhr.open('GET', 'https://example.test/unreadable');
+    xhr.send();
+    xhr.transition(4);
+
+    expect(updates).toHaveBeenLastCalledWith(
+      'net:1',
+      expect.objectContaining({
+        responseHeaders: [],
+        responseBody: expect.objectContaining({ omittedReason: 'unavailable' }),
+      }),
+    );
+    instrumentation.dispose();
+  });
+
+  it.each(['json', 'document'] as const)(
+    'contains serialization failures for a %s response',
+    (responseType) => {
+      const instrumentation = instrumentXhr(sink, { nextId: () => `net:${next++}` });
+      const xhr = new XMLHttpRequest() as unknown as FakeXMLHttpRequest;
+      xhr.open('GET', 'https://example.test/unserializable');
+      xhr.send();
+      xhr.responseType = responseType;
+      if (responseType === 'json') {
+        const circular: { self?: unknown } = {};
+        circular.self = circular;
+        xhr.response = circular;
+      } else {
+        xhr.response = {
+          documentElement: {
+            get outerHTML() {
+              throw new Error('unavailable');
+            },
+          },
+        };
+      }
+      xhr.transition(4);
+      expect(updates).toHaveBeenLastCalledWith(
+        'net:1',
+        expect.objectContaining({
+          responseBody: expect.objectContaining({ omittedReason: 'unavailable' }),
+        }),
+      );
+      instrumentation.dispose();
+    },
+  );
+
+  it('returns a no-op when XMLHttpRequest is unavailable', () => {
+    Object.defineProperty(globalThis, 'XMLHttpRequest', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    const instrumentation = instrumentXhr(sink, { nextId: () => 'net:1' });
+    expect(() => instrumentation.dispose()).not.toThrow();
+  });
 });

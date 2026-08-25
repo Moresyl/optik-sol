@@ -48,6 +48,23 @@ describe('StorageDomain', () => {
     expect(document.cookie).not.toContain('user%20name=');
   });
 
+  it('keeps malformed and bare cookies inspectable instead of throwing', () => {
+    document.cookie = 'bare=';
+    document.cookie = 'bad%ZZ=value%ZZ';
+    const items = new StorageDomain().list('cookie');
+    expect(items).toContainEqual({ key: 'bad%ZZ', value: 'value%ZZ', size: 14 });
+  });
+
+  it('clears every visible cookie through the same decoded key path', () => {
+    const domain = new StorageDomain();
+    domain.set('cookie', 'first key', '1');
+    domain.set('cookie', 'second', '2');
+    domain.clear('cookie');
+    expect(domain.list('cookie').map((item) => item.key)).not.toEqual(
+      expect.arrayContaining(['first key', 'second']),
+    );
+  });
+
   it('reports inaccessible storage instead of throwing from status', () => {
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
     Object.defineProperty(globalThis, 'localStorage', {
@@ -103,6 +120,33 @@ describe('StorageDomain', () => {
       const domain = new StorageDomain();
       await expect(domain.listDatabases()).resolves.toEqual([]);
       await expect(domain.estimate()).resolves.toBeUndefined();
+    } finally {
+      Object.defineProperty(globalThis, 'indexedDB', {
+        configurable: true,
+        value: originalIndexedDb,
+      });
+      Object.defineProperty(navigator, 'storage', {
+        configurable: true,
+        value: originalStorage,
+      });
+    }
+  });
+
+  it('handles missing database enumeration and successful quota estimation', async () => {
+    const originalIndexedDb = globalThis.indexedDB;
+    const originalStorage = navigator.storage;
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      value: {},
+    });
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: { estimate: vi.fn().mockResolvedValue({ usage: 10, quota: 100 }) },
+    });
+    try {
+      const domain = new StorageDomain();
+      await expect(domain.listDatabases()).resolves.toEqual([]);
+      await expect(domain.estimate()).resolves.toEqual({ usage: 10, quota: 100 });
     } finally {
       Object.defineProperty(globalThis, 'indexedDB', {
         configurable: true,

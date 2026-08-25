@@ -168,7 +168,7 @@ export class StorageDomain {
     const doc = globalThis.document;
     if (!doc) throw new Error('document is not available');
 
-    const encoded = encodeURIComponent(key);
+    const encodedKeys = new Set([encodeURIComponent(key), key]);
     const expiry = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
     const hostname = globalThis.location?.hostname ?? '';
     const pathname = globalThis.location?.pathname ?? '/';
@@ -188,9 +188,11 @@ export class StorageDomain {
       paths.add(accumulated);
     }
 
-    for (const domain of domains) {
-      for (const path of paths) {
-        doc.cookie = `${encoded}=;${expiry};path=${path}${domain ? `;domain=${domain}` : ''}`;
+    for (const encoded of encodedKeys) {
+      for (const domain of domains) {
+        for (const path of paths) {
+          doc.cookie = `${encoded}=;${expiry};path=${path}${domain ? `;domain=${domain}` : ''}`;
+        }
       }
     }
   }

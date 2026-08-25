@@ -34,6 +34,33 @@ describe('RemoteObject mirroring', () => {
     expect(registry.size).toBe(0);
   });
 
+  it('describes remaining primitive and callable forms without losing semantics', () => {
+    const registry = new ObjectRegistry();
+    expect(toRemoteObject(Infinity, registry)).toMatchObject({
+      description: 'Infinity',
+      unserializableValue: 'Infinity',
+    });
+    expect(toRemoteObject(-Infinity, registry)).toMatchObject({
+      description: '-Infinity',
+      unserializableValue: '-Infinity',
+    });
+    expect(toRemoteObject(null, registry)).toMatchObject({ subtype: 'null', value: null });
+    expect(toRemoteObject(undefined, registry)).toMatchObject({ description: 'undefined' });
+    expect(toRemoteObject(true, registry)).toMatchObject({ description: 'true', value: true });
+
+    async function asyncTask(value: number) {
+      return value;
+    }
+    function* generator() {
+      yield 1;
+    }
+    class Example {}
+    expect(toRemoteObject(asyncTask, registry).description).toContain('async ƒ asyncTask(value)');
+    expect(toRemoteObject(generator, registry).description).toContain('ƒ* generator()');
+    expect(toRemoteObject(Example, registry).description).toBe('class Example');
+    expect(toRemoteObject(Math.max, registry).description).toContain('[native code]');
+  });
+
   it('builds bounded, cycle-safe previews without invoking getters', () => {
     let getterCalls = 0;
     const value: Record<string, unknown> = { name: 'root' };

@@ -247,4 +247,109 @@ describe('miscellaneous network instrumentation', () => {
     expect(frames?.at(-1)?.payload).toHaveLength(8 * 1024);
     instrumentation.dispose();
   });
+
+  it('describes every binary frame shape and a clean socket close', () => {
+    installSocketFakes();
+    const instrumentation = instrumentWebSocket(sink, { nextId: () => `net:${next++}` });
+    const socket = new WebSocket('wss://example.test/socket', 'chat') as unknown as FakeWebSocket;
+    socket.send(new ArrayBuffer(2));
+    socket.send(new Blob(['abc'], { type: 'text/plain' }));
+    socket.send(new DataView(new ArrayBuffer(4)));
+    (socket.send as (data: unknown) => void)({ custom: true });
+    socket.dispatchEvent(new Event('error'));
+    socket.dispatchEvent(new CloseEvent('close', { code: 1000, wasClean: true }));
+
+    const frames = updates.mock.calls.filter(([, patch]) => patch.frames).at(-1)?.[1].frames ?? [];
+    expect(frames.map((frame) => frame.payload)).toEqual(
+      expect.arrayContaining(['ArrayBuffer(2)', 'Blob(3, text/plain)', 'DataView(4)', '[object Object]']),
+    );
+    expect(updates).toHaveBeenCalledWith(
+      'net:1',
+      expect.objectContaining({ phase: 'failed', error: 'WebSocket error' }),
+    );
+    expect(updates).toHaveBeenLastCalledWith(
+      'net:1',
+      expect.objectContaining({ phase: 'complete', error: undefined }),
+    );
+    expect(starts).toHaveBeenCalledWith(
+      expect.objectContaining({ requestHeaders: [['Sec-WebSocket-Protocol', 'chat']] }),
+    );
+    instrumentation.dispose();
+  });
+
+  it('contains sink failures across socket and event-source callbacks', () => {
+    installSocketFakes();
+    const broken: NetworkSink = {
+      onStart: () => {
+        throw new Error('start failed');
+      },
+      onUpdate: () => {
+        throw new Error('update failed');
+      },
+    };
+    const socketInstrumentation = instrumentWebSocket(broken, { nextId: () => 'net:1' });
+    const sourceInstrumentation = instrumentEventSource(broken, { nextId: () => 'net:2' });
+    expect(() => {
+      const socket = new WebSocket('wss://example.test') as unknown as FakeWebSocket;
+      socket.dispatchEvent(new Event('open'));
+      socket.dispatchEvent(new MessageEvent('message', { data: 'data' }));
+      socket.dispatchEvent(new Event('error'));
+      socket.dispatchEvent(new CloseEvent('close', { code: 1000, wasClean: true }));
+      const source = new EventSource('https://example.test') as unknown as FakeEventSource;
+      source.dispatchEvent(new Event('open'));
+      source.dispatchEvent(new MessageEvent('message', { data: 'data' }));
+      source.dispatchEvent(new Event('error'));
+    }).not.toThrow();
+    socketInstrumentation.dispose();
+    sourceInstrumentation.dispose();
+  });
+
+  it('returns no-op instrumentation when optional browser transports are absent', () => {
+    Object.defineProperty(navigator, 'sendBeacon', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    Object.defineProperty(globalThis, 'WebSocket', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    Object.defineProperty(globalThis, 'EventSource', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    expect(() => instrumentSendBeacon(sink, { nextId: () => 'net:1' }).dispose()).not.toThrow();
+    expect(() => instrumentWebSocket(sink, { nextId: () => 'net:2' }).dispose()).not.toThrow();
+    expect(() => instrumentEventSource(sink, { nextId: () => 'net:3' }).dispose()).not.toThrow();
+  });
+
+  it('preserves sendBeacon and EventSource wrappers installed after Optik', () => {
+    installSocketFakes();
+    const originalBeacon = vi.fn(() => true);
+    Object.defineProperty(navigator, 'sendBeacon', {
+      configurable: true,
+      writable: true,
+      value: originalBeacon,
+    });
+    const beaconInstrumentation = instrumentSendBeacon(sink, { nextId: () => `net:${next++}` });
+    const optikBeacon = navigator.sendBeacon;
+    const laterBeacon = vi.fn((url: string | URL, data?: BodyInit | null) =>
+      optikBeacon.call(navigator, url, data),
+    );
+    navigator.sendBeacon = laterBeacon;
+
+    const sourceInstrumentation = instrumentEventSource(sink, { nextId: () => `net:${next++}` });
+    const optikEventSource = globalThis.EventSource;
+    class LaterEventSource extends optikEventSource {}
+    globalThis.EventSource = LaterEventSource;
+
+    beaconInstrumentation.dispose();
+    sourceInstrumentation.dispose();
+    expect(navigator.sendBeacon).toBe(laterBeacon);
+    expect(globalThis.EventSource).toBe(LaterEventSource);
+    expect(navigator.sendBeacon('https://example.test/after')).toBe(true);
+    expect(starts).not.toHaveBeenCalled();
+  });
 });
