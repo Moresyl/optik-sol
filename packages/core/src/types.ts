@@ -121,6 +121,30 @@ export interface WebSocketFrame {
 }
 
 // ---------------------------------------------------------------------------
+// Performance
+// ---------------------------------------------------------------------------
+
+/** Browsing-context attribution exposed by the Long Tasks API. */
+export interface LongTaskAttribution {
+  containerType: string;
+  containerSrc: string;
+  containerId: string;
+  containerName: string;
+}
+
+/** A main-thread task that occupied the event loop for at least 50ms. */
+export interface LongTaskRecord {
+  id: string;
+  /** `performance.now()` timestamp at which the task began. */
+  startTime: number;
+  /** Total task duration in milliseconds. */
+  duration: number;
+  /** Context classification reported by the browser, such as `self`. */
+  name: string;
+  attribution: LongTaskAttribution[];
+}
+
+// ---------------------------------------------------------------------------
 // Storage
 // ---------------------------------------------------------------------------
 

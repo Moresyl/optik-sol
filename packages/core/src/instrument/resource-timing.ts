@@ -33,30 +33,28 @@ export function instrumentResourceTiming(
   if (typeof PerformanceObserver !== 'function') return { dispose() {} };
 
   const { captureUnhookedResources = true } = options;
+  let active = true;
 
   const handle = (entries: PerformanceEntryList) => {
     for (const entry of entries) {
-      if (entry.entryType !== 'resource') continue;
-      const timing = entry as PerformanceResourceTiming;
+      if (!active) break;
+      try {
+        if (entry.entryType !== 'resource') continue;
+        const timing = entry as PerformanceResourceTiming;
 
-      const existingId = options.findByUrl(timing.name, timing.startTime);
-      if (existingId) {
-        try {
+        const existingId = options.findByUrl(timing.name, timing.startTime);
+        if (existingId) {
           sink.onUpdate(existingId, {
             timing: breakdown(timing),
             fromCache: isFromCache(timing),
           });
-        } catch {
-          // Ignore.
+          continue;
         }
-        continue;
-      }
 
-      if (!captureUnhookedResources) continue;
-      if (WRAPPED_INITIATORS.has(timing.initiatorType)) continue;
+        if (!captureUnhookedResources) continue;
+        if (WRAPPED_INITIATORS.has(timing.initiatorType)) continue;
 
-      const { url, name, origin, query } = splitUrl(timing.name);
-      try {
+        const { url, name, origin, query } = splitUrl(timing.name);
         sink.onStart({
           id: options.nextId(),
           initiator: 'resource',
@@ -80,12 +78,24 @@ export function instrumentResourceTiming(
           timing: breakdown(timing),
         } satisfies NetworkRecord);
       } catch {
-        // Ignore.
+        // Broken WebView entries and consumer errors must not affect the page.
       }
     }
   };
 
-  const observer = new PerformanceObserver((list) => handle(list.getEntries()));
+  let observer: PerformanceObserver;
+  try {
+    observer = new PerformanceObserver((list) => {
+      if (!active) return;
+      try {
+        handle(list.getEntries());
+      } catch {
+        // Ignore a broken observer entry list.
+      }
+    });
+  } catch {
+    return { dispose() {} };
+  }
 
   try {
     // `buffered: true` replays entries that fired before Optik loaded — important
@@ -95,12 +105,20 @@ export function instrumentResourceTiming(
     try {
       observer.observe({ entryTypes: ['resource'] });
     } catch {
+      active = false;
+      try {
+        observer.disconnect();
+      } catch {
+        // Ignore a partially constructed observer.
+      }
       return { dispose() {} };
     }
   }
 
   return {
     dispose() {
+      if (!active) return;
+      active = false;
       try {
         observer.disconnect();
       } catch {

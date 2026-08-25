@@ -14,7 +14,7 @@
 
 ---
 
-Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 59 KB。
+Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 60 KB。
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -30,7 +30,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，请求响应头与体、分段耗时、WebSocket 逐帧记录、默认脱敏的 HAR 1.2 导出 |
 | **元素** | DOM 树惰性浏览、页面内拾取、高亮、盒模型、计算样式、复制选择器 |
 | **存储** | localStorage / sessionStorage / Cookie / IndexedDB，可增删改查 |
-| **环境** | 设备、视口、安全区、内存、加载时序、能力探测 |
+| **环境** | 设备、视口、安全区、内存、加载时序、有上限的主线程长任务证据、能力探测 |
 
 ## 特点
 
@@ -62,6 +62,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | `data-open` | 存在则默认展开面板 |
 | `data-max-logs` | 日志条数上限，默认 5000 |
 | `data-max-requests` | 请求条数上限，默认 1000 |
+| `data-max-long-tasks` | 主线程长任务条数上限，默认 200 |
 | `data-optik-manual` | 存在则**不**自动挂载，由你自己调 `Optik.mount()` |
 
 挂载后可用 `window.Optik`。
@@ -91,6 +92,7 @@ const optik = mount({
   defaultTab: 'console',
   log: { maxEntries: 1000 },
   network: { maxRecords: 300 },
+  performance: { maxLongTasks: 200 },
   capture: {
     console: true,
     exceptions: true,
@@ -103,6 +105,7 @@ const optik = mount({
     websocket: true,
     eventSource: true,
     resourceTiming: true,
+    longTasks: true,
   },
   passthrough: true,       // 是否继续调用原生 console，默认 true
   maxBodyBytes: 512 * 1024,
@@ -119,6 +122,9 @@ optik.destroy();           // 完整还原所有插桩
 同时脱敏请求头、URL 和查询参数中的凭据。代码中可使用 `serializeHar(records)`，并通过
 `{ includeBodies: true, includeWebSocketFrames: true }` 显式加入已留存的正文；支持识别的
 JSON/表单字段仍会脱敏。还需额外传入 `{ redactSensitive: false }` 才会导出原值。
+
+环境面板还会保留浏览器报告的主线程长任务（至少 50ms），显示累计/最长耗时及可用的
+浏览上下文归因。记录有固定上限，可用 `capture.longTasks: false` 关闭采集。
 
 ### 插件
 

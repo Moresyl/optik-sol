@@ -184,4 +184,70 @@ describe('instrumentResourceTiming', () => {
     });
     expect(() => instrumentation.dispose()).not.toThrow();
   });
+
+  it('disconnects when both observer modes fail', () => {
+    FakePerformanceObserver.observe = vi.fn(() => {
+      throw new Error('unsupported');
+    });
+    const instrumentation = instrumentResourceTiming(sink, {
+      nextId: () => 'net:1',
+      findByUrl: () => undefined,
+    });
+    expect(FakePerformanceObserver.latest.disconnect).toHaveBeenCalledOnce();
+    expect(() => instrumentation.dispose()).not.toThrow();
+  });
+
+  it('ignores delayed callbacks after disposal and contains hostile entries', () => {
+    const instrumentation = instrumentResourceTiming(sink, {
+      nextId: () => 'net:1',
+      findByUrl: () => undefined,
+    });
+    instrumentation.dispose();
+    FakePerformanceObserver.latest.emit([timing()]);
+    expect(starts).not.toHaveBeenCalled();
+    expect(updates).not.toHaveBeenCalled();
+
+    instrumentResourceTiming(sink, {
+      nextId: () => 'net:2',
+      findByUrl: () => {
+        throw new Error('hostile entry');
+      },
+    });
+    expect(() => FakePerformanceObserver.latest.emit([timing()])).not.toThrow();
+    expect(starts).not.toHaveBeenCalled();
+  });
+
+  it('degrades when the observer constructor throws', () => {
+    Object.defineProperty(globalThis, 'PerformanceObserver', {
+      configurable: true,
+      writable: true,
+      value: class {
+        constructor() {
+          throw new Error('broken implementation');
+        }
+      },
+    });
+    const instrumentation = instrumentResourceTiming(sink, {
+      nextId: () => 'net:1',
+      findByUrl: () => undefined,
+    });
+    expect(() => instrumentation.dispose()).not.toThrow();
+  });
+
+  it('contains broken observer entry lists', () => {
+    instrumentResourceTiming(sink, {
+      nextId: () => 'net:1',
+      findByUrl: () => undefined,
+    });
+    expect(() =>
+      FakePerformanceObserver.callback(
+        {
+          getEntries: () => {
+            throw new Error('broken list');
+          },
+        } as unknown as PerformanceObserverEntryList,
+        FakePerformanceObserver.latest as unknown as PerformanceObserver,
+      ),
+    ).not.toThrow();
+  });
 });

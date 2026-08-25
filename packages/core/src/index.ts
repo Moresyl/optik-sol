@@ -5,6 +5,11 @@ export { LogDomain } from './domains/log';
 export type { LogDomainEvents, LogDomainOptions, IngestOptions } from './domains/log';
 export { NetworkDomain } from './domains/network';
 export type { NetworkDomainEvents, NetworkDomainOptions } from './domains/network';
+export { PerformanceDomain } from './domains/performance';
+export type {
+  PerformanceDomainEvents,
+  PerformanceDomainOptions,
+} from './domains/performance';
 export { StorageDomain } from './domains/storage';
 export type { StorageAreaStatus } from './domains/storage';
 export { SystemDomain, readSafeArea } from './domains/system';

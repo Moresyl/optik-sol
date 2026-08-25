@@ -10,6 +10,7 @@
 import { Emitter } from './emitter';
 import { LogDomain, type LogDomainOptions } from './domains/log';
 import { NetworkDomain, type NetworkDomainOptions } from './domains/network';
+import { PerformanceDomain, type PerformanceDomainOptions } from './domains/performance';
 import { StorageDomain } from './domains/storage';
 import { SystemDomain } from './domains/system';
 import { instrumentConsole, type ConsoleInstrumentation } from './instrument/console';
@@ -22,7 +23,8 @@ import {
   instrumentWebSocket,
 } from './instrument/misc-network';
 import { instrumentResourceTiming } from './instrument/resource-timing';
-import type { LogEntry, NetworkRecord } from './types';
+import { instrumentLongTasks } from './instrument/long-tasks';
+import type { LogEntry, LongTaskRecord, NetworkRecord } from './types';
 
 export interface CaptureOptions {
   console?: boolean;
@@ -36,11 +38,13 @@ export interface CaptureOptions {
   websocket?: boolean;
   eventSource?: boolean;
   resourceTiming?: boolean;
+  longTasks?: boolean;
 }
 
 export interface KernelOptions {
   log?: LogDomainOptions;
   network?: NetworkDomainOptions;
+  performance?: PerformanceDomainOptions;
   capture?: CaptureOptions;
   /** Forward calls to the original console. Default true. */
   passthrough?: boolean;
@@ -57,6 +61,9 @@ export interface KernelEvents {
   networkUpdated: NetworkRecord;
   networkCleared: void;
   networkResized: number;
+  longTaskAdded: LongTaskRecord;
+  longTasksCleared: void;
+  longTasksResized: number;
 }
 
 /**
@@ -95,12 +102,14 @@ const DEFAULT_CAPTURE: Required<CaptureOptions> = {
   websocket: true,
   eventSource: true,
   resourceTiming: true,
+  longTasks: true,
 };
 
 export class OptikKernel {
   readonly events = new Emitter<KernelEvents>();
   readonly log: LogDomain;
   readonly network: NetworkDomain;
+  readonly performance: PerformanceDomain;
   readonly storage = new StorageDomain();
   readonly system = new SystemDomain();
 
@@ -121,6 +130,7 @@ export class OptikKernel {
     this.#capture = { ...DEFAULT_CAPTURE, ...options.capture };
     this.log = new LogDomain(options.log);
     this.network = new NetworkDomain(options.network);
+    this.performance = new PerformanceDomain(options.performance);
     this.#wireDomains();
   }
 
@@ -212,6 +222,14 @@ export class OptikKernel {
         instrumentResourceTiming(networkSink, { nextId, findByUrl: this.network.findByUrl }),
       );
     }
+    if (capture.longTasks) {
+      this.#instrumentation.push(
+        instrumentLongTasks({
+          nextId: this.performance.nextId,
+          onLongTask: this.performance.onLongTask,
+        }),
+      );
+    }
   }
 
   /**
@@ -257,6 +275,7 @@ export class OptikKernel {
     this.#domainUnsubscribes = [];
     this.log.dispose();
     this.network.dispose();
+    this.performance.dispose();
     this.events.clear();
     this.#started = false;
   }
@@ -296,6 +315,15 @@ export class OptikKernel {
       this.network.events.on('cleared', () => this.events.emit('networkCleared', undefined)),
       this.network.events.on('resized', (capacity) =>
         this.events.emit('networkResized', capacity),
+      ),
+      this.performance.events.on('longTaskAdded', (record) =>
+        this.events.emit('longTaskAdded', record),
+      ),
+      this.performance.events.on('cleared', () =>
+        this.events.emit('longTasksCleared', undefined),
+      ),
+      this.performance.events.on('resized', (capacity) =>
+        this.events.emit('longTasksResized', capacity),
       ),
     ];
   }

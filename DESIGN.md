@@ -81,6 +81,15 @@ Every hook is **fully reversible**: it always passes through to the original met
 
 Some panel behaviour degrades with the environment — no Clipboard API outside HTTPS, no local storage in private mode. The *Environment* tab states these conclusions outright, so when a feature does not work the user knows why instead of suspecting the tool is broken.
 
+## Main-thread stalls
+
+Polling the event loop with a timer keeps the page awake and can itself distort the
+performance being measured. When available, Optik therefore uses the browser's Long
+Tasks API with buffered observation: tasks of at least 50ms that happened before or
+after mounting enter a bounded ring buffer. The Environment panel shows retained count,
+cumulative duration, maximum duration, and browsing-context attribution. Attribution
+URLs are stripped of credentials, query parameters, and fragments before copying.
+
 ## What others usually do not capture
 
 - **Resource load failures** (`<img>` / `<script>` / CSS 404s). These error events **do not bubble**; only the capture phase sees them
@@ -94,4 +103,6 @@ Some panel behaviour degrades with the environment — no Clipboard API outside 
 
 The two sides talk in **CDP-shaped** (Chrome DevTools Protocol) messages: `Request {id, method, params}` / `Response {id, result|error}` / `Event {method, params}`, with a `Transport` abstraction in between.
 
-Today that layer runs in-process. Swap it for a WebSocket and you have remote debugging, without changing a line of the kernel. That is also why no DOM reference is allowed anywhere in the kernel, and why the UI may never bypass `Transport` to reach kernel internals directly.
+Today that layer runs in-process. Swap it for a WebSocket and you have remote debugging,
+without changing the domain APIs. Core instrumentation may use browser APIs (and the
+system domain briefly measures a safe-area probe), but it never owns or renders panel UI.

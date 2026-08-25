@@ -27,6 +27,10 @@ export type {
   HarRequest,
   HarResponse,
   HarTimings,
+  LongTaskAttribution,
+  LongTaskRecord,
+  PerformanceDomainEvents,
+  PerformanceDomainOptions,
 } from 'optik-ui';
 
 /**
@@ -50,6 +54,10 @@ function readScriptOptions(): MountOptions {
   const maxRequests = Number(script.dataset['maxRequests']);
   if (Number.isFinite(maxRequests) && maxRequests > 0)
     options.network = { maxRecords: maxRequests };
+
+  const maxLongTasks = Number(script.dataset['maxLongTasks']);
+  if (Number.isFinite(maxLongTasks) && maxLongTasks > 0)
+    options.performance = { maxLongTasks };
 
   return options;
 }

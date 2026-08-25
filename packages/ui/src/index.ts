@@ -183,6 +183,10 @@ export type {
   HarRequest,
   HarResponse,
   HarTimings,
+  LongTaskAttribution,
+  LongTaskRecord,
+  PerformanceDomainEvents,
+  PerformanceDomainOptions,
 } from 'optik-core';
 export type { MountOptions as OptikOptions };
 export type { OptikPlugin, PluginContext } from './plugin';

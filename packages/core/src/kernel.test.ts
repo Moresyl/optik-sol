@@ -57,10 +57,16 @@ describe('OptikKernel', () => {
     const networkStarted = vi.fn();
     const logResized = vi.fn();
     const networkResized = vi.fn();
+    const longTaskAdded = vi.fn();
+    const longTasksCleared = vi.fn();
+    const longTasksResized = vi.fn();
     kernel.events.on('logAdded', logAdded);
     kernel.events.on('networkStarted', networkStarted);
     kernel.events.on('logResized', logResized);
     kernel.events.on('networkResized', networkResized);
+    kernel.events.on('longTaskAdded', longTaskAdded);
+    kernel.events.on('longTasksCleared', longTasksCleared);
+    kernel.events.on('longTasksResized', longTasksResized);
 
     const log = kernel.log.ingest({ level: 'warn', origin: 'user', args: ['warning'] });
     const network = {
@@ -79,11 +85,24 @@ describe('OptikKernel', () => {
     kernel.network.onStart(network);
     kernel.log.setMaxEntries(25);
     kernel.network.setMaxRecords(10);
+    const longTask = {
+      id: kernel.performance.nextId(),
+      startTime: 2,
+      duration: 55,
+      name: 'self',
+      attribution: [],
+    };
+    kernel.performance.onLongTask(longTask);
+    kernel.performance.setMaxLongTasks(10);
+    kernel.performance.clear();
 
     expect(logAdded).toHaveBeenCalledWith(log);
     expect(networkStarted).toHaveBeenCalledWith(network);
     expect(logResized).toHaveBeenCalledWith(25);
     expect(networkResized).toHaveBeenCalledWith(10);
+    expect(longTaskAdded).toHaveBeenCalledWith(longTask);
+    expect(longTasksResized).toHaveBeenCalledWith(10);
+    expect(longTasksCleared).toHaveBeenCalledOnce();
   });
 
   it('evaluates expressions and statements in global scope', () => {

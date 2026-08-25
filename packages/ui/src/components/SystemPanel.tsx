@@ -8,7 +8,7 @@
  */
 
 import { createSignal, createMemo, For, Show, onCleanup, type JSX } from 'solid-js';
-import type { OptikKernel } from 'optik-core';
+import type { LongTaskAttribution, OptikKernel } from 'optik-core';
 import type { ThemeMode } from '../App';
 import { CopyButton, type CopyController } from './Copy';
 
@@ -110,10 +110,20 @@ export function SystemPanel(props: {
   onThemeChange: (mode: ThemeMode) => void;
 }): JSX.Element {
   const [version, setVersion] = createSignal(0);
+  const [longTasks, setLongTasks] = createSignal(props.kernel.performance.longTasks());
 
   // 视口和内存会随旋转、键盘弹出、GC 而变化，定时重读一次。
   const timer = setInterval(() => setVersion((n) => n + 1), 2000);
-  onCleanup(() => clearInterval(timer));
+  const refreshLongTasks = () => setLongTasks(props.kernel.performance.longTasks());
+  const offLongTask = props.kernel.events.on('longTaskAdded', refreshLongTasks);
+  const offLongTasksCleared = props.kernel.events.on('longTasksCleared', refreshLongTasks);
+  const offLongTasksResized = props.kernel.events.on('longTasksResized', refreshLongTasks);
+  onCleanup(() => {
+    clearInterval(timer);
+    offLongTask();
+    offLongTasksCleared();
+    offLongTasksResized();
+  });
 
   const info = createMemo(() => {
     version();
@@ -135,6 +145,19 @@ export function SystemPanel(props: {
     ),
   );
 
+  const longTaskSummary = createMemo(() => {
+    const tasks = longTasks();
+    let total = 0;
+    let longest = 0;
+    for (const task of tasks) {
+      total += task.duration;
+      longest = Math.max(longest, task.duration);
+    }
+    return { count: tasks.length, total, longest };
+  });
+
+  const recentLongTasks = createMemo(() => longTasks().slice(-10).reverse());
+
   const exportAll = () => {
     const data = info();
     const lines = [
@@ -149,6 +172,15 @@ export function SystemPanel(props: {
       '',
       '--- 加载时序 ---',
       ...timings().map(([label, value]) => `${label}：${value}`),
+      '',
+      '--- 主线程长任务 ---',
+      `次数：${longTaskSummary().count}`,
+      `累计耗时：${Math.round(longTaskSummary().total)} ms`,
+      `最长耗时：${Math.round(longTaskSummary().longest)} ms`,
+      ...longTasks().map(
+        (task) =>
+          `+${Math.round(task.startTime)} ms：${Math.round(task.duration)} ms · ${describeLongTask(task.name, task.attribution[0])}`,
+      ),
       '',
       '--- 能力探测 ---',
       ...capabilities().map(([label, value]) => `${label}：${value ? '支持' : '不支持'}`),
@@ -280,6 +312,36 @@ export function SystemPanel(props: {
           </Group>
         </Show>
 
+        <Group title="主线程长任务">
+          <Show
+            when={info().capabilities['longTaskTiming']}
+            fallback={<Row label="状态" value={<span class="text-warn">当前浏览器不支持</span>} />}
+          >
+            <Row
+              label="统计"
+              value={`${longTaskSummary().count} 次 · 累计 ${Math.round(longTaskSummary().total)} ms · 最长 ${Math.round(longTaskSummary().longest)} ms`}
+            />
+            <Show when={longTasks().length > 0}>
+              <Row
+                label="操作"
+                value={
+                  <button class="chip text-danger" onClick={() => props.kernel.performance.clear()}>
+                    清空记录
+                  </button>
+                }
+              />
+              <For each={recentLongTasks()}>
+                {(task) => (
+                  <Row
+                    label={`+${Math.round(task.startTime)} ms`}
+                    value={`${Math.round(task.duration)} ms · ${describeLongTask(task.name, task.attribution[0])}`}
+                  />
+                )}
+              </For>
+            </Show>
+          </Show>
+        </Group>
+
         <Group title="能力探测">
           <For each={capabilities()}>
             {([label, supported]) => (
@@ -297,4 +359,25 @@ export function SystemPanel(props: {
       </div>
     </div>
   );
+}
+
+function describeLongTask(name: string, attribution: LongTaskAttribution | undefined): string {
+  if (!attribution) return name;
+  const container =
+    attribution.containerName ||
+    attribution.containerId ||
+    redactContainerUrl(attribution.containerSrc);
+  return container ? `${name} · ${attribution.containerType || 'context'} ${container}` : name;
+}
+
+/** Keeps the useful frame location while excluding credentials, query tokens, and fragments. */
+function redactContainerUrl(value: string): string {
+  if (!value) return '';
+  const clean = value.split(/[?#]/, 1)[0] ?? '';
+  try {
+    const url = new URL(clean);
+    return `${url.protocol}//${url.host}${url.pathname}`;
+  } catch {
+    return clean;
+  }
 }
