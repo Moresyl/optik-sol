@@ -177,6 +177,43 @@ describe('HAR export', () => {
     expect(postData.text).not.toContain('multipart-secret');
   });
 
+  it('redacts real multipart fields by Content-Disposition name while preserving safe parts', () => {
+    const boundary = '----optik-test-boundary';
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="username"',
+      '',
+      'alice',
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="password_confirmation"',
+      '',
+      'multipart-password',
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="client_secret_expires_at"',
+      'Content-Type: text/plain',
+      '',
+      'multipart-client-secret',
+      `--${boundary}--`,
+      '',
+    ].join('\r\n');
+    const serialized = serializeHar(
+      [
+        record({
+          requestBody: {
+            text: body,
+            mimeType: `multipart/form-data; boundary="${boundary}"`,
+          },
+        }),
+      ],
+      { timeOrigin: 0, includeBodies: true },
+    );
+
+    expect(serialized).toContain('alice');
+    expect(serialized).not.toContain('multipart-password');
+    expect(serialized).not.toContain('multipart-client-secret');
+    expect(serialized.match(/\[REDACTED\]/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
   it('redacts hash credentials even when a malformed URL cannot be parsed', () => {
     const serialized = serializeHar(
       [record({ url: 'http://[invalid]#access_token=fragment-secret', query: [] })],

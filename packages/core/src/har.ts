@@ -132,6 +132,21 @@ const EXACT_SENSITIVE = new Set([
   'csrf',
   'xsrf',
 ]);
+const SENSITIVE_FRAGMENTS = [
+  'password',
+  'passwd',
+  'passcode',
+  'accesstoken',
+  'refreshtoken',
+  'idtoken',
+  'authtoken',
+  'apikey',
+  'clientsecret',
+  'privatekey',
+  'secretkey',
+  'sessionid',
+  'authorizationcode',
+];
 
 export function createHar(
   records: readonly NetworkRecord[],
@@ -309,14 +324,7 @@ function redactBody(text: string, mimeType: string | undefined): string {
     }
   }
   if (normalizedMime?.startsWith('multipart/form-data')) {
-    return text
-      .split(/(\r?\n)/)
-      .map((line) => {
-        const equals = line.indexOf('=');
-        if (equals <= 0 || !isSensitiveName(line.slice(0, equals).trim())) return line;
-        return `${line.slice(0, equals + 1)}${REDACTED}`;
-      })
-      .join('');
+    return redactMultipart(text, normalizedMime);
   }
   if (
     normalizedMime?.startsWith('application/x-www-form-urlencoded') ||
@@ -325,6 +333,46 @@ function redactBody(text: string, mimeType: string | undefined): string {
     return redactSearchParams(new URLSearchParams(text)).toString();
   }
   return text;
+}
+
+function redactMultipart(text: string, mimeType: string): string {
+  const boundaryMatch = /\bboundary\s*=\s*(?:"([^"]+)"|([^;\s]+))/i.exec(mimeType);
+  const boundary = boundaryMatch?.[1] ?? boundaryMatch?.[2];
+  if (boundary && text.includes(`--${boundary}`)) {
+    const delimiter = `--${boundary}`;
+    return text
+      .split(delimiter)
+      .map((part) => redactMultipartPart(part))
+      .join(delimiter);
+  }
+
+  // describeRequestBody(FormData) uses a compact name=value line format rather
+  // than raw multipart bytes. Keep that representation protected as well.
+  return text
+    .split(/(\r?\n)/)
+    .map((line) => {
+      const equals = line.indexOf('=');
+      if (equals <= 0 || !isSensitiveName(line.slice(0, equals).trim())) return line;
+      return `${line.slice(0, equals + 1)}${REDACTED}`;
+    })
+    .join('');
+}
+
+function redactMultipartPart(part: string): string {
+  const separator = part.includes('\r\n\r\n') ? '\r\n\r\n' : '\n\n';
+  const headerEnd = part.indexOf(separator);
+  if (headerEnd === -1) return part;
+  const headers = part.slice(0, headerEnd);
+  const disposition = /(?:^|\r?\n)content-disposition:[^\r\n]*/i.exec(headers)?.[0];
+  const nameMatch = disposition
+    ? /\bname\s*=\s*(?:"([^"]*)"|'([^']*)'|([^;\r\n]+))/i.exec(disposition)
+    : null;
+  const name = (nameMatch?.[1] ?? nameMatch?.[2] ?? nameMatch?.[3])?.trim();
+  if (!name || !isSensitiveName(name)) return part;
+
+  const body = part.slice(headerEnd + separator.length);
+  const ending = body.endsWith('\r\n') ? '\r\n' : body.endsWith('\n') ? '\n' : '';
+  return `${part.slice(0, headerEnd + separator.length)}${REDACTED}${ending}`;
 }
 
 function redactSearchParams(params: URLSearchParams): URLSearchParams {
@@ -385,6 +433,7 @@ function isSensitiveName(name: string): boolean {
   const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
   return (
     EXACT_SENSITIVE.has(normalized) ||
+    SENSITIVE_FRAGMENTS.some((fragment) => normalized.includes(fragment)) ||
     normalized.endsWith('token') ||
     normalized.endsWith('secret') ||
     normalized.endsWith('password')

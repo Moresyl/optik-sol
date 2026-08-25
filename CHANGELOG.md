@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- Privacy-safe HAR 1.2 export with explicit payload and raw-value opt-ins
+- Privacy-safe HAR 1.2 export with real multipart-field redaction and explicit payload/raw-value opt-ins
 - Bounded main-thread Long Tasks capture, attribution, Environment-panel diagnostics, and declarative script configuration
 - A protocol client/router, isolated in-process transport, and trusted-transport kernel bridge with pagination and borrowed-object cleanup for logs, network records, performance data, and live events
 
