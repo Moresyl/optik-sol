@@ -103,7 +103,20 @@ export class PluginRegistry {
   }
 
   #notify(): void {
-    for (const listener of this.#listeners) listener();
+    // Copy before iteration so self-unsubscription cannot skip the next subscriber.
+    // A plugin-facing listener must not turn an already-committed registry mutation
+    // into an apparent exception or prevent the App subscriber from refreshing.
+    for (const listener of [...this.#listeners]) {
+      try {
+        listener();
+      } catch (error) {
+        try {
+          console.warn('[optik] 插件注册表监听器出错：', error);
+        } catch {
+          // A hostile page can replace or freeze console methods.
+        }
+      }
+    }
   }
 }
 

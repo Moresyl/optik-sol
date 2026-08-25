@@ -63,6 +63,32 @@ describe('PluginRegistry', () => {
     expect(registry.takeRetired()).toEqual([]);
     warn.mockRestore();
   });
+
+  it('isolates broken subscribers and tolerates self-unsubscription', () => {
+    const registry = new PluginRegistry();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = vi.fn(() => {
+      throw new Error('listener failed');
+    });
+    const selfRemoving = vi.fn();
+    let offSelf: () => void = () => undefined;
+    offSelf = registry.subscribe(() => {
+      selfRemoving();
+      offSelf();
+    });
+    registry.subscribe(broken);
+    const healthy = vi.fn();
+    registry.subscribe(healthy);
+
+    expect(() => registry.register(plugin('one'))).not.toThrow();
+    registry.register(plugin('two'));
+
+    expect(selfRemoving).toHaveBeenCalledOnce();
+    expect(broken).toHaveBeenCalledTimes(2);
+    expect(healthy).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
 });
 
 describe('safely', () => {
