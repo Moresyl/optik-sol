@@ -65,7 +65,10 @@ export class NetworkDomain {
   onStart = (record: NetworkRecord): void => {
     this.#byId.set(record.id, record);
     this.#records.push(record);
-    if (this.#parseJson) this.#attachParsedBody(record.requestBody);
+    if (this.#parseJson) {
+      this.#attachParsedBody(record.requestBody);
+      this.#attachParsedBody(record.responseBody);
+    }
     this.events.emit('requestStarted', record);
   };
 
