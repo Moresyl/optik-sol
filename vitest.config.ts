@@ -25,8 +25,8 @@ export default defineConfig({
       thresholds: {
         // Whole product: prevent a well-tested core from masking UI regressions.
         statements: 80,
-        branches: 70,
-        functions: 75,
+        branches: 75,
+        functions: 80,
         lines: 85,
         // The framework-independent engine keeps its stricter established gate.
         'packages/core/src/**/*.ts': {
