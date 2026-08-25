@@ -62,6 +62,7 @@ export interface Store {
   toggleLevel: (level: LogLevel) => void;
   setLevels: (levels: LogLevel[]) => void;
   toggleRegex: () => void;
+  toggleCaseSensitive: () => void;
 
   /** 已勾选待复制的日志 id。 */
   selection: Accessor<Set<string>>;
@@ -266,6 +267,10 @@ function buildStore(kernel: OptikKernel): Store {
 
     toggleRegex() {
       setFilter((previous) => ({ ...previous, useRegex: !previous.useRegex }));
+    },
+
+    toggleCaseSensitive() {
+      setFilter((previous) => ({ ...previous, caseSensitive: !previous.caseSensitive }));
     },
 
     selection,

@@ -623,6 +623,7 @@ export function ConsolePanel(props: {
               <button
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': props.store.filter().levels.has(level) }}
+                aria-pressed={props.store.filter().levels.has(level)}
                 onClick={() => props.store.toggleLevel(level)}
               >
                 {LEVEL_LABELS[level]}
@@ -651,9 +652,19 @@ export function ConsolePanel(props: {
             class="chip shrink-0 font-mono"
             classList={{ 'bg-accent text-accent-fg': props.store.filter().useRegex }}
             title="正则匹配"
+            aria-pressed={props.store.filter().useRegex}
             onClick={props.store.toggleRegex}
           >
             .*
+          </button>
+          <button
+            class="chip shrink-0 font-mono"
+            classList={{ 'bg-accent text-accent-fg': props.store.filter().caseSensitive }}
+            title="区分大小写"
+            aria-pressed={props.store.filter().caseSensitive}
+            onClick={props.store.toggleCaseSensitive}
+          >
+            Aa
           </button>
         </div>
 

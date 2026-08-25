@@ -98,6 +98,20 @@ function renderWithStore(): {
 }
 
 describe('ConsolePanel REPL history', () => {
+  it('exposes accessible regex and case-sensitive search toggles', () => {
+    const input = renderPanel();
+    const panel = input.closest<HTMLElement>('.relative')!;
+    const regex = panel.querySelector<HTMLButtonElement>('[title="正则匹配"]')!;
+    const caseSensitive = panel.querySelector<HTMLButtonElement>('[title="区分大小写"]')!;
+
+    expect(regex.getAttribute('aria-pressed')).toBe('false');
+    expect(caseSensitive.getAttribute('aria-pressed')).toBe('false');
+    regex.click();
+    caseSensitive.click();
+    expect(regex.getAttribute('aria-pressed')).toBe('true');
+    expect(caseSensitive.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('opens the command picker as an Escape-closeable modal with initial focus', () => {
     const input = renderPanel();
     [...input.ownerDocument.querySelectorAll('button')]

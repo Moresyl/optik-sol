@@ -121,4 +121,42 @@ describe('createStore', () => {
     expect(store.logs().map((entry) => entry.text)).toEqual(['fallback']);
     store.dispose();
   });
+
+  it('supports case-sensitive and regex filters plus complete selection controls', () => {
+    const store = createStore(kernel);
+    const first = kernel.log.ingest({ level: 'warn', origin: 'user', args: ['Hello'] })!;
+    const second = kernel.log.ingest({ level: 'log', origin: 'user', args: ['hello'] })!;
+    kernel.log.ingest({ level: 'error', origin: 'user', args: ['literal ['] });
+    flush();
+    expect(store.errorCount()).toBe(1);
+
+    store.setQuery('HELLO');
+    expect(store.visibleLogs()).toHaveLength(2);
+    store.toggleCaseSensitive();
+    expect(store.visibleLogs()).toHaveLength(0);
+    store.setQuery('^hello$');
+    store.toggleRegex();
+    expect(store.visibleLogs().map((entry) => entry.id)).toEqual([second.id]);
+    store.setQuery('[');
+    expect(store.visibleLogs().map((entry) => entry.text)).toEqual(['literal [']);
+
+    store.setQuery('');
+    store.setLevels(['warn']);
+    expect(store.visibleLogs().map((entry) => entry.id)).toEqual([first.id]);
+    store.toggleLevel('warn');
+    expect(store.filter().levels).toEqual(new Set(['debug', 'log', 'info', 'warn', 'error']));
+
+    store.toggleSelected(first.id);
+    store.toggleSelected(second.id);
+    store.toggleSelected(first.id);
+    expect(store.selection()).toEqual(new Set([second.id]));
+    store.clearSelection();
+    expect(store.selection().size).toBe(0);
+    store.toggleSelected(first.id);
+    store.clearLogs();
+    flush();
+    expect(store.logs()).toHaveLength(0);
+    expect(store.selection().size).toBe(0);
+    store.dispose();
+  });
 });
