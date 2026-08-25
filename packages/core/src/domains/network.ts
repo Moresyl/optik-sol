@@ -64,6 +64,12 @@ export class NetworkDomain {
   }
 
   onStart = (record: NetworkRecord): void => {
+    // IDs are the map/ring ownership key. Treat a duplicate start as an update instead
+    // of inserting two rows whose eventual eviction would delete each other's index.
+    if (this.#byId.has(record.id)) {
+      this.onUpdate(record.id, record);
+      return;
+    }
     this.#byId.set(record.id, record);
     this.#records.push(record);
     if (this.#parseJson) {
@@ -80,6 +86,18 @@ export class NetworkDomain {
 
     // Timing arrives in pieces from different sources (wrapper, then Resource Timing);
     // merging rather than replacing is what keeps the detailed phases once they land.
+    // A patch can never rename a record: #byId and RingBuffer are both keyed by the
+    // original id. Accepting an id field would corrupt lookup and eviction ownership.
+    const { id: _ignoredId, ...mutablePatch } = patch;
+    patch = mutablePatch;
+
+    if ('requestBody' in patch) {
+      this.#releaseReplacedBody(record.requestBody, patch.requestBody);
+    }
+    if ('responseBody' in patch) {
+      this.#releaseReplacedBody(record.responseBody, patch.responseBody);
+    }
+
     if (patch.timing) {
       patch = { ...patch, timing: { ...record.timing, ...patch.timing } };
     }
@@ -184,5 +202,10 @@ export class NetworkDomain {
       const id = body?.parsed?.objectId;
       if (id) this.registry.release(id);
     }
+  }
+
+  #releaseReplacedBody(previous: NetworkBody | undefined, next: NetworkBody | undefined): void {
+    const previousId = previous?.parsed?.objectId;
+    if (previousId && previousId !== next?.parsed?.objectId) this.registry.release(previousId);
   }
 }

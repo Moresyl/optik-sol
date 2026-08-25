@@ -84,6 +84,44 @@ describe('NetworkDomain', () => {
     ).toBe(true);
   });
 
+  it('releases parsed object handles when request or response bodies are replaced', () => {
+    const domain = new NetworkDomain();
+    const firstRequest: NetworkBody = { text: '{"request":1}', mimeType: 'application/json' };
+    const firstResponse: NetworkBody = { text: '{"response":1}', mimeType: 'application/json' };
+    const item = record('net:1', { requestBody: firstRequest, responseBody: firstResponse });
+    domain.onStart(item);
+    const oldIds = [firstRequest.parsed!.objectId!, firstResponse.parsed!.objectId!];
+
+    const nextRequest: NetworkBody = { text: '{"request":2}', mimeType: 'application/json' };
+    const nextResponse: NetworkBody = { text: '{"response":2}', mimeType: 'application/json' };
+    domain.onUpdate(item.id, { requestBody: nextRequest, responseBody: nextResponse });
+
+    expect(oldIds.every((id) => !domain.registry.has(id))).toBe(true);
+    expect(domain.registry.size).toBe(2);
+    expect(nextRequest.parsed?.objectId).toBeTruthy();
+    expect(nextResponse.parsed?.objectId).toBeTruthy();
+
+    domain.onUpdate(item.id, { requestBody: nextRequest, responseBody: undefined });
+    expect(domain.registry.has(nextRequest.parsed!.objectId!)).toBe(true);
+    expect(domain.registry.has(nextResponse.parsed!.objectId!)).toBe(false);
+  });
+
+  it('keeps record identity stable and merges duplicate starts into one row', () => {
+    const domain = new NetworkDomain();
+    const item = record('net:1');
+    const updated = vi.fn();
+    domain.events.on('requestUpdated', updated);
+    domain.onStart(item);
+    domain.onUpdate(item.id, { id: 'renamed', status: 201 });
+    domain.onStart(record('net:1', { phase: 'complete', status: 204 }));
+
+    expect(domain.records()).toHaveLength(1);
+    expect(domain.get('net:1')).toBe(item);
+    expect(domain.get('renamed')).toBeUndefined();
+    expect(item).toMatchObject({ id: 'net:1', phase: 'complete', status: 204 });
+    expect(updated).toHaveBeenCalledTimes(2);
+  });
+
   it('does not parse invalid, truncated, or disabled JSON bodies', () => {
     const domain = new NetworkDomain();
     const invalid: NetworkBody = { text: '{bad', mimeType: 'application/json' };
