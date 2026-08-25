@@ -104,4 +104,90 @@ describe('RemoteObject mirroring', () => {
     registry.release(remote.objectId!);
     expect(getProperties(remote.objectId!, registry)).toBeNull();
   });
+
+  it('degrades hostile and revoked proxies without throwing from reflection', () => {
+    const registry = new ObjectRegistry();
+    const hostile = new Proxy(
+      {},
+      {
+        get(_target, key) {
+          if (key === Symbol.toStringTag) throw new Error('no reflection');
+          return undefined;
+        },
+        getPrototypeOf() {
+          throw new Error('no prototype');
+        },
+        ownKeys() {
+          throw new Error('no keys');
+        },
+      },
+    );
+    const { proxy, revoke } = Proxy.revocable({}, {});
+    revoke();
+
+    expect(() => toRemoteObject(hostile, registry)).not.toThrow();
+    expect(() => toRemoteObject(proxy, registry)).not.toThrow();
+  });
+
+  it('describes common platform subtypes and bounded map/set entries', () => {
+    const registry = new ObjectRegistry();
+    const cases: Array<[unknown, string, string | undefined]> = [
+      [new Date('invalid'), 'Invalid Date', 'date'],
+      [/value/gi, '/value/gi', 'regexp'],
+      [new Uint8Array(3), 'Uint8Array(3)', 'typedarray'],
+      [new ArrayBuffer(4), 'ArrayBuffer(4)', 'arraybuffer'],
+      [new DataView(new ArrayBuffer(5)), 'DataView(5)', 'dataview'],
+      [Promise.resolve(1), 'Promise', 'promise'],
+      [new URL('https://example.test/path'), 'https://example.test/path', 'url'],
+      [document.createTextNode('hello'), '#text "hello"', 'node'],
+      [document.createComment('note'), '<!--note-->', 'node'],
+    ];
+    for (const [value, description, subtype] of cases) {
+      expect(toRemoteObject(value, registry)).toMatchObject({ description, subtype });
+    }
+    expect(toRemoteObject(new Error('broken'), registry)).toMatchObject({ subtype: 'error' });
+    expect(toRemoteObject(new Error('broken'), registry).description).toContain('broken');
+    class BlobFixture {
+      readonly size = 3;
+      get [Symbol.toStringTag]() {
+        return 'Blob';
+      }
+    }
+    expect(toRemoteObject(new BlobFixture(), registry)).toMatchObject({
+      subtype: 'blob',
+      description: 'BlobFixture(3)',
+    });
+
+    const map = toRemoteObject(new Map([['a', 1], ['b', 2]]), registry, {
+      ...DEFAULT_PREVIEW_LIMITS,
+      maxEntries: 1,
+    });
+    const set = toRemoteObject(new Set([1, 2]), registry, {
+      ...DEFAULT_PREVIEW_LIMITS,
+      maxEntries: 1,
+    });
+    expect(map.preview).toMatchObject({ overflow: true, entries: [{ key: expect.anything() }] });
+    expect(set.preview).toMatchObject({ overflow: true, entries: [{ value: expect.anything() }] });
+  });
+
+  it('walks prototypes and expands synthetic map/set entries', () => {
+    const registry = new ObjectRegistry();
+    const parent = { inherited: 1 };
+    const child = Object.create(parent) as { own: number };
+    child.own = 2;
+    const remote = toRemoteObject(child, registry);
+    const properties = getProperties(remote.objectId!, registry, { ownProperties: false });
+    expect(properties?.find((property) => property.name === 'own')).toMatchObject({ isOwn: true });
+    expect(properties?.find((property) => property.name === 'inherited')).toMatchObject({
+      isOwn: false,
+    });
+
+    const mapped = toRemoteObject(new Map([['key', 'value']]), registry);
+    expect(getProperties(mapped.objectId!, registry)?.[0]).toMatchObject({
+      name: '0',
+      keyKind: 'internal',
+    });
+    const set = toRemoteObject(new Set(['value']), registry);
+    expect(getProperties(set.objectId!, registry)?.[0]?.value?.value).toBe('value');
+  });
 });

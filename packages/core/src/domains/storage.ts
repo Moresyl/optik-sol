@@ -134,15 +134,21 @@ export class StorageDomain {
       .map((pair) => {
         const eq = pair.indexOf('=');
         // A cookie may legitimately have no '=' (a bare name).
-        const key = (eq === -1 ? pair : pair.slice(0, eq)).trim();
+        const rawKey = (eq === -1 ? pair : pair.slice(0, eq)).trim();
         const rawValue = eq === -1 ? '' : pair.slice(eq + 1).trim();
+        let key = rawKey;
         let value = rawValue;
+        try {
+          key = decodeURIComponent(rawKey);
+        } catch {
+          // Malformed percent-encoding; keep the raw key so it remains removable.
+        }
         try {
           value = decodeURIComponent(rawValue);
         } catch {
           // Malformed percent-encoding; show the raw bytes rather than throwing.
         }
-        return { key, value, size: byteLengthOf(key) + byteLengthOf(rawValue) };
+        return { key, value, size: byteLengthOf(rawKey) + byteLengthOf(rawValue) };
       })
       .filter((item) => item.key.length > 0)
       .sort((a, b) => a.key.localeCompare(b.key));

@@ -26,6 +26,7 @@ export interface NetworkDomainEvents {
   requestStarted: NetworkRecord;
   requestUpdated: NetworkRecord;
   cleared: void;
+  resized: number;
 }
 
 export class NetworkDomain {
@@ -141,6 +142,7 @@ export class NetworkDomain {
 
   setMaxRecords(max: number): void {
     this.#records.resize(max);
+    this.events.emit('resized', this.#records.capacity);
   }
 
   dispose(): void {

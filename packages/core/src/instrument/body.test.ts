@@ -5,6 +5,7 @@ import {
   headersToEntries,
   isTextualMime,
   mimeTypeOf,
+  normalizeByteLimit,
   parseHeaderString,
   splitUrl,
   truncateText,
@@ -24,6 +25,17 @@ describe('network body helpers', () => {
     );
     expect(isTextualMime('application/vnd.api+json')).toBe(true);
     expect(isTextualMime('image/png')).toBe(false);
+  });
+
+  it.each([
+    [undefined, 20, 20],
+    [Number.NaN, 20, 20],
+    [Number.POSITIVE_INFINITY, 20, 20],
+    [-1, 20, 20],
+    [0, 20, 0],
+    [4.9, 20, 4],
+  ])('normalizes a runtime byte limit of %s', (value, fallback, expected) => {
+    expect(normalizeByteLimit(value, fallback)).toBe(expected);
   });
 
   it('parses header strings and HeadersInit forms', () => {

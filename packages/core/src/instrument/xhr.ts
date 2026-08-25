@@ -17,6 +17,7 @@ import {
   DEFAULT_MAX_BODY_BYTES,
   isTextualMime,
   mimeTypeOf,
+  normalizeByteLimit,
   parseHeaderString,
   splitUrl,
   truncateText,
@@ -40,7 +41,8 @@ export interface Instrumentation {
 export const OPTIK_INTERNAL = Symbol.for('optik.internal-request');
 
 export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions): Instrumentation {
-  const { maxBodyBytes = DEFAULT_MAX_BODY_BYTES, nextId } = options;
+  const { nextId } = options;
+  const maxBodyBytes = normalizeByteLimit(options.maxBodyBytes, DEFAULT_MAX_BODY_BYTES);
   const Original = globalThis.XMLHttpRequest;
   if (typeof Original !== 'function') return { dispose() {} };
 

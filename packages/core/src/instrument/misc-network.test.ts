@@ -230,4 +230,21 @@ describe('miscellaneous network instrumentation', () => {
     new WebSocket('wss://example.test/after');
     expect(starts).toHaveBeenCalledOnce();
   });
+
+  it('normalizes invalid frame limits before retaining a chatty socket', () => {
+    installSocketFakes();
+    const instrumentation = instrumentWebSocket(sink, {
+      nextId: () => `net:${next++}`,
+      maxFrames: Number.NaN,
+      maxFramePayload: Number.POSITIVE_INFINITY,
+    });
+    const socket = new WebSocket('wss://example.test/socket') as unknown as FakeWebSocket;
+
+    for (let index = 0; index < 501; index++) socket.send('x'.repeat(9_000));
+
+    const frames = updates.mock.calls.at(-1)?.[1].frames;
+    expect(frames).toHaveLength(500);
+    expect(frames?.at(-1)?.payload).toHaveLength(8 * 1024);
+    instrumentation.dispose();
+  });
 });

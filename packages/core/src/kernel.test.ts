@@ -55,8 +55,12 @@ describe('OptikKernel', () => {
     const kernel = create({ capture: { console: false } });
     const logAdded = vi.fn();
     const networkStarted = vi.fn();
+    const logResized = vi.fn();
+    const networkResized = vi.fn();
     kernel.events.on('logAdded', logAdded);
     kernel.events.on('networkStarted', networkStarted);
+    kernel.events.on('logResized', logResized);
+    kernel.events.on('networkResized', networkResized);
 
     const log = kernel.log.ingest({ level: 'warn', origin: 'user', args: ['warning'] });
     const network = {
@@ -73,9 +77,13 @@ describe('OptikKernel', () => {
       timing: { startTime: 0 },
     };
     kernel.network.onStart(network);
+    kernel.log.setMaxEntries(25);
+    kernel.network.setMaxRecords(10);
 
     expect(logAdded).toHaveBeenCalledWith(log);
     expect(networkStarted).toHaveBeenCalledWith(network);
+    expect(logResized).toHaveBeenCalledWith(25);
+    expect(networkResized).toHaveBeenCalledWith(10);
   });
 
   it('evaluates expressions and statements in global scope', () => {
@@ -128,5 +136,41 @@ describe('OptikKernel', () => {
     const entry = kernel.log.ingest({ level: 'log', origin: 'user', args: ['after restart'] });
     expect(kernel.started).toBe(true);
     expect(added).toHaveBeenCalledWith(entry);
+  });
+
+  it('rolls back earlier hooks when instrumentation installation fails', () => {
+    const originalLog = console.log;
+    const fetchDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch');
+    const originalFetch = globalThis.fetch;
+    expect(fetchDescriptor).toBeDefined();
+    Object.defineProperty(globalThis, 'fetch', {
+      value: originalFetch,
+      configurable: true,
+      writable: false,
+    });
+    const kernel = create({
+      passthrough: false,
+      capture: {
+        console: true,
+        exceptions: false,
+        rejections: false,
+        resourceErrors: false,
+        cspViolations: false,
+        xhr: false,
+        fetch: true,
+        beacon: false,
+        websocket: false,
+        eventSource: false,
+        resourceTiming: false,
+      },
+    });
+
+    try {
+      expect(() => kernel.start()).toThrow();
+      expect(kernel.started).toBe(false);
+      expect(console.log).toBe(originalLog);
+    } finally {
+      Object.defineProperty(globalThis, 'fetch', fetchDescriptor!);
+    }
   });
 });

@@ -34,16 +34,17 @@ describe('StorageDomain', () => {
     expect(localStorage.length).toBe(0);
   });
 
-  it('encodes cookie values and decodes them when listed', () => {
+  it('round-trips encoded cookie names and values through the UI-facing key', () => {
     const domain = new StorageDomain();
     domain.set('cookie', 'user name', '张 三');
 
-    expect(domain.list('cookie')).toContainEqual({
-      key: 'user%20name',
+    const item = domain.list('cookie').find((candidate) => candidate.key === 'user name');
+    expect(item).toEqual({
+      key: 'user name',
       value: '张 三',
       size: expect.any(Number),
     });
-    domain.remove('cookie', 'user name');
+    domain.remove('cookie', item!.key);
     expect(document.cookie).not.toContain('user%20name=');
   });
 

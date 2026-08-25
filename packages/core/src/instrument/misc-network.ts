@@ -10,7 +10,13 @@
 
 import type { NetworkRecord, WebSocketFrame } from '../types';
 import type { Instrumentation, NetworkSink } from './xhr';
-import { byteLengthOf, describeRequestBody, splitUrl, truncateText } from './body';
+import {
+  byteLengthOf,
+  describeRequestBody,
+  normalizeByteLimit,
+  splitUrl,
+  truncateText,
+} from './body';
 
 export interface MiscNetworkOptions {
   nextId(): string;
@@ -96,7 +102,8 @@ export function instrumentWebSocket(
   const Original = globalThis.WebSocket;
   if (typeof Original !== 'function') return { dispose() {} };
 
-  const { maxFrames = 500, maxFramePayload = 8 * 1024 } = options;
+  const maxFrames = normalizeCount(options.maxFrames, 500);
+  const maxFramePayload = normalizeByteLimit(options.maxFramePayload, 8 * 1024);
   let active = true;
 
   class OptikWebSocket extends Original {
@@ -118,7 +125,7 @@ export function instrumentWebSocket(
         try {
           sink.onUpdate(id, { frames: [...frames] });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       };
 
@@ -145,7 +152,7 @@ export function instrumentWebSocket(
           frames: [],
         });
       } catch {
-      // Ignore.
+        // Ignore.
       }
 
       this.addEventListener('open', () => {
@@ -159,7 +166,7 @@ export function instrumentWebSocket(
             timing: { startTime, responseStart: now },
           });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
 
@@ -186,7 +193,7 @@ export function instrumentWebSocket(
             timing: { startTime, endTime, duration: endTime - startTime },
           });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
 
@@ -195,7 +202,7 @@ export function instrumentWebSocket(
         try {
           sink.onUpdate(id, { phase: 'failed', error: 'WebSocket error' });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
 
@@ -279,7 +286,8 @@ export function instrumentEventSource(
   const Original = globalThis.EventSource;
   if (typeof Original !== 'function') return { dispose() {} };
 
-  const { maxFrames = 500, maxFramePayload = 8 * 1024 } = options;
+  const maxFrames = normalizeCount(options.maxFrames, 500);
+  const maxFramePayload = normalizeByteLimit(options.maxFramePayload, 8 * 1024);
   let active = true;
 
   class OptikEventSource extends Original {
@@ -307,7 +315,7 @@ export function instrumentEventSource(
           frames: [],
         });
       } catch {
-      // Ignore.
+        // Ignore.
       }
 
       this.addEventListener('open', () => {
@@ -319,7 +327,7 @@ export function instrumentEventSource(
             timing: { startTime, responseStart: performance.now() },
           });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
 
@@ -330,7 +338,7 @@ export function instrumentEventSource(
         try {
           sink.onUpdate(id, { frames: [...frames] });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
 
@@ -342,7 +350,7 @@ export function instrumentEventSource(
             error: this.readyState === 2 ? 'EventSource closed' : 'EventSource reconnecting',
           });
         } catch {
-      // Ignore.
+          // Ignore.
         }
       });
     }
@@ -357,4 +365,10 @@ export function instrumentEventSource(
       }
     },
   };
+}
+
+function normalizeCount(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : fallback;
 }

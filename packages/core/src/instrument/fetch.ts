@@ -17,6 +17,7 @@ import {
   headersToEntries,
   isTextualMime,
   mimeTypeOf,
+  normalizeByteLimit,
   splitUrl,
   truncateText,
 } from './body';
@@ -30,7 +31,8 @@ export function instrumentFetch(
   sink: NetworkSink,
   options: FetchInstrumentOptions,
 ): Instrumentation {
-  const { maxBodyBytes = DEFAULT_MAX_BODY_BYTES, nextId } = options;
+  const { nextId } = options;
+  const maxBodyBytes = normalizeByteLimit(options.maxBodyBytes, DEFAULT_MAX_BODY_BYTES);
   const originalFetch = globalThis.fetch;
   if (typeof originalFetch !== 'function') return { dispose() {} };
   let active = true;

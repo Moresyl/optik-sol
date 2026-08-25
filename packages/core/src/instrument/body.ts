@@ -12,6 +12,16 @@ import type { NetworkBody } from '../types';
 /** Bodies above this are recorded as metadata only. */
 export const DEFAULT_MAX_BODY_BYTES = 512 * 1024;
 
+/** Runtime configuration may come from HTML attributes or plain JavaScript. */
+export function normalizeByteLimit(
+  value: number | undefined,
+  fallback = DEFAULT_MAX_BODY_BYTES,
+): number {
+  return value !== undefined && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : fallback;
+}
+
 const TEXTUAL_MIME =
   /^(text\/|application\/(json|xml|javascript|x-www-form-urlencoded|graphql|ld\+json|problem\+json)|.*\+json$|.*\+xml$)/i;
 

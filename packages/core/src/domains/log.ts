@@ -39,6 +39,7 @@ export interface LogDomainEvents {
   /** Emitted when an existing entry's repeat counter increments. */
   entryUpdated: LogEntry;
   cleared: void;
+  resized: number;
 }
 
 export interface IngestOptions {
@@ -151,6 +152,7 @@ export class LogDomain {
 
   setMaxEntries(max: number): void {
     this.#entries.resize(max);
+    this.events.emit('resized', this.#entries.capacity);
   }
 
   dispose(): void {

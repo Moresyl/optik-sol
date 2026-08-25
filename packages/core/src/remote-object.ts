@@ -200,44 +200,48 @@ const TYPED_ARRAY_TAGS = new Set([
 ]);
 
 function subtypeOf(value: object): RemoteObjectSubtype | undefined {
-  const tag = tagOf(value);
-  switch (tag) {
-    case 'Array':
-      return 'array';
-    case 'RegExp':
-      return 'regexp';
-    case 'Date':
-      return 'date';
-    case 'Map':
-      return 'map';
-    case 'Set':
-      return 'set';
-    case 'WeakMap':
-      return 'weakmap';
-    case 'WeakSet':
-      return 'weakset';
-    case 'Promise':
-      return 'promise';
-    case 'ArrayBuffer':
-    case 'SharedArrayBuffer':
-      return 'arraybuffer';
-    case 'DataView':
-      return 'dataview';
-    case 'Blob':
-    case 'File':
-      return 'blob';
-    case 'FormData':
-      return 'formdata';
-    case 'URL':
-    case 'URLSearchParams':
-      return 'url';
-  }
-  if (TYPED_ARRAY_TAGS.has(tag)) return 'typedarray';
-  if (isError(value)) return 'error';
-  if (isNode(value)) return 'node';
-  if (isArrayLike(value)) return 'array';
-  if (typeof (value as { next?: unknown }).next === 'function' && Symbol.iterator in value) {
-    return 'iterator';
+  try {
+    const tag = tagOf(value);
+    switch (tag) {
+      case 'Array':
+        return 'array';
+      case 'RegExp':
+        return 'regexp';
+      case 'Date':
+        return 'date';
+      case 'Map':
+        return 'map';
+      case 'Set':
+        return 'set';
+      case 'WeakMap':
+        return 'weakmap';
+      case 'WeakSet':
+        return 'weakset';
+      case 'Promise':
+        return 'promise';
+      case 'ArrayBuffer':
+      case 'SharedArrayBuffer':
+        return 'arraybuffer';
+      case 'DataView':
+        return 'dataview';
+      case 'Blob':
+      case 'File':
+        return 'blob';
+      case 'FormData':
+        return 'formdata';
+      case 'URL':
+      case 'URLSearchParams':
+        return 'url';
+    }
+    if (TYPED_ARRAY_TAGS.has(tag)) return 'typedarray';
+    if (isError(value)) return 'error';
+    if (isNode(value)) return 'node';
+    if (isArrayLike(value)) return 'array';
+    if (typeof (value as { next?: unknown }).next === 'function' && Symbol.iterator in value) {
+      return 'iterator';
+    }
+  } catch {
+    // Revoked proxies and hostile host objects can throw from every reflection trap.
   }
   return undefined;
 }

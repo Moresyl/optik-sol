@@ -52,9 +52,11 @@ export interface KernelEvents {
   logAdded: LogEntry;
   logUpdated: LogEntry;
   logCleared: void;
+  logResized: number;
   networkStarted: NetworkRecord;
   networkUpdated: NetworkRecord;
   networkCleared: void;
+  networkResized: number;
 }
 
 /**
@@ -131,6 +133,16 @@ export class OptikKernel {
     this.#wireDomains();
     this.#started = true;
 
+    try {
+      this.#installInstrumentation();
+    } catch (error) {
+      this.#stopInstrumentation();
+      this.#started = false;
+      throw error;
+    }
+  }
+
+  #installInstrumentation(): void {
     const capture = this.#capture;
     const maxBodyBytes = this.#options.maxBodyBytes;
     const networkSink = { onStart: this.network.onStart, onUpdate: this.network.onUpdate };
@@ -239,6 +251,17 @@ export class OptikKernel {
 
   /** Removes every hook and restores the page to its pre-Optik state. */
   dispose(): void {
+    this.#stopInstrumentation();
+
+    for (const unsubscribe of this.#domainUnsubscribes) unsubscribe();
+    this.#domainUnsubscribes = [];
+    this.log.dispose();
+    this.network.dispose();
+    this.events.clear();
+    this.#started = false;
+  }
+
+  #stopInstrumentation(): void {
     for (const instrumentation of this.#instrumentation) {
       try {
         instrumentation.dispose();
@@ -254,13 +277,6 @@ export class OptikKernel {
       // Best effort.
     }
     this.#consoleInstrumentation = undefined;
-
-    for (const unsubscribe of this.#domainUnsubscribes) unsubscribe();
-    this.#domainUnsubscribes = [];
-    this.log.dispose();
-    this.network.dispose();
-    this.events.clear();
-    this.#started = false;
   }
 
   /** Rebuilds the domain event bridge after a dispose/start cycle. */
@@ -270,6 +286,7 @@ export class OptikKernel {
       this.log.events.on('entryAdded', (entry) => this.events.emit('logAdded', entry)),
       this.log.events.on('entryUpdated', (entry) => this.events.emit('logUpdated', entry)),
       this.log.events.on('cleared', () => this.events.emit('logCleared', undefined)),
+      this.log.events.on('resized', (capacity) => this.events.emit('logResized', capacity)),
       this.network.events.on('requestStarted', (record) =>
         this.events.emit('networkStarted', record),
       ),
@@ -277,6 +294,9 @@ export class OptikKernel {
         this.events.emit('networkUpdated', record),
       ),
       this.network.events.on('cleared', () => this.events.emit('networkCleared', undefined)),
+      this.network.events.on('resized', (capacity) =>
+        this.events.emit('networkResized', capacity),
+      ),
     ];
   }
 }
