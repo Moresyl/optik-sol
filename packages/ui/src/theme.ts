@@ -136,6 +136,16 @@ button, input, textarea, select {
   outline: none;
 }
 
+/* Reset 掉原生轮廓后必须提供一致且只对键盘导航出现的替代焦点。 */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--optik-accent);
+  outline-offset: -2px;
+}
+
 button { cursor: pointer; }
 
 /* 值着色：由 data-type / data-subtype 驱动，原子类无法表达 */
@@ -169,7 +179,8 @@ button { cursor: pointer; }
   right: -4px;
 }
 .optik-splitter:hover,
-.optik-splitter:active {
+.optik-splitter:active,
+.optik-splitter:focus-visible {
   background: var(--optik-accent);
 }
 

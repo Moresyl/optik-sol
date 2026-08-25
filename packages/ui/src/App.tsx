@@ -44,6 +44,9 @@ export interface AppProps {
 const LAUNCHER_SIZE = 48;
 const POSITION_KEY = 'optik:launcher-position';
 const HEIGHT_KEY = 'optik:panel-height';
+const MIN_PANEL_HEIGHT = 0.25;
+const MAX_PANEL_HEIGHT = 0.92;
+const PANEL_HEIGHT_KEYBOARD_STEP = 0.05;
 
 function readStored(key: string): unknown {
   try {
@@ -75,7 +78,11 @@ export function readLauncherPosition(): LauncherPosition {
 export function readPanelHeight(): number {
   const value = readStored(HEIGHT_KEY);
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0.6;
-  return Math.min(0.92, Math.max(0.25, value));
+  return clampPanelHeight(value);
+}
+
+function clampPanelHeight(value: number): number {
+  return Math.min(MAX_PANEL_HEIGHT, Math.max(MIN_PANEL_HEIGHT, value));
 }
 
 function writeStored(key: string, value: unknown): void {
@@ -267,11 +274,26 @@ export function App(props: AppProps): JSX.Element {
       threshold: 2,
       onMove: ({ dy }) => {
         // 向上拖是变高，所以取负；上下都留出余量，避免拖成完全不可用的高度。
-        setHeight((previous) => Math.min(0.92, Math.max(0.25, previous - dy / innerHeight)));
+        setHeight((previous) => clampPanelHeight(previous - dy / innerHeight));
       },
       onEnd: () => writeStored(HEIGHT_KEY, height()),
     });
     onCleanup(dispose);
+  };
+
+  const onResizerKeyDown = (event: KeyboardEvent) => {
+    let next: number | undefined;
+    const step = event.shiftKey ? PANEL_HEIGHT_KEYBOARD_STEP * 2 : PANEL_HEIGHT_KEYBOARD_STEP;
+    if (event.key === 'ArrowUp') next = height() + step;
+    else if (event.key === 'ArrowDown') next = height() - step;
+    else if (event.key === 'Home') next = MIN_PANEL_HEIGHT;
+    else if (event.key === 'End') next = MAX_PANEL_HEIGHT;
+    if (next === undefined) return;
+
+    event.preventDefault();
+    const value = clampPanelHeight(next);
+    setHeight(value);
+    writeStored(HEIGHT_KEY, value);
   };
 
   // ---- 渲染 --------------------------------------------------------------
@@ -338,6 +360,13 @@ export function App(props: AppProps): JSX.Element {
             class="shrink-0 row-center justify-center h-5 bg-bg-elevated not-selectable
  [touch-action:none] cursor-ns-resize"
             aria-label="拖动调整面板高度"
+            role="separator"
+            tabIndex={0}
+            aria-orientation="horizontal"
+            aria-valuemin={MIN_PANEL_HEIGHT * 100}
+            aria-valuemax={MAX_PANEL_HEIGHT * 100}
+            aria-valuenow={Math.round(height() * 100)}
+            onKeyDown={onResizerKeyDown}
           >
             <div class="w-9 h-1 rounded-full bg-line-strong" />
           </div>

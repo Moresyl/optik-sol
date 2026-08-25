@@ -36,6 +36,29 @@ describe('mount lifecycle', () => {
     expect(document.querySelectorAll('[data-optik-root]')).toHaveLength(1);
   });
 
+  it('lets keyboard users resize the open panel and persists the result', () => {
+    const app = mount({ capture: NO_CAPTURE, defaultOpen: true });
+    const host = document.querySelector<HTMLElement>('[data-optik-root]')!;
+    const separator = host.shadowRoot!.querySelector<HTMLElement>(
+      '[aria-label="拖动调整面板高度"]',
+    )!;
+
+    expect(separator.getAttribute('role')).toBe('separator');
+    expect(separator.tabIndex).toBe(0);
+    expect(separator.getAttribute('aria-valuenow')).toBe('60');
+    separator.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }),
+    );
+    expect(separator.getAttribute('aria-valuenow')).toBe('65');
+    expect(localStorage.getItem('optik:panel-height')).toBe('0.65');
+
+    separator.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }),
+    );
+    expect(separator.getAttribute('aria-valuenow')).toBe('92');
+    app.destroy();
+  });
+
   it('rolls back instrumentation and state when a plugin rejects mounting', () => {
     const originalLog = console.log;
     expect(() =>

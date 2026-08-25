@@ -468,6 +468,9 @@ export function ConsolePanel(props: {
 }): JSX.Element {
   const [input, setInput] = createSignal('');
   const [history, setHistory] = createSignal<string[]>([]);
+  /** -1 代表当前草稿，0 开始依次指向由新到旧的历史。 */
+  const [historyCursor, setHistoryCursor] = createSignal(-1);
+  const [historyDraft, setHistoryDraft] = createSignal('');
   const [picker, setPicker] = createSignal(false);
   /**
    * 底栏的两种形态，默认「指令」。
@@ -510,6 +513,8 @@ export function ConsolePanel(props: {
       [expression, ...previous.filter((item) => item !== expression)].slice(0, 50),
     );
     setInput('');
+    setHistoryDraft('');
+    setHistoryCursor(-1);
 
     // 先把输入本身作为一条日志记下来，回显才有上下文。
     props.kernel.log.ingest({ level: 'log', origin: 'user', args: [`› ${expression}`] });
@@ -550,6 +555,8 @@ export function ConsolePanel(props: {
     // 需要补参数的：切到输入框、填进去、聚焦、把光标停在那对空引号中间，接着打字就是了
     setMode('input');
     setInput(command.expression);
+    setHistoryDraft(command.expression);
+    setHistoryCursor(-1);
     requestAnimationFrame(() => {
       if (!inputRef) return;
       inputRef.focus();
@@ -561,6 +568,25 @@ export function ConsolePanel(props: {
         // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
       }
     });
+  };
+
+  const browseHistory = (direction: 'older' | 'newer') => {
+    const entries = history();
+    if (entries.length === 0) return;
+
+    const current = historyCursor();
+    if (direction === 'older') {
+      if (current === -1) setHistoryDraft(input());
+      const next = Math.min(current + 1, entries.length - 1);
+      setHistoryCursor(next);
+      setInput(entries[next] ?? '');
+      return;
+    }
+
+    if (current === -1) return;
+    const next = current - 1;
+    setHistoryCursor(next);
+    setInput(next === -1 ? historyDraft() : (entries[next] ?? ''));
   };
 
   const selectedText = () => {
@@ -608,8 +634,11 @@ export function ConsolePanel(props: {
           <input
             class="field flex-1"
             type="search"
+            name="optik-console-filter"
+            aria-label="搜索日志"
             inputmode="search"
             placeholder="搜索日志…"
+            autocomplete="off"
             autocapitalize="off"
             autocorrect="off"
             spellcheck={false}
@@ -743,6 +772,8 @@ export function ConsolePanel(props: {
         >
           <input
             class="field flex-1 font-mono"
+            name="optik-console-expression"
+            aria-label="控制台表达式"
             placeholder="表达式，回车执行"
             autocapitalize="off"
             autocorrect="off"
@@ -750,14 +781,22 @@ export function ConsolePanel(props: {
             spellcheck={false}
             value={input()}
             ref={(element) => (inputRef = element)}
-            onInput={(event) => setInput(event.currentTarget.value)}
+            onInput={(event) => {
+              const value = event.currentTarget.value;
+              setInput(value);
+              setHistoryDraft(value);
+              setHistoryCursor(-1);
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
                 run();
               } else if (event.key === 'ArrowUp' && history().length > 0) {
                 event.preventDefault();
-                setInput(history()[0]);
+                browseHistory('older');
+              } else if (event.key === 'ArrowDown' && historyCursor() !== -1) {
+                event.preventDefault();
+                browseHistory('newer');
               }
             }}
           />

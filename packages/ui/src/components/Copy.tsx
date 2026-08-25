@@ -220,6 +220,7 @@ export function CopySheet(props: {
             </div>
             <textarea
               readOnly
+              aria-label="待手动复制的文本"
               spellcheck={false}
               autocapitalize="off"
               autocorrect="off"

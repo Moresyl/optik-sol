@@ -237,7 +237,10 @@ function EditSheet(props: {
         >
           <input
             class="field font-mono"
+            name="optik-storage-key"
+            aria-label="存储键"
             placeholder="例如 token"
+            autocomplete="off"
             autocapitalize="off"
             autocorrect="off"
             spellcheck={false}
@@ -258,7 +261,10 @@ function EditSheet(props: {
         <textarea
           class="flex-1 min-h-40 px-2.5 py-2 rounded-md bg-bg border border-line
  font-mono text-input leading-5 resize-none selectable"
+          name="optik-storage-value"
+          aria-label="存储值"
           placeholder="值（字符串原样写入，不会自动加引号）"
+          autocomplete="off"
           autocapitalize="off"
           autocorrect="off"
           spellcheck={false}
@@ -415,8 +421,11 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
           <input
             class="field flex-1"
             type="search"
+            name="optik-storage-filter"
+            aria-label="按键或值筛选存储项"
             inputmode="search"
             placeholder="按键或值筛选…"
+            autocomplete="off"
             autocapitalize="off"
             autocorrect="off"
             spellcheck={false}

@@ -14,12 +14,19 @@ import { useLayout } from '../layout';
 
 const MIN_RATIO = 0.2;
 const MAX_RATIO = 0.75;
+const KEYBOARD_STEP = 0.02;
+
+function clampRatio(value: number): number {
+  const clamped = Math.min(MAX_RATIO, Math.max(MIN_RATIO, value));
+  // 避免连续键盘调整产生 42.00000000000001% 这类浮点噪声并写入存储。
+  return Math.round(clamped * 10_000) / 10_000;
+}
 
 function readRatio(key: string, fallback: number): number {
   try {
     const raw = localStorage.getItem(key);
     const value = raw ? Number(raw) : NaN;
-    return Number.isFinite(value) ? Math.min(MAX_RATIO, Math.max(MIN_RATIO, value)) : fallback;
+    return Number.isFinite(value) ? clampRatio(value) : fallback;
   } catch {
     return fallback;
   }
@@ -44,6 +51,29 @@ export function SplitView(props: SplitViewProps): JSX.Element {
 
   let container: HTMLDivElement | undefined;
 
+  const persistRatio = (value: number) => {
+    try {
+      localStorage.setItem(props.storageKey, String(value));
+    } catch {
+      // 隐私模式下写不了，比例记不住而已。
+    }
+  };
+
+  const onSplitterKeyDown = (event: KeyboardEvent) => {
+    let next: number | undefined;
+    const step = event.shiftKey ? KEYBOARD_STEP * 5 : KEYBOARD_STEP;
+    if (event.key === 'ArrowLeft') next = ratio() - step;
+    else if (event.key === 'ArrowRight') next = ratio() + step;
+    else if (event.key === 'Home') next = MIN_RATIO;
+    else if (event.key === 'End') next = MAX_RATIO;
+    if (next === undefined) return;
+
+    event.preventDefault();
+    const value = clampRatio(next);
+    setRatio(value);
+    persistRatio(value);
+  };
+
   const attachSplitter = (element: HTMLElement) => {
     const dispose = makeDraggable(element, {
       // 分隔线是明确的操作对象，不需要大阈值来区分「点击还是拖拽」。
@@ -51,15 +81,9 @@ export function SplitView(props: SplitViewProps): JSX.Element {
       onMove: ({ dx }) => {
         const width = container?.clientWidth ?? 0;
         if (width === 0) return;
-        setRatio((previous) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, previous + dx / width)));
+        setRatio((previous) => clampRatio(previous + dx / width));
       },
-      onEnd: () => {
-        try {
-          localStorage.setItem(props.storageKey, String(ratio()));
-        } catch {
-          // 隐私模式下写不了，比例记不住而已。
-        }
-      },
+      onEnd: () => persistRatio(ratio()),
     });
     onCleanup(dispose);
   };
@@ -82,8 +106,13 @@ export function SplitView(props: SplitViewProps): JSX.Element {
           ref={attachSplitter}
           class="optik-splitter"
           role="separator"
+          tabIndex={0}
           aria-orientation="vertical"
           aria-label="拖动调整两栏宽度"
+          aria-valuemin={MIN_RATIO * 100}
+          aria-valuemax={MAX_RATIO * 100}
+          aria-valuenow={Math.round(ratio() * 100)}
+          onKeyDown={onSplitterKeyDown}
         />
 
         <div class="flex-1 min-w-0 h-full">

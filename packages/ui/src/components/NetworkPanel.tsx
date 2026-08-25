@@ -700,8 +700,11 @@ export function NetworkPanel(props: {
           <input
             class="field flex-1"
             type="search"
+            name="optik-network-filter"
+            aria-label="按地址筛选网络请求"
             inputmode="search"
             placeholder="按地址筛选…"
+            autocomplete="off"
             autocapitalize="off"
             autocorrect="off"
             spellcheck={false}
