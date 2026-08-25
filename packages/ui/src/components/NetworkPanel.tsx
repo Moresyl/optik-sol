@@ -170,14 +170,14 @@ const OMITTED_REASONS: Record<string, string> = {
 };
 
 function formatBytes(bytes: number | undefined): string {
-  if (bytes === undefined) return '—';
+  if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '—';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
 function formatDuration(ms: number | undefined): string {
-  if (ms === undefined) return '—';
+  if (ms === undefined || !Number.isFinite(ms) || ms < 0) return '—';
   if (ms < 1000) return `${Math.round(ms)} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
 }
@@ -341,7 +341,7 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
       { label: '内容下载', value: download, color: '#60c088' },
     ].filter(
       (phase): phase is { label: string; value: number; color: string } =>
-        phase.value !== undefined,
+        phase.value !== undefined && Number.isFinite(phase.value) && phase.value >= 0,
     );
   });
 

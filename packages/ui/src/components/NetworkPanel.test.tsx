@@ -185,6 +185,26 @@ describe('NetworkPanel', () => {
     expect(host.textContent).not.toContain('cURL 命令');
   });
 
+  it('degrades invalid timing and size measurements without emitting invalid UI values', () => {
+    const { host } = mount([
+      record({
+        responseBody: { text: 'body', size: Number.NaN },
+        timing: {
+          startTime: 0,
+          duration: -1,
+          dns: Number.NaN,
+          tcp: -5,
+        },
+      }),
+    ]);
+
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    expect(host.textContent).toContain('无分段数据');
+    expect(host.textContent).not.toContain('NaN');
+    expect(host.textContent).not.toContain('-5 ms');
+    expect(host.textContent).not.toContain('-1 ms');
+  });
+
   it('exports privacy-safe HAR and clears the live list', async () => {
     const { host, copy } = mount([
       record({ requestHeaders: [['Authorization', 'Bearer secret']] }),
