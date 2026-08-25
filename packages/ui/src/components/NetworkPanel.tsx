@@ -346,6 +346,7 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
   });
 
   const total = createMemo(() => phases().reduce((sum, phase) => sum + phase.value, 0));
+  const widthOf = (value: number) => (total() > 0 ? `${(value / total()) * 100}%` : '0%');
 
   return (
     <Show
@@ -360,7 +361,7 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
         <For each={phases()}>
           {(phase) => (
             <div
-              style={{ width: `${(phase.value / total()) * 100}%`, background: phase.color }}
+              style={{ width: widthOf(phase.value), background: phase.color }}
               title={phase.label}
             />
           )}
