@@ -346,12 +346,13 @@ function LogRow(props: {
    * 长按复制本行。注意这里用的是纯观察型手势——它不 preventDefault，
    * 所以系统原生的"长按选中文字"依然可用，两条路互不干扰。
    */
+  let disposeLongPress: (() => void) | undefined;
+  onCleanup(() => disposeLongPress?.());
   const attachLongPress = (element: HTMLElement) => {
-    const dispose = onLongPress(element, {
+    disposeLongPress?.();
+    disposeLongPress = onLongPress(element, {
       onLongPress: () => props.copier.copy(entryToText(props.entry, props.kernel), '此行'),
     });
-    // Solid 的 ref 回调没有 onCleanup 上下文，挂到元素上由面板卸载时统一清理。
-    (element as HTMLElement & { __optikDispose?: () => void }).__optikDispose = dispose;
   };
 
   const selected = () => props.store.selection().has(props.entry.id);

@@ -23,6 +23,8 @@ const cleanups: Array<() => void> = [];
 
 afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 function inputValue(input: HTMLInputElement, value: string): void {
@@ -98,6 +100,41 @@ function renderWithStore(): {
 }
 
 describe('ConsolePanel REPL history', () => {
+  it('removes log-row long-press listeners when the row is unmounted', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('PointerEvent', class extends MouseEvent {
+      readonly pointerId = 1;
+      readonly isPrimary = true;
+    });
+    const kernel = new OptikKernel({ capture: NO_CAPTURE });
+    kernel.log.ingest({ level: 'log', origin: 'user', args: ['detached'] });
+    const store = createStore(kernel);
+    const copy = vi.fn(() => true);
+    const copier: CopyController = {
+      copy,
+      reveal: vi.fn(),
+      toast: () => null,
+      sheet: () => null,
+      closeSheet: vi.fn(),
+    };
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const dispose = render(
+      () => <ConsolePanel store={store} kernel={kernel} copier={copier} />,
+      host,
+    );
+    const row = host.querySelector<HTMLButtonElement>('[title^="复制此行"]')!.parentElement!;
+    dispose();
+
+    row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }));
+    vi.advanceTimersByTime(500);
+    expect(copy).not.toHaveBeenCalled();
+
+    store.dispose();
+    kernel.dispose();
+    host.remove();
+  });
+
   it('exposes accessible regex and case-sensitive search toggles', () => {
     const input = renderPanel();
     const panel = input.closest<HTMLElement>('.relative')!;
