@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
 export default defineConfig({
-  plugins: [solid()],
+  // Direct listeners keep module evaluation DOM-free. Solid's delegated mode emits
+  // a top-level delegateEvents() call that touches window.document during SSR import.
+  plugins: [solid({ solid: { delegateEvents: false } })],
   build: {
     lib: {
       entry: 'src/index.ts',

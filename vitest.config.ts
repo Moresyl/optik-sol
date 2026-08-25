@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import solid from 'vite-plugin-solid';
 
 export default defineConfig({
-  plugins: [solid({ hot: false })],
+  plugins: [solid({ hot: false, solid: { delegateEvents: false } })],
   test: {
     environment: 'happy-dom',
     include: ['packages/**/*.test.{ts,tsx}'],

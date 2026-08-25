@@ -23,6 +23,7 @@
     "dev": "pnpm --filter optik-ui css && pnpm --parallel --filter optik-ui --filter playground dev",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:dist": "node scripts/verify-dist.mjs",
     "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ui/tsconfig.json && tsc -p packages/optik/tsconfig.json",
     "clean": "pnpm -r exec rimraf dist .turbo tsconfig.tsbuildinfo"
   },
