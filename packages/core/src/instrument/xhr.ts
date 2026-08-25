@@ -62,6 +62,8 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
   const originalSend = Original.prototype.send;
   const originalSetRequestHeader = Original.prototype.setRequestHeader;
   let active = true;
+  const requestCleanups = new WeakMap<XMLHttpRequest, () => void>();
+  const pendingCleanups = new Set<() => void>();
 
   const wrappedOpen = function open(
     this: XMLHttpRequest,
@@ -70,6 +72,8 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
     ...rest: unknown[]
   ) {
     if (!active) return (originalOpen as Function).call(this, method, url, ...rest);
+    // open() may legally reuse an XHR before its previous send settles.
+    requestCleanups.get(this)?.();
     states.set(this, {
       id: nextId(),
       method: String(method || 'GET').toUpperCase(),
@@ -134,10 +138,20 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
     let settled = false;
 
     const cleanup = () => {
-      this.removeEventListener('readystatechange', onReadyStateChange);
-      this.removeEventListener('error', onRequestError);
-      this.removeEventListener('abort', onAbort);
-      this.removeEventListener('timeout', onTimeout);
+      for (const [event, listener] of [
+        ['readystatechange', onReadyStateChange],
+        ['error', onRequestError],
+        ['abort', onAbort],
+        ['timeout', onTimeout],
+      ] as const) {
+        try {
+          this.removeEventListener(event, listener);
+        } catch {
+          // Best effort for partially implemented WebViews.
+        }
+      }
+      if (requestCleanups.get(this) === cleanup) requestCleanups.delete(this);
+      pendingCleanups.delete(cleanup);
     };
 
     const settleFailure = (phase: 'failed' | 'aborted', message: string) => {
@@ -208,10 +222,17 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
       });
     };
 
-    this.addEventListener('readystatechange', onReadyStateChange);
-    this.addEventListener('error', onRequestError);
-    this.addEventListener('abort', onAbort);
-    this.addEventListener('timeout', onTimeout);
+    try {
+      this.addEventListener('readystatechange', onReadyStateChange);
+      this.addEventListener('error', onRequestError);
+      this.addEventListener('abort', onAbort);
+      this.addEventListener('timeout', onTimeout);
+      requestCleanups.set(this, cleanup);
+      pendingCleanups.add(cleanup);
+    } catch {
+      cleanup();
+      // Instrumentation is optional; still send through the untouched host request.
+    }
 
     try {
       return originalSend.call(this, body as XMLHttpRequestBodyInit);
@@ -227,6 +248,7 @@ export function instrumentXhr(sink: NetworkSink, options: XhrInstrumentOptions):
   return {
     dispose() {
       active = false;
+      for (const cleanup of [...pendingCleanups]) cleanup();
       // Do not overwrite an instrumentor installed after Optik. If another wrapper is
       // chained above ours, it can keep calling this now-inert pass-through safely.
       if (Original.prototype.open === wrappedOpen) Original.prototype.open = originalOpen;

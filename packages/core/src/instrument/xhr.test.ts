@@ -141,6 +141,25 @@ describe('instrumentXhr', () => {
     instrumentation.dispose();
   });
 
+  it('detaches an in-flight request when an XHR is reopened or instrumentation is disposed', () => {
+    const instrumentation = instrumentXhr(sink, { nextId: () => `net:${next++}` });
+    const xhr = new XMLHttpRequest() as unknown as FakeXMLHttpRequest;
+    const remove = vi.spyOn(xhr, 'removeEventListener');
+
+    xhr.open('GET', 'https://example.test/first');
+    xhr.send();
+    xhr.open('GET', 'https://example.test/second');
+    expect(remove).toHaveBeenCalledTimes(4);
+    xhr.send();
+    const updatesBeforeDispose = updates.mock.calls.length;
+
+    instrumentation.dispose();
+    expect(remove).toHaveBeenCalledTimes(8);
+    xhr.status = 200;
+    xhr.transition(4);
+    expect(updates).toHaveBeenCalledTimes(updatesBeforeDispose);
+  });
+
   it('records a synchronous send failure and rethrows the original value', () => {
     const instrumentation = instrumentXhr(sink, { nextId: () => `net:${next++}` });
     const xhr = new XMLHttpRequest() as unknown as FakeXMLHttpRequest;
