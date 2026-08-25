@@ -101,6 +101,12 @@ export function App(props: AppProps): JSX.Element {
   const [pluginVersion, setPluginVersion] = createSignal(0);
   const copier = createCopyController();
 
+  // The panel DOM is removed while closed; release ResizeObserver's strong reference
+  // immediately rather than retaining that detached subtree until a later reopen.
+  createEffect(() => {
+    if (!open()) layout.disconnect();
+  });
+
   // 对外的 show()/hide() 通过宿主元素上的自定义事件驱动，
   // 这样命令式 API 不需要拿到组件内部的 setter。
   const onOpen = () => setOpen(true);

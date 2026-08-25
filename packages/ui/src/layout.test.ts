@@ -74,4 +74,41 @@ describe('createLayout compatibility', () => {
     expect(layout.dense()).toBe(false);
     dispose();
   });
+
+  it('disconnects explicitly and contains a throwing cleanup shim', () => {
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = vi.fn();
+        disconnect = disconnect;
+      },
+    );
+    let dispose!: () => void;
+    const layout = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createLayout();
+    });
+    layout.observe(document.createElement('div'));
+    layout.disconnect();
+    layout.disconnect();
+    expect(disconnect).toHaveBeenCalledOnce();
+    dispose();
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = vi.fn();
+        disconnect(): void {
+          throw new Error('broken disconnect');
+        }
+      },
+    );
+    createRoot((cleanup) => {
+      const broken = createLayout();
+      broken.observe(document.createElement('div'));
+      expect(() => broken.disconnect()).not.toThrow();
+      cleanup();
+    });
+  });
 });

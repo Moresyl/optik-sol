@@ -34,10 +34,21 @@ export const useLayout = (): Layout => useContext(LayoutContext);
 /**
  * 返回布局信号和一个 ref 回调；把 ref 挂到要观察宽度的容器上。
  */
-export function createLayout(): Layout & { observe: (element: HTMLElement) => void } {
+export function createLayout(): Layout & {
+  observe: (element: HTMLElement) => void;
+  disconnect: () => void;
+} {
   const [width, setWidth] = createSignal(0);
   let stopObservation: (() => void) | undefined;
-  onCleanup(() => stopObservation?.());
+  const disconnect = () => {
+    try {
+      stopObservation?.();
+    } catch {
+      // Cleanup must remain safe for third-party ResizeObserver shims.
+    }
+    stopObservation = undefined;
+  };
+  onCleanup(disconnect);
 
   let media: MediaQueryList | null = null;
   try {
@@ -59,8 +70,7 @@ export function createLayout(): Layout & { observe: (element: HTMLElement) => vo
   }
 
   const observe = (element: HTMLElement) => {
-    stopObservation?.();
-    stopObservation = undefined;
+    disconnect();
     const measure = () => setWidth(element.clientWidth);
     measure();
 
@@ -90,5 +100,5 @@ export function createLayout(): Layout & { observe: (element: HTMLElement) => vo
   };
 
   const wide = () => width() >= SPLIT_MIN_WIDTH;
-  return { wide, dense: () => wide() && fine(), observe };
+  return { wide, dense: () => wide() && fine(), observe, disconnect };
 }
