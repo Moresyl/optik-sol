@@ -12,11 +12,13 @@ All notable changes to this project are documented here. The format follows [Kee
 - Bounded main-thread Long Tasks capture, attribution, Environment-panel diagnostics, and declarative script configuration
 - A protocol client/router, isolated in-process transport, and trusted-transport kernel bridge with pagination and borrowed-object cleanup for logs, network records, performance data, and live events
 - Bounded object-property expansion with an explicit truncation marker for very large arrays, maps, sets, and objects
+- Case-sensitive console search alongside literal and regular-expression matching
 
 ### Changed
 
-- Added enforceable coverage thresholds and broad edge/error/lifecycle regression tests
-- Hardened instrumentation (including in-flight XHR and live WebSocket/EventSource cleanup) and transport teardown, bounded response capture with strict length validation, semantically correct log coalescing, transactional/automatic mounting, validated plugin navigation plus cleanup/subscriber isolation, object-handle release including replaced network bodies, stable network record identity, asynchronous clipboard/modal lifecycle and keyboard focus, runtime buffer resizing, background-page state delivery, live element-tree selectors and self-healing highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, and disconnectable legacy layout observers
+- Expanded enforceable coverage thresholds from core-only measurement to every shipped package, with broad edge/error/lifecycle regression tests
+- Hardened instrumentation (including in-flight XHR and live WebSocket/EventSource cleanup) and transport teardown, bounded response capture with strict length validation, semantically correct log coalescing, transactional/automatic mounting, validated plugin navigation plus cleanup/subscriber/diagnostic isolation, object-handle release including replaced network bodies and exceptional deep-copy paths, stable network record identity, asynchronous clipboard/modal lifecycle and keyboard focus, network timing/body/HAR rendering, runtime buffer resizing, background-page state delivery, live element-tree selectors and self-healing highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, disconnectable legacy layout observers, and shared frame-scheduling fallbacks for incomplete WebViews
+- Released per-row long-press listeners on unmount and guarded zero-duration network timing bars against invalid CSS widths
 
 ## [0.2.0] - 2026-08-11
 
