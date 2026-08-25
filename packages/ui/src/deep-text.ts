@@ -125,7 +125,16 @@ export function remoteObjectToDeepText(remote: RemoteObject, kernel: OptikKernel
     return listLike ? value : `${JSON.stringify(property.name)}: ${value}`;
   };
 
-  const text = walk(remote, 0, '');
-  for (const objectId of borrowed) kernel.log.registry.release(objectId);
-  return text;
+  try {
+    return walk(remote, 0, '');
+  } catch {
+    // A custom protocol bridge or hostile host object may still throw while a deeper
+    // level is being materialised. Copying is a read-only convenience: degrade to an
+    // explicit marker instead of breaking the whole panel.
+    return `「${remote.description}（展开失败）」`;
+  } finally {
+    // `walk` can fail after one or more ancestor levels have already retained their
+    // children. Always return those borrowed references, including exceptional paths.
+    for (const objectId of borrowed) kernel.log.registry.release(objectId);
+  }
 }
