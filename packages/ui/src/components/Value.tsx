@@ -127,6 +127,7 @@ export function ValueView(props: ValueProps): JSX.Element {
   const [children, setChildren] = createSignal<PropertyDescriptor[] | null>(null);
   const [released, setReleased] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
+  const [loadFailed, setLoadFailed] = createSignal(false);
   let cancelPending: (() => void) | undefined;
   let disposed = false;
 
@@ -173,17 +174,27 @@ export function ValueView(props: ValueProps): JSX.Element {
   const load = () => {
     if (children() !== null || released()) return;
     setLoading(true);
+    setLoadFailed(false);
     // 取属性可能触发 getter 求值，放到下一帧避免阻塞本次点击的视觉反馈。
     cancelPending = scheduleFrame(() => {
       cancelPending = undefined;
       if (disposed) return;
       // 不展开原型链、也不调用 getter：在调试器里触发副作用是不可接受的，
       // getter 会以 `(...)` 占位显示，用户想看再单独求值。
-      const result = domain().getProperties(target().objectId!, {
-        ownProperties: true,
-        includeNonEnumerable: true,
-        invokeGetters: false,
-      });
+      let result: PropertyDescriptor[] | null;
+      try {
+        result = domain().getProperties(target().objectId!, {
+          ownProperties: true,
+          includeNonEnumerable: true,
+          invokeGetters: false,
+        });
+      } catch {
+        if (!disposed) {
+          setLoading(false);
+          setLoadFailed(true);
+        }
+        return;
+      }
       if (disposed) {
         releaseProperties(result);
         return;
@@ -273,6 +284,12 @@ export function ValueView(props: ValueProps): JSX.Element {
         <Show when={released()}>
           <div class="text-fg-tertiary py-1" style={{ 'padding-left': `${(depth() + 1) * 12}px` }}>
             值已释放（该条日志已超出缓冲区上限，原始对象不再被引用）
+          </div>
+        </Show>
+
+        <Show when={loadFailed()}>
+          <div class="text-warn py-1" style={{ 'padding-left': `${(depth() + 1) * 12}px` }}>
+            展开失败，请收起后重试
           </div>
         </Show>
 
