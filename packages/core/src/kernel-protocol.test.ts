@@ -85,6 +85,18 @@ describe('attachKernelProtocol', () => {
     await expect(
       client.request(KernelProtocolMethods.LogGetProperties, { objectId, options: true }),
     ).rejects.toMatchObject({ code: ErrorCode.InvalidParams });
+    await expect(
+      client.request(KernelProtocolMethods.LogGetProperties, {
+        objectId,
+        options: { maxProperties: 0 },
+      }),
+    ).rejects.toMatchObject({ code: ErrorCode.InvalidParams });
+    await expect(
+      client.request(KernelProtocolMethods.LogGetProperties, {
+        objectId,
+        options: { maxProperties: 10_001 },
+      }),
+    ).rejects.toMatchObject({ code: ErrorCode.InvalidParams });
 
     const borrowedId = initialProperties.flatMap((property) => [
       property.value?.objectId,

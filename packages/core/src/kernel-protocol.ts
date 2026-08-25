@@ -1,6 +1,11 @@
 /** Exposes the kernel's bounded, JSON-safe domains through the Optik protocol. */
 
-import type { GetPropertiesOptions, ObjectRegistry, PropertyDescriptor } from './remote-object';
+import {
+  MAX_PROPERTY_EXPANSION_LIMIT,
+  type GetPropertiesOptions,
+  type ObjectRegistry,
+  type PropertyDescriptor,
+} from './remote-object';
 import { ErrorCode, type Transport } from './protocol';
 import { ProtocolRequestError, ProtocolRouter, sendEvent } from './transport';
 import type { OptikKernel } from './kernel';
@@ -191,6 +196,20 @@ function propertyParams(params: unknown): {
       throw invalidParams(`${key} must be a boolean`);
     }
     if (value !== undefined) options[key] = value;
+  }
+  const maxProperties = rawOptions['maxProperties'];
+  if (maxProperties !== undefined) {
+    if (
+      typeof maxProperties !== 'number' ||
+      !Number.isSafeInteger(maxProperties) ||
+      maxProperties < 1 ||
+      maxProperties > MAX_PROPERTY_EXPANSION_LIMIT
+    ) {
+      throw invalidParams(
+        `maxProperties must be a safe integer between 1 and ${MAX_PROPERTY_EXPANSION_LIMIT}`,
+      );
+    }
+    options.maxProperties = maxProperties;
   }
   return { objectId, options };
 }

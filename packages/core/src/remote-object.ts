@@ -659,7 +659,12 @@ export interface GetPropertiesOptions {
   includeNonEnumerable?: boolean;
   /** Invoke getters and report their values. Default false — getters can have side effects. */
   invokeGetters?: boolean;
+  /** Maximum materialized properties per expansion. Default 1000, hard cap 10000. */
+  maxProperties?: number;
 }
+
+export const DEFAULT_PROPERTY_EXPANSION_LIMIT = 1000;
+export const MAX_PROPERTY_EXPANSION_LIMIT = 10_000;
 
 /**
  * Expands one level of an object previously retained via `toRemoteObject`.
@@ -676,7 +681,9 @@ export function getProperties(
   if (target === undefined) return null;
 
   const { ownProperties = true, includeNonEnumerable = false, invokeGetters = false } = options;
+  const maxProperties = normalizePropertyLimit(options.maxProperties);
   const out: PropertyDescriptor[] = [];
+  let truncated = false;
   // Symbols with the same description are still distinct property keys. Tracking their
   // rendered text (`Symbol(name)`) silently dropped all but the first one.
   const seenNames = new Set<PropertyKey>();
@@ -688,6 +695,10 @@ export function getProperties(
     let index = 0;
     try {
       for (const item of target as Iterable<unknown>) {
+        if (out.length >= maxProperties) {
+          truncated = true;
+          break;
+        }
         const entryValue =
           subtype === 'map'
             ? { key: (item as [unknown, unknown])[0], value: (item as [unknown, unknown])[1] }
@@ -719,6 +730,10 @@ export function getProperties(
     }
 
     for (const name of names) {
+      if (out.length >= maxProperties) {
+        truncated = true;
+        break;
+      }
       const key = typeof name === 'symbol' ? name.toString() : name;
       if (seenNames.has(name)) continue; // Shadowed by a nearer prototype.
       seenNames.add(name);
@@ -756,13 +771,29 @@ export function getProperties(
       out.push(entry);
     }
 
-    if (ownProperties) break;
+    if (ownProperties || truncated) break;
     try {
       current = Object.getPrototypeOf(current);
     } catch {
       break;
     }
     isOwnLevel = false;
+  }
+
+  if (truncated) {
+    out.push({
+      name: '[[Truncated]]',
+      value: {
+        type: 'string',
+        value: `仅显示前 ${maxProperties} 项`,
+        description: `仅显示前 ${maxProperties} 项`,
+      },
+      isOwn: false,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      keyKind: 'internal',
+    });
   }
 
   // `[[Prototype]]` last, mirroring DevTools' ordering.
@@ -784,4 +815,10 @@ export function getProperties(
   }
 
   return out;
+}
+
+function normalizePropertyLimit(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_PROPERTY_EXPANSION_LIMIT;
+  if (!Number.isFinite(value) || value < 1) return DEFAULT_PROPERTY_EXPANSION_LIMIT;
+  return Math.min(MAX_PROPERTY_EXPANSION_LIMIT, Math.floor(value));
 }

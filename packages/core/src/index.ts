@@ -23,6 +23,8 @@ export {
   toRemoteObject,
   getProperties,
   DEFAULT_PREVIEW_LIMITS,
+  DEFAULT_PROPERTY_EXPANSION_LIMIT,
+  MAX_PROPERTY_EXPANSION_LIMIT,
 } from './remote-object';
 export type {
   EntryPreview,

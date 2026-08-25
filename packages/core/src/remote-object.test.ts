@@ -217,4 +217,23 @@ describe('RemoteObject mirroring', () => {
     const set = toRemoteObject(new Set(['value']), registry);
     expect(getProperties(set.objectId!, registry)?.[0]?.value?.value).toBe('value');
   });
+
+  it('bounds large property expansions and exposes an explicit truncation row', () => {
+    const registry = new ObjectRegistry();
+    const large = Array.from({ length: 1_100 }, (_, index) => index);
+    const remote = toRemoteObject(large, registry);
+
+    const defaults = getProperties(remote.objectId!, registry)!;
+    expect(defaults.filter((property) => property.keyKind === 'index')).toHaveLength(1000);
+    expect(defaults).toContainEqual(
+      expect.objectContaining({
+        name: '[[Truncated]]',
+        value: expect.objectContaining({ value: '仅显示前 1000 项' }),
+      }),
+    );
+
+    const limited = getProperties(remote.objectId!, registry, { maxProperties: 2 })!;
+    expect(limited.filter((property) => property.keyKind === 'index')).toHaveLength(2);
+    expect(limited).toContainEqual(expect.objectContaining({ name: '[[Truncated]]' }));
+  });
 });
