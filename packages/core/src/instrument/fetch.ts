@@ -60,8 +60,12 @@ export function instrumentFetch(
           ? headersToEntries(init.headers)
           : headersToEntries(input.headers);
         // A Request's body is a stream we must not consume — record it as such.
-        requestBody = init?.body
-          ? describeRequestBody(init.body, findHeader(requestHeaders, 'content-type'), maxBodyBytes)
+        requestBody = init && 'body' in init
+          ? describeRequestBody(
+              init.body,
+              findHeader(requestHeaders, 'content-type'),
+              maxBodyBytes,
+            )
           : input.bodyUsed || input.body
             ? { omitted: true, omittedReason: 'streaming' }
             : undefined;
@@ -115,7 +119,13 @@ export function instrumentFetch(
         const responseStart = performance.now();
         const responseHeaders = safeHeaderEntries(response.headers);
         const mime = mimeTypeOf(findHeader(responseHeaders, 'content-type'));
-        const declaredLength = Number(findHeader(responseHeaders, 'content-length') ?? NaN);
+        const rawDeclaredLength = Number(findHeader(responseHeaders, 'content-length') ?? NaN);
+        const declaredLength =
+          Number.isFinite(rawDeclaredLength) &&
+          Number.isInteger(rawDeclaredLength) &&
+          rawDeclaredLength >= 0
+            ? rawDeclaredLength
+            : Number.NaN;
 
         try {
           sink.onUpdate(id, {

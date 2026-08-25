@@ -125,6 +125,41 @@ describe('instrumentFetch', () => {
     instrumentation.dispose();
   });
 
+  it('honors an explicitly empty RequestInit body instead of reporting the source stream', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(response({ body: null }));
+    const instrumentation = instrumentFetch(sink, { nextId: () => `net:${next++}` });
+    const request = new Request('https://example.test/override', {
+      method: 'POST',
+      body: 'original',
+    });
+
+    await fetch(request, { body: '' });
+    expect(starts).toHaveBeenCalledWith(
+      expect.objectContaining({ requestBody: { text: '', mimeType: 'text/plain', size: 0 } }),
+    );
+    instrumentation.dispose();
+  });
+
+  it.each(['-1', '1.5'])('does not trust an invalid Content-Length of %s', async (length) => {
+    const value = response({
+      body: 'must not be buffered by the legacy fallback',
+      headers: { 'Content-Type': 'text/plain', 'Content-Length': length },
+    });
+    globalThis.fetch = vi.fn().mockResolvedValue(value);
+    const instrumentation = instrumentFetch(sink, { nextId: () => `net:${next++}` });
+
+    await fetch('https://example.test/invalid-length');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(updates).toHaveBeenLastCalledWith(
+      'net:1',
+      expect.objectContaining({
+        responseBody: expect.objectContaining({ omittedReason: 'unavailable' }),
+      }),
+    );
+    instrumentation.dispose();
+  });
+
   it.each([
     [
       'opaque',
