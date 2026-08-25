@@ -19,6 +19,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Expanded enforceable coverage thresholds from core-only measurement to every shipped package, with broad edge/error/lifecycle regression tests
 - Hardened instrumentation (including in-flight XHR and live WebSocket/EventSource cleanup) and transport teardown, bounded response capture with strict length validation, semantically correct log coalescing, transactional/automatic mounting, validated plugin navigation plus cleanup/subscriber/diagnostic isolation, object-handle release including replaced network bodies and exceptional deep-copy paths, stable network record identity, asynchronous clipboard/modal lifecycle and keyboard focus, network timing/body/HAR rendering, runtime buffer resizing, background-page state delivery, live element-tree selectors and self-healing highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, disconnectable legacy layout observers, and shared frame-scheduling fallbacks for incomplete WebViews
 - Released per-row long-press listeners on unmount and guarded zero-duration network timing bars against invalid CSS widths
+- Kept ESM, CJS, and IIFE entry points safe to evaluate in server-side and build-tool environments without a DOM
 
 ## [0.2.0] - 2026-08-11
 
