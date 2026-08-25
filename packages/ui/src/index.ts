@@ -10,7 +10,7 @@
 import { render } from 'solid-js/web';
 import { OptikKernel, type KernelOptions } from 'optik-core';
 import { App, type ThemeMode } from './App';
-import { createStore, type TabId } from './store';
+import { BUILTIN_TABS, createStore, type TabId } from './store';
 import { BASE_STYLES } from './theme';
 import { PluginRegistry, type OptikPlugin } from './plugin';
 import unoStyles from './generated/uno.css?inline';
@@ -70,10 +70,19 @@ export function mount(options: MountOptions = {}): OptikInstance {
 
     const store = createStore(kernel);
     cleanupStore = store;
-    if (defaultTab) store.setActiveTab(defaultTab);
 
     const registry = new PluginRegistry();
     for (const plugin of plugins) registry.register(plugin);
+    const tabAvailable = (tab: TabId) =>
+      BUILTIN_TABS.includes(tab as (typeof BUILTIN_TABS)[number]) ||
+      (tab.startsWith('plugin:') && Boolean(registry.get(tab.slice(7))));
+    const assertTab = (tab: TabId) => {
+      if (!tabAvailable(tab)) throw new Error(`[optik] 未知标签页：${tab}`);
+    };
+    if (defaultTab) {
+      assertTab(defaultTab);
+      store.setActiveTab(defaultTab);
+    }
 
     const host = document.createElement('div');
     cleanupHost = host;
@@ -111,11 +120,16 @@ export function mount(options: MountOptions = {}): OptikInstance {
       },
 
       eject(id) {
+        if (!registry.get(id)) return false;
+        if (store.activeTab() === `plugin:${id}`) store.setActiveTab('console');
         return registry.unregister(id);
       },
 
       show(tab) {
-        if (tab) store.setActiveTab(tab);
+        if (tab) {
+          assertTab(tab);
+          store.setActiveTab(tab);
+        }
         // 面板的开合由 App 内部状态控制，通过自定义事件通知，避免把 setter 泄露出去。
         host.dispatchEvent(new CustomEvent('optik:open'));
       },

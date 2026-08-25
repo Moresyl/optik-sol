@@ -107,6 +107,10 @@ describe('mount lifecycle', () => {
     expect(app.eject('tools')).toBe(true);
     await Promise.resolve();
 
+    const host = document.querySelector<HTMLElement>('[data-optik-root]')!;
+    expect(host.shadowRoot?.textContent).toContain('控制台');
+    expect(host.shadowRoot?.textContent).not.toContain('插件渲染失败');
+
     expect(events).toEqual([
       'first:render',
       'first:show',
@@ -119,6 +123,18 @@ describe('mount lifecycle', () => {
       'second:hide',
       'second:dispose',
     ]);
+  });
+
+  it('rejects unknown initial and imperative tabs without entering a blank state', () => {
+    expect(() =>
+      mount({ capture: NO_CAPTURE, defaultTab: 'plugin:missing' }),
+    ).toThrow('[optik] 未知标签页：plugin:missing');
+    expect(instance()).toBeNull();
+
+    const app = mount({ capture: NO_CAPTURE, defaultOpen: true });
+    expect(() => app.show('typo')).toThrow('[optik] 未知标签页：typo');
+    const host = document.querySelector<HTMLElement>('[data-optik-root]')!;
+    expect(host.shadowRoot?.textContent).toContain('控制台');
   });
 
   it('finishes teardown and clears the singleton even when cleanup throws undefined', () => {
