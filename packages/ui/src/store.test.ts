@@ -8,6 +8,7 @@ describe('createStore', () => {
   let kernel: OptikKernel;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     frames = new Map();
     nextFrame = 1;
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
@@ -21,6 +22,7 @@ describe('createStore', () => {
 
   afterEach(() => {
     kernel.dispose();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -80,5 +82,32 @@ describe('createStore', () => {
     expect(frames.size).toBe(0);
     kernel.log.ingest({ level: 'log', origin: 'user', args: ['after dispose'] });
     expect(frames.size).toBe(0);
+  });
+
+  it('uses a timeout watchdog when an animation frame is paused in the background', () => {
+    const store = createStore(kernel);
+    kernel.log.ingest({ level: 'log', origin: 'user', args: ['background'] });
+    expect(store.logs()).toHaveLength(0);
+    expect(frames.size).toBe(1);
+
+    vi.advanceTimersByTime(99);
+    expect(store.logs()).toHaveLength(0);
+    vi.advanceTimersByTime(1);
+    expect(store.logs().map((entry) => entry.text)).toEqual(['background']);
+    expect(frames.size).toBe(0);
+    store.dispose();
+  });
+
+  it('falls back to a short timer when requestAnimationFrame throws', () => {
+    vi.stubGlobal('requestAnimationFrame', () => {
+      throw new Error('blocked');
+    });
+    const store = createStore(kernel);
+    kernel.log.ingest({ level: 'log', origin: 'user', args: ['fallback'] });
+    vi.advanceTimersByTime(15);
+    expect(store.logs()).toHaveLength(0);
+    vi.advanceTimersByTime(1);
+    expect(store.logs().map((entry) => entry.text)).toEqual(['fallback']);
+    store.dispose();
   });
 });

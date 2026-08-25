@@ -110,9 +110,26 @@ function buildStore(kernel: OptikKernel): Store {
   let logsDirty = false;
   let requestsDirty = false;
   let frame: number | null = null;
+  let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const cancelScheduled = () => {
+    if (frame !== null) {
+      try {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
+      } catch {
+        // A host-page shim must not prevent store disposal or the timeout fallback.
+      }
+      frame = null;
+    }
+    if (fallbackTimer !== undefined) {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = undefined;
+    }
+  };
 
   const flush = () => {
-    frame = null;
+    // rAF and the watchdog race; whichever wins cancels the other one.
+    cancelScheduled();
     if (logsDirty) {
       logsDirty = false;
       const nextLogs = kernel.log.entries();
@@ -131,12 +148,17 @@ function buildStore(kernel: OptikKernel): Store {
   };
 
   const schedule = () => {
-    if (frame !== null) return;
-    // 页面在后台时 rAF 不触发，用 setTimeout 兜底，否则切回前台会看到断层。
-    frame =
-      typeof requestAnimationFrame === 'function'
-        ? requestAnimationFrame(flush)
-        : (setTimeout(flush, 16) as unknown as number);
+    if (frame !== null || fallbackTimer !== undefined) return;
+    if (typeof requestAnimationFrame === 'function') {
+      try {
+        frame = requestAnimationFrame(flush);
+      } catch {
+        // Some embedded hosts expose a broken shim; the timer below remains authoritative.
+      }
+    }
+    // 后台页暂停 rAF，所以不能和它二选一。100ms 看门狗保证数据仍会提交；
+    // 没有可用 rAF 时缩短到一帧，保持前台交互即时。
+    fallbackTimer = setTimeout(flush, frame === null ? 16 : 100);
   };
 
   const markLogs = () => {
@@ -264,11 +286,7 @@ function buildStore(kernel: OptikKernel): Store {
 
     dispose() {
       for (const off of unsubscribes) off();
-      if (frame !== null) {
-        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
-        else clearTimeout(frame);
-        frame = null;
-      }
+      cancelScheduled();
     },
   };
 }
