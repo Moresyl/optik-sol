@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Added enforceable coverage thresholds and broad edge/error/lifecycle regression tests
-- Hardened instrumentation (including in-flight XHR cleanup) and transport teardown, bounded response capture, semantically correct log coalescing, transactional/automatic mounting, plugin cleanup and subscriber isolation, object-handle release including replaced network bodies, stable network record identity, asynchronous clipboard/modal lifecycle, runtime buffer resizing, background-page state delivery, live element-tree selectors and self-healing highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, and legacy layout observers
+- Hardened instrumentation (including in-flight XHR and live WebSocket/EventSource cleanup) and transport teardown, bounded response capture, semantically correct log coalescing, transactional/automatic mounting, plugin cleanup and subscriber isolation, object-handle release including replaced network bodies, stable network record identity, asynchronous clipboard/modal lifecycle, runtime buffer resizing, background-page state delivery, live element-tree selectors and self-healing highlighting, asynchronous IndexedDB enumeration, REPL evaluation/session history, keyboard-adjustable splitters, visible focus states, and legacy layout observers
 
 ## [0.2.0] - 2026-08-11
 

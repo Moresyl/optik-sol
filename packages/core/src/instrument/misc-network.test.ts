@@ -222,6 +222,7 @@ describe('miscellaneous network instrumentation', () => {
     globalThis.WebSocket = LaterWebSocket;
 
     webSocketInstrumentation.dispose();
+    expect(Object.hasOwn(socket, 'send')).toBe(false);
     const before = updates.mock.calls.length;
     socket.dispatchEvent(new MessageEvent('message', { data: 'ignored' }));
     expect(updates).toHaveBeenCalledTimes(before);
@@ -229,6 +230,23 @@ describe('miscellaneous network instrumentation', () => {
 
     new WebSocket('wss://example.test/after');
     expect(starts).toHaveBeenCalledOnce();
+  });
+
+  it('detaches EventSource listeners and restores close on disposal', () => {
+    installSocketFakes();
+    const instrumentation = instrumentEventSource(sink, { nextId: () => `net:${next++}` });
+    const source = new EventSource('https://example.test/events') as unknown as FakeEventSource;
+    const remove = vi.spyOn(source, 'removeEventListener');
+    expect(Object.hasOwn(source, 'close')).toBe(true);
+
+    instrumentation.dispose();
+    expect(remove).toHaveBeenCalledTimes(3);
+    expect(Object.hasOwn(source, 'close')).toBe(false);
+    const before = updates.mock.calls.length;
+    source.dispatchEvent(new MessageEvent('message', { data: 'ignored' }));
+    expect(updates).toHaveBeenCalledTimes(before);
+    source.close();
+    expect(source.readyState).toBe(2);
   });
 
   it('normalizes invalid frame limits before retaining a chatty socket', () => {

@@ -105,6 +105,7 @@ export function instrumentWebSocket(
   const maxFrames = normalizeCount(options.maxFrames, 500);
   const maxFramePayload = normalizeByteLimit(options.maxFramePayload, 8 * 1024);
   let active = true;
+  const instanceCleanups = new Set<() => void>();
 
   class OptikWebSocket extends Original {
     constructor(url: string | URL, protocols?: string | string[]) {
@@ -116,6 +117,9 @@ export function instrumentWebSocket(
       const startTime = performance.now();
       const { url: fullUrl, name, origin, query } = splitUrl(String(url));
       const frames: WebSocketFrame[] = [];
+      const ownSend = Object.getOwnPropertyDescriptor(this, 'send');
+      const originalSend = this.send.bind(this);
+      let cleaned = false;
 
       const pushFrame = (frame: WebSocketFrame) => {
         if (!active) return;
@@ -155,7 +159,7 @@ export function instrumentWebSocket(
         // Ignore.
       }
 
-      this.addEventListener('open', () => {
+      const onOpen = () => {
         if (!active) return;
         const now = performance.now();
         try {
@@ -168,13 +172,13 @@ export function instrumentWebSocket(
         } catch {
           // Ignore.
         }
-      });
+      };
 
-      this.addEventListener('message', (event: MessageEvent) => {
+      const onMessage = (event: MessageEvent) => {
         pushFrame(describeFrame('receive', event.data, maxFramePayload));
-      });
+      };
 
-      this.addEventListener('close', (event: CloseEvent) => {
+      const onClose = (event: CloseEvent) => {
         if (!active) return;
         const endTime = performance.now();
         pushFrame({
@@ -195,20 +199,20 @@ export function instrumentWebSocket(
         } catch {
           // Ignore.
         }
-      });
+        cleanup();
+      };
 
-      this.addEventListener('error', () => {
+      const onError = () => {
         if (!active) return;
         try {
           sink.onUpdate(id, { phase: 'failed', error: 'WebSocket error' });
         } catch {
           // Ignore.
         }
-      });
+      };
 
       // Wrap `send` per-instance so outbound frames are captured too.
-      const originalSend = this.send.bind(this);
-      this.send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+      const wrappedSend = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
         if (active) {
           try {
             pushFrame(describeFrame('send', data, maxFramePayload));
@@ -218,6 +222,35 @@ export function instrumentWebSocket(
         }
         originalSend(data);
       };
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        for (const [event, listener] of [
+          ['open', onOpen],
+          ['message', onMessage],
+          ['close', onClose],
+          ['error', onError],
+        ] as const) {
+          try {
+            this.removeEventListener(event, listener as EventListener);
+          } catch {
+            // Best effort for partially implemented sockets.
+          }
+        }
+        if (this.send === wrappedSend) {
+          if (ownSend) Object.defineProperty(this, 'send', ownSend);
+          else Reflect.deleteProperty(this, 'send');
+        }
+        frames.length = 0;
+        instanceCleanups.delete(cleanup);
+      };
+
+      this.addEventListener('open', onOpen);
+      this.addEventListener('message', onMessage);
+      this.addEventListener('close', onClose);
+      this.addEventListener('error', onError);
+      this.send = wrappedSend;
+      instanceCleanups.add(cleanup);
     }
   }
 
@@ -227,6 +260,7 @@ export function instrumentWebSocket(
   return {
     dispose() {
       active = false;
+      for (const cleanup of [...instanceCleanups]) cleanup();
       if (globalThis.WebSocket === (OptikWebSocket as unknown as typeof WebSocket)) {
         globalThis.WebSocket = Original;
       }
@@ -289,6 +323,7 @@ export function instrumentEventSource(
   const maxFrames = normalizeCount(options.maxFrames, 500);
   const maxFramePayload = normalizeByteLimit(options.maxFramePayload, 8 * 1024);
   let active = true;
+  const instanceCleanups = new Set<() => void>();
 
   class OptikEventSource extends Original {
     constructor(url: string | URL, init?: EventSourceInit) {
@@ -298,6 +333,9 @@ export function instrumentEventSource(
       const startTime = performance.now();
       const { url: fullUrl, name, origin, query } = splitUrl(String(url));
       const frames: WebSocketFrame[] = [];
+      const ownClose = Object.getOwnPropertyDescriptor(this, 'close');
+      const originalClose = this.close.bind(this);
+      let cleaned = false;
 
       try {
         sink.onStart({
@@ -318,7 +356,7 @@ export function instrumentEventSource(
         // Ignore.
       }
 
-      this.addEventListener('open', () => {
+      const onOpen = () => {
         if (!active) return;
         try {
           sink.onUpdate(id, {
@@ -329,9 +367,9 @@ export function instrumentEventSource(
         } catch {
           // Ignore.
         }
-      });
+      };
 
-      this.addEventListener('message', (event: MessageEvent) => {
+      const onMessage = (event: MessageEvent) => {
         if (!active) return;
         frames.push(describeFrame('receive', event.data, maxFramePayload));
         if (frames.length > maxFrames) frames.splice(0, frames.length - maxFrames);
@@ -340,9 +378,9 @@ export function instrumentEventSource(
         } catch {
           // Ignore.
         }
-      });
+      };
 
-      this.addEventListener('error', () => {
+      const onError = () => {
         if (!active) return;
         try {
           sink.onUpdate(id, {
@@ -352,7 +390,40 @@ export function instrumentEventSource(
         } catch {
           // Ignore.
         }
-      });
+        if (this.readyState === 2) cleanup();
+      };
+
+      const wrappedClose = () => {
+        cleanup();
+        originalClose();
+      };
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        for (const [event, listener] of [
+          ['open', onOpen],
+          ['message', onMessage],
+          ['error', onError],
+        ] as const) {
+          try {
+            this.removeEventListener(event, listener as EventListener);
+          } catch {
+            // Best effort.
+          }
+        }
+        if (this.close === wrappedClose) {
+          if (ownClose) Object.defineProperty(this, 'close', ownClose);
+          else Reflect.deleteProperty(this, 'close');
+        }
+        frames.length = 0;
+        instanceCleanups.delete(cleanup);
+      };
+
+      this.addEventListener('open', onOpen);
+      this.addEventListener('message', onMessage);
+      this.addEventListener('error', onError);
+      this.close = wrappedClose;
+      instanceCleanups.add(cleanup);
     }
   }
 
@@ -360,6 +431,7 @@ export function instrumentEventSource(
   return {
     dispose() {
       active = false;
+      for (const cleanup of [...instanceCleanups]) cleanup();
       if (globalThis.EventSource === (OptikEventSource as unknown as typeof EventSource)) {
         globalThis.EventSource = Original;
       }
