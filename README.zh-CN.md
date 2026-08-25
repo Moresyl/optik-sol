@@ -14,7 +14,7 @@
 
 ---
 
-Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 46 KB。
+Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 59 KB。
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -27,7 +27,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | 标签 | 内容 |
 | --- | --- |
 | **控制台** | 各级别日志、分组、重复合并、`%c` 样式、正则搜索与高亮、勾选批量复制、表达式求值（`$_` 引用上次结果） |
-| **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，请求响应头与体、分段耗时、WebSocket 逐帧记录 |
+| **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，请求响应头与体、分段耗时、WebSocket 逐帧记录、默认脱敏的 HAR 1.2 导出 |
 | **元素** | DOM 树惰性浏览、页面内拾取、高亮、盒模型、计算样式、复制选择器 |
 | **存储** | localStorage / sessionStorage / Cookie / IndexedDB，可增删改查 |
 | **环境** | 设备、视口、安全区、内存、加载时序、能力探测 |
@@ -60,8 +60,8 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | --- | --- |
 | `data-theme` | `light`（默认）/ `dark` |
 | `data-open` | 存在则默认展开面板 |
-| `data-max-logs` | 日志条数上限，默认 1000 |
-| `data-max-requests` | 请求条数上限，默认 300 |
+| `data-max-logs` | 日志条数上限，默认 5000 |
+| `data-max-requests` | 请求条数上限，默认 1000 |
 | `data-optik-manual` | 存在则**不**自动挂载，由你自己调 `Optik.mount()` |
 
 挂载后可用 `window.Optik`。
@@ -91,7 +91,19 @@ const optik = mount({
   defaultTab: 'console',
   log: { maxEntries: 1000 },
   network: { maxRecords: 300 },
-  capture: { console: true, errors: true, network: true },
+  capture: {
+    console: true,
+    exceptions: true,
+    rejections: true,
+    resourceErrors: true,
+    cspViolations: true,
+    xhr: true,
+    fetch: true,
+    beacon: true,
+    websocket: true,
+    eventSource: true,
+    resourceTiming: true,
+  },
   passthrough: true,       // 是否继续调用原生 console，默认 true
   maxBodyBytes: 512 * 1024,
 });
@@ -102,6 +114,11 @@ optik.use(plugin);
 optik.eject('plugin-id');
 optik.destroy();           // 完整还原所有插桩
 ```
+
+网络面板可直接复制安全模式的 HAR 1.2：默认不导出请求/响应正文与 WebSocket 帧正文，
+同时脱敏请求头、URL 和查询参数中的凭据。代码中可使用 `serializeHar(records)`，并通过
+`{ includeBodies: true, includeWebSocketFrames: true }` 显式加入已留存的正文；支持识别的
+JSON/表单字段仍会脱敏。还需额外传入 `{ redactSensitive: false }` 才会导出原值。
 
 ### 插件
 

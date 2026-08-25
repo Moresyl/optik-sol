@@ -47,6 +47,10 @@ export function mount(options: MountOptions = {}): OptikInstance {
   // 重复挂载在热更新场景下很常见，直接复用而不是叠两个面板。
   if (current) return current;
 
+  if (typeof document === 'undefined') {
+    throw new Error('[optik] mount() requires a browser document');
+  }
+
   const {
     container,
     theme = 'light',
@@ -57,69 +61,110 @@ export function mount(options: MountOptions = {}): OptikInstance {
   } = options;
 
   const kernel = new OptikKernel(kernelOptions);
-  kernel.start();
+  let cleanupStore: ReturnType<typeof createStore> | undefined;
+  let cleanupHost: HTMLElement | undefined;
+  let cleanupApp: (() => void) | undefined;
 
-  const store = createStore(kernel);
-  if (defaultTab) store.setActiveTab(defaultTab);
+  try {
+    kernel.start();
 
-  const registry = new PluginRegistry();
-  for (const plugin of plugins) registry.register(plugin);
+    const store = createStore(kernel);
+    cleanupStore = store;
+    if (defaultTab) store.setActiveTab(defaultTab);
 
-  const host = document.createElement('div');
-  // 这个标记有两个用途：元素面板据此把自己从 DOM 树里过滤掉，
-  // 拾取模式也据此判断"点在了面板上"。
-  host.setAttribute('data-optik-root', '');
-  host.style.cssText = 'position:static;display:contents;';
+    const registry = new PluginRegistry();
+    for (const plugin of plugins) registry.register(plugin);
 
-  const shadow = host.attachShadow({ mode: 'open' });
+    const host = document.createElement('div');
+    cleanupHost = host;
+    // 这个标记有两个用途：元素面板据此把自己从 DOM 树里过滤掉，
+    // 拾取模式也据此判断"点在了面板上"。
+    host.setAttribute('data-optik-root', '');
+    host.style.cssText = 'position:static;display:contents;';
 
-  const style = document.createElement('style');
-  style.textContent = BASE_STYLES + unoStyles;
-  shadow.appendChild(style);
+    const shadow = host.attachShadow({ mode: 'open' });
 
-  const mountPoint = document.createElement('div');
-  shadow.appendChild(mountPoint);
+    const style = document.createElement('style');
+    style.textContent = BASE_STYLES + unoStyles;
+    shadow.appendChild(style);
 
-  (container ?? document.body).appendChild(host);
+    const mountPoint = document.createElement('div');
+    shadow.appendChild(mountPoint);
 
-  const disposeApp = render(
-    () => App({ kernel, store, plugins: registry, host, theme, defaultOpen }),
-    mountPoint,
-  );
+    const target = container ?? document.body ?? document.documentElement;
+    if (!target) throw new Error('[optik] no DOM container is available for mount()');
+    target.appendChild(host);
 
-  const instance: OptikInstance = {
-    kernel,
+    const disposeApp = render(
+      () => App({ kernel, store, plugins: registry, host, theme, defaultOpen }),
+      mountPoint,
+    );
+    cleanupApp = disposeApp;
+    let destroyed = false;
 
-    use(plugin) {
-      registry.register(plugin);
-      return instance;
-    },
+    const instance: OptikInstance = {
+      kernel,
 
-    eject(id) {
-      return registry.unregister(id);
-    },
+      use(plugin) {
+        registry.register(plugin);
+        return instance;
+      },
 
-    show(tab) {
-      if (tab) store.setActiveTab(tab);
-      // 面板的开合由 App 内部状态控制，通过自定义事件通知，避免把 setter 泄露出去。
-      host.dispatchEvent(new CustomEvent('optik:open'));
-    },
+      eject(id) {
+        return registry.unregister(id);
+      },
 
-    hide() {
-      host.dispatchEvent(new CustomEvent('optik:close'));
-    },
+      show(tab) {
+        if (tab) store.setActiveTab(tab);
+        // 面板的开合由 App 内部状态控制，通过自定义事件通知，避免把 setter 泄露出去。
+        host.dispatchEvent(new CustomEvent('optik:open'));
+      },
 
-    destroy() {
-      disposeApp();
-      store.dispose();
+      hide() {
+        host.dispatchEvent(new CustomEvent('optik:close'));
+      },
+
+      destroy() {
+        if (destroyed) return;
+        destroyed = true;
+        let firstError: unknown;
+        let failed = false;
+        for (const cleanup of [disposeApp, store.dispose, () => kernel.dispose(), () => host.remove()]) {
+          try {
+            cleanup();
+          } catch (error) {
+            if (!failed) firstError = error;
+            failed = true;
+          }
+        }
+        if (current === instance) current = null;
+        if (failed) throw firstError;
+      },
+    };
+
+    current = instance;
+    return instance;
+  } catch (error) {
+    // Mount is transactional: a broken plugin, unavailable Shadow DOM, or render
+    // failure must not leave native APIs instrumented with no panel to control them.
+    try {
+      cleanupApp?.();
+    } catch {
+      // Preserve the original mount error.
+    }
+    try {
+      cleanupStore?.dispose();
+    } catch {
+      // Preserve the original mount error.
+    }
+    try {
       kernel.dispose();
-      host.remove();
-      current = null;
-    },
-  };
-
-  current = instance;
-  return instance;
+    } catch {
+      // Preserve the original mount error.
+    }
+    cleanupHost?.remove();
+    throw error;
+  }
 }
 
 /** 当前实例，未挂载时为 null。 */
@@ -127,7 +172,18 @@ export function instance(): OptikInstance | null {
   return current;
 }
 
-export { OptikKernel } from 'optik-core';
+export { OptikKernel, createHar, serializeHar } from 'optik-core';
+export type {
+  HarArchive,
+  HarContent,
+  HarEntry,
+  HarExportOptions,
+  HarNameValue,
+  HarPostData,
+  HarRequest,
+  HarResponse,
+  HarTimings,
+} from 'optik-core';
 export type { MountOptions as OptikOptions };
 export type { OptikPlugin, PluginContext } from './plugin';
 export type { ThemeMode } from './App';

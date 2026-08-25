@@ -19,7 +19,7 @@ import { NetworkPanel } from './components/NetworkPanel';
 import { ElementPanel } from './components/ElementPanel';
 import { StoragePanel } from './components/StoragePanel';
 import { SystemPanel } from './components/SystemPanel';
-import { PluginRegistry, safely, type PluginContext } from './plugin';
+import { PluginRegistry, safely, type OptikPlugin, type PluginContext } from './plugin';
 import { createLayout, LayoutProvider } from './layout';
 
 export type ThemeMode = 'light' | 'dark';
@@ -45,14 +45,37 @@ const LAUNCHER_SIZE = 48;
 const POSITION_KEY = 'optik:launcher-position';
 const HEIGHT_KEY = 'optik:panel-height';
 
-/** 读取持久化的数值，任何异常（隐私模式下 localStorage 抛错）都退回默认值。 */
-function readStored<T>(key: string, fallback: T): T {
+function readStored(key: string): unknown {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    return raw === null ? undefined : JSON.parse(raw);
   } catch {
-    return fallback;
+    return undefined;
   }
+}
+
+export interface LauncherPosition {
+  x: number;
+  y: number;
+}
+
+/** 持久化内容属于不可信输入：旧版本、用户脚本或扩展都可能改写它。 */
+export function readLauncherPosition(): LauncherPosition {
+  const value = readStored(POSITION_KEY);
+  if (!value || typeof value !== 'object') return { x: -1, y: -1 };
+  const { x, y } = value as Partial<LauncherPosition>;
+  return typeof x === 'number' &&
+    Number.isFinite(x) &&
+    typeof y === 'number' &&
+    Number.isFinite(y)
+    ? { x, y }
+    : { x: -1, y: -1 };
+}
+
+export function readPanelHeight(): number {
+  const value = readStored(HEIGHT_KEY);
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0.6;
+  return Math.min(0.92, Math.max(0.25, value));
 }
 
 function writeStored(key: string, value: unknown): void {
@@ -106,8 +129,6 @@ export function App(props: AppProps): JSX.Element {
     theme: resolvedTheme,
   };
 
-  onCleanup(props.plugins.subscribe(() => setPluginVersion((n) => n + 1)));
-
   const pluginList = createMemo(() => {
     pluginVersion();
     return props.plugins.list();
@@ -118,6 +139,11 @@ export function App(props: AppProps): JSX.Element {
     ...pluginList().map((plugin) => ({ id: `plugin:${plugin.id}` as TabId, label: plugin.label })),
   ]);
 
+  const activePluginId = createMemo(() => {
+    const tab = props.store.activeTab();
+    return tab.startsWith('plugin:') ? tab.slice(7) : null;
+  });
+
   /** 插件视图渲染一次即缓存，切走再切回不会丢状态。 */
   const pluginNodes = new Map<string, Node>();
 
@@ -126,20 +152,60 @@ export function App(props: AppProps): JSX.Element {
     if (!plugin) return null;
     let node = pluginNodes.get(id);
     if (!node) {
-      const produced = safely('渲染', () => plugin.render(pluginContext));
-      if (!produced) return null;
-      node = typeof produced === 'function' ? produced() : produced;
+      node = safely('渲染', () => {
+        const produced = plugin.render(pluginContext);
+        return typeof produced === 'function' ? produced() : produced;
+      });
+      if (!node) return null;
       pluginNodes.set(id, node);
     }
-    safely('显示', () => plugin.onShow?.(pluginContext));
     return node;
   };
 
-  onCleanup(() => props.plugins.disposeAll(pluginContext));
+  let shownPlugin: OptikPlugin | undefined;
+
+  const hideShownPlugin = () => {
+    if (!shownPlugin) return;
+    safely('隐藏', () => shownPlugin?.onHide?.(pluginContext));
+    shownPlugin = undefined;
+  };
+
+  const disposeRetired = () => {
+    for (const plugin of props.plugins.takeRetired()) {
+      if (shownPlugin === plugin) hideShownPlugin();
+      pluginNodes.delete(plugin.id);
+      safely('销毁', () => plugin.onDispose?.(pluginContext));
+    }
+  };
+
+  const unsubscribePlugins = props.plugins.subscribe(() => {
+    disposeRetired();
+    setPluginVersion((n) => n + 1);
+  });
+  // Initial plugin arrays can contain duplicate ids before App subscribes.
+  disposeRetired();
+
+  createEffect(() => {
+    pluginVersion();
+    const id = open() ? activePluginId() : null;
+    const next = id ? props.plugins.get(id) : undefined;
+    if (next === shownPlugin) return;
+    hideShownPlugin();
+    if (!next || !renderPlugin(next.id)) return;
+    shownPlugin = next;
+    safely('显示', () => next.onShow?.(pluginContext));
+  });
+
+  onCleanup(() => {
+    unsubscribePlugins();
+    hideShownPlugin();
+    disposeRetired();
+    props.plugins.disposeAll(pluginContext);
+  });
 
   // ---- 悬浮按钮 ----------------------------------------------------------
 
-  const initial = readStored(POSITION_KEY, { x: -1, y: -1 });
+  const initial = readLauncherPosition();
   const [position, setPosition] = createSignal(initial);
 
   /** 把按钮夹回视口内。转屏、键盘收起、窗口缩放后都要重新夹一次。 */
@@ -194,7 +260,7 @@ export function App(props: AppProps): JSX.Element {
 
   // ---- 面板高度 ----------------------------------------------------------
 
-  const [height, setHeight] = createSignal(readStored(HEIGHT_KEY, 0.6));
+  const [height, setHeight] = createSignal(readPanelHeight());
 
   const attachResizer = (element: HTMLElement) => {
     const dispose = makeDraggable(element, {
@@ -209,11 +275,6 @@ export function App(props: AppProps): JSX.Element {
   };
 
   // ---- 渲染 --------------------------------------------------------------
-
-  const activePluginId = createMemo(() => {
-    const tab = props.store.activeTab();
-    return tab.startsWith('plugin:') ? tab.slice(7) : null;
-  });
 
   return (
     <>

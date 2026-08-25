@@ -47,19 +47,25 @@ export interface OptikPlugin {
 export class PluginRegistry {
   #plugins = new Map<string, OptikPlugin>();
   #listeners = new Set<() => void>();
+  #retired: OptikPlugin[] = [];
 
   register(plugin: OptikPlugin): void {
     if (!plugin.id || !plugin.label) {
       throw new Error('[optik] 插件必须提供 id 和 label');
     }
+    const previous = this.#plugins.get(plugin.id);
+    if (previous && previous !== plugin) this.#retired.push(previous);
     this.#plugins.set(plugin.id, plugin);
     this.#notify();
   }
 
   unregister(id: string): boolean {
-    const removed = this.#plugins.delete(id);
-    if (removed) this.#notify();
-    return removed;
+    const plugin = this.#plugins.get(id);
+    if (!plugin) return false;
+    this.#plugins.delete(id);
+    this.#retired.push(plugin);
+    this.#notify();
+    return true;
   }
 
   get(id: string): OptikPlugin | undefined {
@@ -76,8 +82,14 @@ export class PluginRegistry {
     return () => this.#listeners.delete(listener);
   }
 
+  /** 被替换/移除的插件仍需由 App 带着完整上下文执行生命周期清理。 */
+  takeRetired(): OptikPlugin[] {
+    return this.#retired.splice(0);
+  }
+
   disposeAll(context: PluginContext): void {
-    for (const plugin of this.#plugins.values()) {
+    const plugins = new Set([...this.#retired, ...this.#plugins.values()]);
+    for (const plugin of plugins) {
       try {
         plugin.onDispose?.(context);
       } catch (error) {
@@ -85,6 +97,7 @@ export class PluginRegistry {
         console.warn('[optik] 插件销毁失败：', error);
       }
     }
+    this.#retired = [];
     this.#plugins.clear();
     this.#listeners.clear();
   }

@@ -14,7 +14,7 @@ English | [简体中文](README.zh-CN.md)
 
 ---
 
-Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 46 KB gzipped.
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 59 KB gzipped.
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -27,7 +27,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | Panel | What it shows |
 | --- | --- |
 | **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
-| **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — request and response headers and bodies, timing breakdown, per-frame WebSocket records |
+| **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — request and response headers and bodies, timing breakdown, per-frame WebSocket records, privacy-safe HAR 1.2 export |
 | **Elements** | Lazy DOM tree browsing, in-page picking, highlighting, box model, computed styles, selector copy |
 | **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access |
 | **Environment** | Device, viewport, safe area, memory, load timing, capability detection |
@@ -60,8 +60,8 @@ The full reasoning behind these trade-offs is in [DESIGN.md](DESIGN.md).
 | --- | --- |
 | `data-theme` | `light` (default) / `dark` |
 | `data-open` | If present, the panel starts expanded |
-| `data-max-logs` | Maximum log entries, default 1000 |
-| `data-max-requests` | Maximum request records, default 300 |
+| `data-max-logs` | Maximum log entries, default 5000 |
+| `data-max-requests` | Maximum request records, default 1000 |
 | `data-optik-manual` | If present, the panel does **not** auto-mount; call `Optik.mount()` yourself |
 
 Once mounted, `window.Optik` is available.
@@ -91,7 +91,19 @@ const optik = mount({
   defaultTab: 'console',
   log: { maxEntries: 1000 },
   network: { maxRecords: 300 },
-  capture: { console: true, errors: true, network: true },
+  capture: {
+    console: true,
+    exceptions: true,
+    rejections: true,
+    resourceErrors: true,
+    cspViolations: true,
+    xhr: true,
+    fetch: true,
+    beacon: true,
+    websocket: true,
+    eventSource: true,
+    resourceTiming: true,
+  },
   passthrough: true,       // keep calling the native console, default true
   maxBodyBytes: 512 * 1024,
 });
@@ -102,6 +114,13 @@ optik.use(plugin);
 optik.eject('plugin-id');
 optik.destroy();           // fully restores every hook
 ```
+
+The Network panel can copy a HAR 1.2 archive in safe mode: request/response bodies and
+WebSocket frame payloads are omitted, while credentials in headers, URLs and query
+parameters are redacted. Code can call `serializeHar(records)` and explicitly opt into
+retained payloads with `{ includeBodies: true, includeWebSocketFrames: true }`; supported
+JSON and form fields are then redacted too. Raw export additionally requires
+`{ redactSensitive: false }`.
 
 ### Plugins
 

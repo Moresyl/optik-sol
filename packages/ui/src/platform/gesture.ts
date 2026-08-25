@@ -30,7 +30,8 @@ export interface DraggableOptions {
 }
 
 export function makeDraggable(element: HTMLElement, options: DraggableOptions): () => void {
-  const { threshold = 6, onStart, onMove, onEnd } = options;
+  const threshold = normalizeNonNegative(options.threshold, 6);
+  const { onStart, onMove, onEnd } = options;
 
   let pointerId: number | null = null;
   let startX = 0;
@@ -77,6 +78,7 @@ export function makeDraggable(element: HTMLElement, options: DraggableOptions): 
 
   if (typeof PointerEvent === 'function') {
     const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0 || !event.isPrimary) return;
       if (pointerId !== null) return; // 忽略多指
       begin(event.pointerId, event.clientX, event.clientY);
       try {
@@ -173,9 +175,12 @@ export interface LongPressOptions {
  * 原生的长按选中与拷贝菜单必须继续正常工作——我们是在它之上追加菜单，而不是取代它。
  */
 export function onLongPress(element: HTMLElement, options: LongPressOptions): () => void {
-  const { duration = 500, tolerance = 10, onLongPress: handler } = options;
+  const duration = normalizeNonNegative(options.duration, 500);
+  const tolerance = normalizeNonNegative(options.tolerance, 10);
+  const { onLongPress: handler } = options;
 
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let activeId: number | null = null;
   let startX = 0;
   let startY = 0;
 
@@ -186,8 +191,15 @@ export function onLongPress(element: HTMLElement, options: LongPressOptions): ()
     }
   };
 
-  const start = (clientX: number, clientY: number, target: EventTarget | null) => {
+  const finish = () => {
     cancel();
+    activeId = null;
+  };
+
+  const start = (id: number, clientX: number, clientY: number, target: EventTarget | null) => {
+    if (activeId !== null) return;
+    cancel();
+    activeId = id;
     startX = clientX;
     startY = clientY;
     timer = setTimeout(() => {
@@ -200,22 +212,61 @@ export function onLongPress(element: HTMLElement, options: LongPressOptions): ()
     if (Math.hypot(clientX - startX, clientY - startY) > tolerance) cancel();
   };
 
-  const onPointerDown = (event: PointerEvent) => start(event.clientX, event.clientY, event.target);
-  const onPointerMove = (event: PointerEvent) => maybeCancel(event.clientX, event.clientY);
+  const teardown: Array<() => void> = [];
+  if (typeof PointerEvent === 'function') {
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0 || !event.isPrimary) return;
+      start(event.pointerId, event.clientX, event.clientY, event.target);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (activeId === event.pointerId) maybeCancel(event.clientX, event.clientY);
+    };
+    const onPointerEnd = (event: PointerEvent) => {
+      if (activeId === event.pointerId) finish();
+    };
+    element.addEventListener('pointerdown', onPointerDown, { passive: true });
+    element.addEventListener('pointermove', onPointerMove, { passive: true });
+    element.addEventListener('pointerup', onPointerEnd, { passive: true });
+    element.addEventListener('pointercancel', onPointerEnd, { passive: true });
+    teardown.push(() => {
+      element.removeEventListener('pointerdown', onPointerDown);
+      element.removeEventListener('pointermove', onPointerMove);
+      element.removeEventListener('pointerup', onPointerEnd);
+      element.removeEventListener('pointercancel', onPointerEnd);
+    });
+  } else {
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      if (touch) start(touch.identifier, touch.clientX, touch.clientY, event.target);
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = findTouch(event.changedTouches, activeId);
+      if (touch) maybeCancel(touch.clientX, touch.clientY);
+    };
+    const onTouchEnd = (event: TouchEvent) => {
+      if (findTouch(event.changedTouches, activeId)) finish();
+    };
+    element.addEventListener('touchstart', onTouchStart, { passive: true });
+    element.addEventListener('touchmove', onTouchMove, { passive: true });
+    element.addEventListener('touchend', onTouchEnd, { passive: true });
+    element.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    teardown.push(() => {
+      element.removeEventListener('touchstart', onTouchStart);
+      element.removeEventListener('touchmove', onTouchMove);
+      element.removeEventListener('touchend', onTouchEnd);
+      element.removeEventListener('touchcancel', onTouchEnd);
+    });
+  }
 
   // 全部 passive：这个模块永远不干预默认行为。
-  element.addEventListener('pointerdown', onPointerDown, { passive: true });
-  element.addEventListener('pointermove', onPointerMove, { passive: true });
-  element.addEventListener('pointerup', cancel, { passive: true });
-  element.addEventListener('pointercancel', cancel, { passive: true });
-  element.addEventListener('scroll', cancel, { passive: true, capture: true });
-
+  element.addEventListener('scroll', finish, { passive: true, capture: true });
   return () => {
-    cancel();
-    element.removeEventListener('pointerdown', onPointerDown);
-    element.removeEventListener('pointermove', onPointerMove);
-    element.removeEventListener('pointerup', cancel);
-    element.removeEventListener('pointercancel', cancel);
-    element.removeEventListener('scroll', cancel, true);
+    finish();
+    for (const remove of teardown) remove();
+    element.removeEventListener('scroll', finish, true);
   };
+}
+
+function normalizeNonNegative(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isFinite(value) && value >= 0 ? value : fallback;
 }

@@ -115,7 +115,14 @@ function buildStore(kernel: OptikKernel): Store {
     frame = null;
     if (logsDirty) {
       logsDirty = false;
-      setLogs(kernel.log.entries());
+      const nextLogs = kernel.log.entries();
+      setLogs(nextLogs);
+      setSelection((previous) => {
+        if (previous.size === 0) return previous;
+        const retained = new Set(nextLogs.map((entry) => entry.id));
+        const next = new Set([...previous].filter((id) => retained.has(id)));
+        return next.size === previous.size ? previous : next;
+      });
     }
     if (requestsDirty) {
       requestsDirty = false;
@@ -145,9 +152,11 @@ function buildStore(kernel: OptikKernel): Store {
     kernel.events.on('logAdded', markLogs),
     kernel.events.on('logUpdated', markLogs),
     kernel.events.on('logCleared', markLogs),
+    kernel.events.on('logResized', markLogs),
     kernel.events.on('networkStarted', markRequests),
     kernel.events.on('networkUpdated', markRequests),
     kernel.events.on('networkCleared', markRequests),
+    kernel.events.on('networkResized', markRequests),
   ];
 
   // ---- 过滤 --------------------------------------------------------------

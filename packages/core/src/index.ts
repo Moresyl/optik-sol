@@ -42,3 +42,16 @@ export { instrumentErrors } from './instrument/errors';
 export { captureStack, parseStack } from './instrument/stack';
 export { byteLengthOf, mimeTypeOf, isTextualMime, splitUrl } from './instrument/body';
 export type { Instrumentation, NetworkSink } from './instrument/xhr';
+
+export { createHar, serializeHar } from './har';
+export type {
+  HarArchive,
+  HarContent,
+  HarEntry,
+  HarExportOptions,
+  HarNameValue,
+  HarPostData,
+  HarRequest,
+  HarResponse,
+  HarTimings,
+} from './har';

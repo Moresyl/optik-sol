@@ -16,7 +16,18 @@ import { mount, instance, type MountOptions, type OptikInstance } from 'optik-ui
 export { mount, instance };
 export type { MountOptions, OptikInstance };
 export type { OptikPlugin, PluginContext, ThemeMode, TabId } from 'optik-ui';
-export { OptikKernel, copyText } from 'optik-ui';
+export { OptikKernel, copyText, createHar, serializeHar } from 'optik-ui';
+export type {
+  HarArchive,
+  HarContent,
+  HarEntry,
+  HarExportOptions,
+  HarNameValue,
+  HarPostData,
+  HarRequest,
+  HarResponse,
+  HarTimings,
+} from 'optik-ui';
 
 /**
  * 读取 script 标签上的配置：

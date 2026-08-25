@@ -13,8 +13,8 @@ import { copyText } from '../platform/clipboard';
 export interface CopyController {
   /**
    * 复制文本；失败时自动弹出兜底层。
-   * 返回是否走通了自动路径——按钮据此决定要不要就地闪一个「已复制」，
-   * 兜底层已经弹出来的时候再报一次成功只会让人困惑。
+   * 只有同步路径已确认成功时返回 true。异步 Clipboard 路径返回 false，
+   * 待 Promise 真正成功后再由回调提示；失败则自动弹出兜底层。
    */
   copy: (text: string, label?: string) => boolean;
   /** 直接打开兜底层（用于「查看原文」这类主动入口）。 */
@@ -45,8 +45,18 @@ export function createCopyController(): CopyController {
         return false;
       }
       // 必须同步调用，才能保留用户手势。
-      const result = copyText(text);
+      const result = copyText(text, {
+        onAsyncResult(outcome) {
+          if (outcome.ok) showToast(`已复制${label}（${formatSize(text.length)}）`);
+          else {
+            setToast(null);
+            setSheet({ text, title: `手动复制${label}` });
+          }
+        },
+      });
       if (result.ok) {
+        // Promise 结果尚未确定；回调负责给出真实反馈，按钮不能提前报成功。
+        if (result.method === 'async-clipboard') return false;
         showToast(`已复制${label}（${formatSize(text.length)}）`);
         return true;
       }

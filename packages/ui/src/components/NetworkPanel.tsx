@@ -8,7 +8,13 @@
  */
 
 import { createSignal, For, Show, createMemo, type JSX } from 'solid-js';
-import type { NetworkRecord, NetworkBody, OptikKernel, RequestInitiator } from 'optik-core';
+import {
+  serializeHar,
+  type NetworkRecord,
+  type NetworkBody,
+  type OptikKernel,
+  type RequestInitiator,
+} from 'optik-core';
 import type { Store } from '../store';
 import { CopyButton, type CopyController } from './Copy';
 import { ValueView } from './Value';
@@ -761,6 +767,15 @@ export function NetworkPanel(props: {
           <button class="chip shrink-0" onClick={props.store.clearRequests}>
             清空
           </button>
+          <div class="shrink-0 row-center gap-1 text-fg-tertiary" title="默认脱敏后复制 HAR 1.2">
+            <span>HAR</span>
+            <CopyButton
+              copier={props.copier}
+              text={() => serializeHar(props.store.requests())}
+              label="全部请求 HAR（安全模式：无正文）"
+              class="min-h-8 px-2"
+            />
+          </div>
         </div>
       </div>
 

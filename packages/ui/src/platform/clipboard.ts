@@ -39,6 +39,8 @@ export interface CopyOptions {
    * focus from the REPL input and dismisses the iOS keyboard mid-typing.
    */
   restoreFocusTo?: HTMLElement | null;
+  /** Reports the eventual Clipboard API result when the synchronous path failed. */
+  onAsyncResult?: (outcome: CopyOutcome) => void;
 }
 
 /**
@@ -60,16 +62,32 @@ export function copyText(text: string, options: CopyOptions = {}): CopyOutcome {
   restoreSelection(savedSelection);
   restoreFocus(activeElement);
 
-  if (execResult.ok) return execResult;
+  if (execResult.ok) return { ok: true, method: 'exec-command' };
 
   // execCommand is unavailable or was refused. Try the async API — still inside the
   // gesture because we have not awaited anything.
   const clipboard = globalThis.navigator?.clipboard;
   if (clipboard?.writeText) {
-    // Fire and forget: the caller already has a synchronous answer. If this rejects
-    // there is nothing more we can do automatically, and the UI has already been told
-    // to offer the manual sheet.
-    void clipboard.writeText(text).catch(() => undefined);
+    let pending: Promise<void>;
+    try {
+      pending = Promise.resolve(clipboard.writeText(text));
+    } catch {
+      const outcome: CopyOutcome = {
+        ok: false,
+        method: 'needs-manual',
+        reason: 'navigator.clipboard.writeText threw synchronously',
+      };
+      return outcome;
+    }
+    void pending.then(
+      () => notifyAsync(options, { ok: true, method: 'async-clipboard' }),
+      () =>
+        notifyAsync(options, {
+          ok: false,
+          method: 'needs-manual',
+          reason: 'navigator.clipboard.writeText was rejected',
+        }),
+    );
     return { ok: true, method: 'async-clipboard' };
   }
 
@@ -78,6 +96,14 @@ export function copyText(text: string, options: CopyOptions = {}): CopyOutcome {
     method: 'needs-manual',
     reason: execResult.reason,
   };
+}
+
+function notifyAsync(options: CopyOptions, outcome: CopyOutcome): void {
+  try {
+    options.onAsyncResult?.(outcome);
+  } catch {
+    // A notification callback is UI bookkeeping and must not create an unhandled rejection.
+  }
 }
 
 /**
