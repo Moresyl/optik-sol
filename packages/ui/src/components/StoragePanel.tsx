@@ -9,7 +9,7 @@
  * 所以这里做了三件事：值自动格式化、值单独成块、长值折叠而不是套一层滚动条。
  */
 
-import { createSignal, createMemo, onCleanup, For, Show, type JSX } from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup, For, Show, type JSX } from 'solid-js';
 import type { OptikKernel, StorageArea, StorageItem } from 'optik-core';
 import { CopyButton, type CopyController } from './Copy';
 
@@ -277,19 +277,72 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
     null,
   );
   const [query, setQuery] = createSignal('');
+  const [indexedSnapshot, setIndexedSnapshot] = createSignal<{
+    loading: boolean;
+    available: boolean;
+    reason?: string;
+    items: StorageItem[];
+  }>({ loading: false, available: true, items: [] });
+  let indexedGeneration = 0;
 
   /** `version` 只是一个手动刷新的种子——存储没有变更事件可订阅。 */
-  const refresh = () => setVersion((n) => n + 1);
+  const refresh = () => {
+    if (area() === 'indexedDB') indexedGeneration++;
+    setVersion((n) => n + 1);
+  };
 
-  const status = createMemo(() => {
+  createEffect(() => {
+    const currentArea = area();
     version();
-    return props.kernel.storage.status(area());
+    if (currentArea !== 'indexedDB') {
+      indexedGeneration++;
+      return;
+    }
+
+    const generation = ++indexedGeneration;
+    setIndexedSnapshot({ loading: true, available: true, items: [] });
+    void props.kernel.storage.listDatabaseItems().then(
+      (items) => {
+        if (generation === indexedGeneration)
+          setIndexedSnapshot({ loading: false, available: true, items });
+      },
+      (error: unknown) => {
+        if (generation === indexedGeneration) {
+          setIndexedSnapshot({
+            loading: false,
+            available: false,
+            reason: error instanceof Error ? error.message : String(error),
+            items: [],
+          });
+        }
+      },
+    );
   });
+  onCleanup(() => indexedGeneration++);
+
+  const snapshot = createMemo(() => {
+    version();
+    const currentArea = area();
+    if (currentArea !== 'indexedDB') return props.kernel.storage.snapshot(currentArea);
+    const indexed = indexedSnapshot();
+    return {
+      items: indexed.items,
+      status: {
+        area: currentArea,
+        available: indexed.available,
+        reason: indexed.reason,
+        itemCount: indexed.items.length,
+        totalBytes: indexed.items.reduce((sum, item) => sum + item.size, 0),
+      },
+    };
+  });
+
+  const status = createMemo(() => snapshot().status);
 
   const items = createMemo(() => {
     version();
     const needle = query().toLowerCase();
-    const all = props.kernel.storage.list(area());
+    const all = snapshot().items;
     if (!needle) return all;
     return all.filter(
       (item) =>
@@ -313,13 +366,17 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
   };
 
   const remove = (item: StorageItem) => {
-    props.kernel.storage.remove(area(), item.key);
-    refresh();
+    try {
+      props.kernel.storage.remove(area(), item.key);
+      refresh();
+    } catch (error) {
+      props.copier.reveal(String(error), '删除失败');
+    }
   };
 
   const exportText = () =>
-    props.kernel.storage
-      .list(area())
+    snapshot()
+      .items
       .map((item) => `${item.key} = ${item.value}`)
       .join('\n');
 
@@ -338,8 +395,13 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': area() === candidate }}
                 onClick={() => {
+                  // Invalidate an in-flight IndexedDB enumeration synchronously. Solid
+                  // effects run after the event; waiting for the effect leaves a race
+                  // where an old Promise can commit into the newly selected area.
+                  indexedGeneration++;
                   setArea(candidate);
                   setEditing(null);
+                  setQuery('');
                   refresh();
                 }}
               >
@@ -365,7 +427,9 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
 
         <div class="row-center gap-1 px-2 pb-1.5 not-selectable overflow-x-auto no-scrollbar">
           <span class="text-fg-tertiary shrink-0 pr-1">
-            {status().itemCount} 项 · {formatBytes(status().totalBytes)}
+            {area() === 'indexedDB' && indexedSnapshot().loading
+              ? '正在读取…'
+              : `${status().itemCount} 项 · ${formatBytes(status().totalBytes)}`}
           </span>
           <button class="chip shrink-0" onClick={refresh}>
             刷新
@@ -390,8 +454,12 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
               confirmLabel={`确认清空${AREA_LABELS[area()]}`}
               class="shrink-0 min-h-8 px-2.5"
               onConfirm={() => {
-                props.kernel.storage.clear(area());
-                refresh();
+                try {
+                  props.kernel.storage.clear(area());
+                  refresh();
+                } catch (error) {
+                  props.copier.reveal(String(error), '清空失败');
+                }
               }}
             />
           </Show>
@@ -407,6 +475,9 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
           fallback={
             <div class="p-8 text-center text-fg-tertiary text-base not-selectable">
               当前环境不支持{AREA_LABELS[area()]}（可能处于隐私模式或被安全策略禁用）
+              <Show when={status().reason}>
+                {(reason) => <div class="mt-2 font-mono wrap-anywhere">{reason()}</div>}
+              </Show>
             </div>
           }
         >

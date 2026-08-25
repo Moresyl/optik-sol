@@ -11,7 +11,7 @@ export type {
   PerformanceDomainOptions,
 } from './domains/performance';
 export { StorageDomain } from './domains/storage';
-export type { StorageAreaStatus } from './domains/storage';
+export type { StorageAreaStatus, StorageSnapshot } from './domains/storage';
 export { SystemDomain, readSafeArea } from './domains/system';
 
 export { Emitter } from './emitter';

@@ -65,30 +65,51 @@ const STYLE_GROUPS: { title: string; properties: string[] }[] = [
 ];
 
 /** 高亮层：四块半透明色分别对应 margin / border / padding / content。 */
-class Highlighter {
+export class Highlighter {
   #root: HTMLDivElement | null = null;
 
-  #ensure(): HTMLDivElement {
+  #ensure(): HTMLDivElement | null {
     if (this.#root) return this.#root;
+    const parent = document.body ?? document.documentElement;
+    if (!parent) return null;
     const root = document.createElement('div');
     root.setAttribute('data-optik-highlight', '');
     root.style.cssText =
       'position:fixed;top:0;left:0;pointer-events:none;z-index:2147482999;display:none;';
-    root.innerHTML =
-      '<div data-part="margin" style="position:absolute;background:rgba(246,178,107,0.45)"></div>' +
-      '<div data-part="content" style="position:absolute;background:rgba(111,168,220,0.45);' +
-      'outline:1px solid rgba(111,168,220,0.9)"></div>' +
-      '<div data-part="label" style="position:absolute;padding:2px 6px;border-radius:3px;' +
-      'background:#1c1c1e;color:#fff;font:11px/1.4 -apple-system,sans-serif;white-space:nowrap"></div>';
-    document.body.appendChild(root);
+    const margin = document.createElement('div');
+    margin.dataset['part'] = 'margin';
+    margin.style.cssText = 'position:absolute;background:rgba(246,178,107,0.45);';
+    const content = document.createElement('div');
+    content.dataset['part'] = 'content';
+    content.style.cssText =
+      'position:absolute;background:rgba(111,168,220,0.45);outline:1px solid rgba(111,168,220,0.9);';
+    const label = document.createElement('div');
+    label.dataset['part'] = 'label';
+    label.style.cssText =
+      'position:absolute;padding:2px 6px;border-radius:3px;background:#1c1c1e;color:#fff;' +
+      'font:11px/1.4 -apple-system,sans-serif;white-space:nowrap;max-width:100vw;overflow:hidden;text-overflow:ellipsis;';
+    root.append(margin, content, label);
+    parent.appendChild(root);
     this.#root = root;
     return root;
   }
 
   show(element: Element): void {
+    if (!element.isConnected) {
+      this.hide();
+      return;
+    }
     const root = this.#ensure();
-    const rect = element.getBoundingClientRect();
-    const style = getComputedStyle(element);
+    if (!root) return;
+    let rect: DOMRect;
+    let style: CSSStyleDeclaration;
+    try {
+      rect = element.getBoundingClientRect();
+      style = getComputedStyle(element);
+    } catch {
+      this.hide();
+      return;
+    }
     const margin = {
       top: parseFloat(style.marginTop) || 0,
       right: parseFloat(style.marginRight) || 0,
@@ -139,13 +160,17 @@ function describe(node: Element): string {
 }
 
 /** 生成 CSS 选择器路径，可直接粘到 document.querySelector 里用。 */
-function selectorFor(node: Element): string {
+export function selectorFor(node: Element): string {
   const parts: string[] = [];
   let current: Element | null = node;
-  while (current && current !== document.documentElement) {
+  while (current) {
+    if (current === current.ownerDocument.documentElement) {
+      parts.unshift(current.tagName.toLowerCase());
+      break;
+    }
     let part = current.tagName.toLowerCase();
-    if (current.id) {
-      parts.unshift(`#${current.id}`);
+    if (current.id && hasUniqueId(current)) {
+      parts.unshift(`#${escapeCssIdentifier(current.id)}`);
       break; // id 唯一，到此为止
     }
     const parent: Element | null = current.parentElement;
@@ -157,6 +182,84 @@ function selectorFor(node: Element): string {
     current = parent;
   }
   return parts.join(' > ');
+}
+
+function hasUniqueId(node: Element): boolean {
+  try {
+    if (node.ownerDocument.getElementById(node.id) !== node) return false;
+    try {
+      return (
+        node.ownerDocument.querySelectorAll(`#${escapeCssIdentifier(node.id)}`).length === 1
+      );
+    } catch {
+      // Some old selector engines reject valid hexadecimal escapes; compare raw ids.
+    }
+    let matches = 0;
+    for (const candidate of node.ownerDocument.querySelectorAll('[id]')) {
+      if (candidate.id === node.id && ++matches > 1) return false;
+    }
+    return matches === 1;
+  } catch {
+    return false;
+  }
+}
+
+export function scrollToElement(node: Element): void {
+  try {
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch {
+    try {
+      node.scrollIntoView();
+    } catch {
+      // Detached nodes and old WebViews can reject both forms.
+    }
+  }
+}
+
+/** CSS.escape-compatible fallback for Android WebViews that do not expose CSS.escape. */
+export function escapeCssIdentifier(value: string): string {
+  try {
+    if (typeof CSS?.escape === 'function') return CSS.escape(value);
+  } catch {
+    // Use the standards-compatible fallback below.
+  }
+
+  const length = value.length;
+  let escaped = '';
+  for (let index = 0; index < length; index++) {
+    const code = value.charCodeAt(index);
+    const character = value.charAt(index);
+    if (code === 0) {
+      escaped += '\uFFFD';
+      continue;
+    }
+    if (
+      (code >= 1 && code <= 31) ||
+      code === 127 ||
+      (index === 0 && code >= 48 && code <= 57) ||
+      (index === 1 && code >= 48 && code <= 57 && value.charAt(0) === '-')
+    ) {
+      escaped += `\\${code.toString(16)} `;
+      continue;
+    }
+    if (index === 0 && character === '-' && length === 1) {
+      escaped += '\\-';
+      continue;
+    }
+    if (
+      code >= 128 ||
+      character === '-' ||
+      character === '_' ||
+      (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122)
+    ) {
+      escaped += character;
+    } else {
+      escaped += `\\${character}`;
+    }
+  }
+  return escaped;
 }
 
 /** 面板自身的节点不出现在树里。 */
@@ -257,13 +360,18 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const [tab, setTab] = createSignal<'tree' | 'style' | 'attrs'>('tree');
 
   const highlighter = new Highlighter();
-  onCleanup(() => highlighter.dispose());
+  let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => {
+    clearTimeout(highlightTimer);
+    highlighter.dispose();
+  });
 
   const select = (node: Element) => {
     setSelected(node);
     highlighter.show(node);
     // 高亮只是定位辅助，长时间留着会挡住阅读。
-    setTimeout(() => highlighter.hide(), 1600);
+    clearTimeout(highlightTimer);
+    highlightTimer = setTimeout(() => highlighter.hide(), 1600);
   };
 
   /**
@@ -326,7 +434,12 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const styles = createMemo(() => {
     const node = selected();
     if (!node) return [];
-    const computed = getComputedStyle(node);
+    let computed: CSSStyleDeclaration;
+    try {
+      computed = getComputedStyle(node);
+    } catch {
+      return [];
+    }
     return STYLE_GROUPS.map((group) => ({
       title: group.title,
       entries: group.properties
@@ -340,8 +453,14 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const boxModel = createMemo(() => {
     const node = selected();
     if (!node) return null;
-    const rect = node.getBoundingClientRect();
-    const computed = getComputedStyle(node);
+    let rect: DOMRect;
+    let computed: CSSStyleDeclaration;
+    try {
+      rect = node.getBoundingClientRect();
+      computed = getComputedStyle(node);
+    } catch {
+      return null;
+    }
     const read = (property: string) =>
       Math.round(parseFloat(computed.getPropertyValue(property)) || 0);
     return {
@@ -436,7 +555,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
               </button>
               <button
                 class="icon-btn min-h-9 px-2"
-                onClick={() => node().scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                onClick={() => scrollToElement(node())}
               >
                 滚动到此
               </button>

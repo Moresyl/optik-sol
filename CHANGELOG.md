@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Added enforceable coverage thresholds and broad edge/error/lifecycle regression tests
-- Hardened instrumentation teardown, bounded response capture, transactional mounting, plugin cleanup, object-handle release, clipboard feedback, and runtime buffer resizing
+- Hardened instrumentation teardown, bounded response capture, transactional mounting, plugin cleanup, object-handle release, clipboard feedback, runtime buffer resizing, element selectors/highlighting, and asynchronous IndexedDB enumeration
 
 ## [0.2.0] - 2026-08-11
 

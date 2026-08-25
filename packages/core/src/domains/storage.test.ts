@@ -75,7 +75,9 @@ describe('StorageDomain', () => {
     });
 
     try {
-      expect(new StorageDomain().status('localStorage')).toMatchObject({
+      const snapshot = new StorageDomain().snapshot('localStorage');
+      expect(snapshot.items).toEqual([]);
+      expect(snapshot.status).toMatchObject({
         available: false,
         reason: 'blocked',
         itemCount: 0,
@@ -87,7 +89,10 @@ describe('StorageDomain', () => {
 
   it('keeps IndexedDB data read-only and enumerates databases defensively', async () => {
     const domain = new StorageDomain();
-    expect(domain.list('indexedDB')).toEqual([]);
+    expect(domain.snapshot('indexedDB')).toMatchObject({
+      items: [],
+      status: { available: false },
+    });
     expect(() => domain.set('indexedDB', 'db', 'value')).toThrow(/read-only/i);
     expect(() => domain.remove('indexedDB', 'db')).toThrow(/read-only/i);
     expect(() => domain.clear('indexedDB')).toThrow(/read-only/i);
@@ -98,7 +103,12 @@ describe('StorageDomain', () => {
       value: { databases: vi.fn().mockResolvedValue([{ name: 'main', version: 2 }, {}]) },
     });
     try {
+      expect(domain.list('indexedDB')).toEqual([]);
       await expect(domain.listDatabases()).resolves.toEqual([{ name: 'main', version: 2 }]);
+      expect(domain.canListDatabases()).toBe(true);
+      await expect(domain.listDatabaseItems()).resolves.toEqual([
+        { key: 'main', value: '版本 2', size: 12 },
+      ]);
     } finally {
       Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: original });
     }
@@ -119,6 +129,7 @@ describe('StorageDomain', () => {
     try {
       const domain = new StorageDomain();
       await expect(domain.listDatabases()).resolves.toEqual([]);
+      await expect(domain.listDatabaseItems()).rejects.toThrow('denied');
       await expect(domain.estimate()).resolves.toBeUndefined();
     } finally {
       Object.defineProperty(globalThis, 'indexedDB', {
@@ -145,7 +156,9 @@ describe('StorageDomain', () => {
     });
     try {
       const domain = new StorageDomain();
+      expect(domain.canListDatabases()).toBe(false);
       await expect(domain.listDatabases()).resolves.toEqual([]);
+      await expect(domain.listDatabaseItems()).rejects.toThrow(/cannot enumerate/i);
       await expect(domain.estimate()).resolves.toEqual({ usage: 10, quota: 100 });
     } finally {
       Object.defineProperty(globalThis, 'indexedDB', {

@@ -14,7 +14,7 @@
 
 ---
 
-Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 63 KB。
+Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 64 KB。
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>

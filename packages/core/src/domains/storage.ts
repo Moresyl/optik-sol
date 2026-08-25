@@ -18,6 +18,11 @@ export interface StorageAreaStatus {
   totalBytes: number;
 }
 
+export interface StorageSnapshot {
+  status: StorageAreaStatus;
+  items: StorageItem[];
+}
+
 export class StorageDomain {
   list(area: StorageArea): StorageItem[] {
     switch (area) {
@@ -28,26 +33,38 @@ export class StorageDomain {
       case 'cookie':
         return this.#listCookies();
       case 'indexedDB':
+        if (!globalThis.indexedDB) throw new Error('IndexedDB is not available in this context');
         return [];
     }
   }
 
   status(area: StorageArea): StorageAreaStatus {
+    return this.snapshot(area).status;
+  }
+
+  /** Reads items and status atomically so a blocked storage getter is touched only once. */
+  snapshot(area: StorageArea): StorageSnapshot {
     try {
       const items = this.list(area);
       return {
-        area,
-        available: true,
-        itemCount: items.length,
-        totalBytes: items.reduce((sum, item) => sum + item.size, 0),
+        items,
+        status: {
+          area,
+          available: true,
+          itemCount: items.length,
+          totalBytes: items.reduce((sum, item) => sum + item.size, 0),
+        },
       };
     } catch (err) {
       return {
-        area,
-        available: false,
-        reason: err instanceof Error ? err.message : String(err),
-        itemCount: 0,
-        totalBytes: 0,
+        items: [],
+        status: {
+          area,
+          available: false,
+          reason: err instanceof Error ? err.message : String(err),
+          itemCount: 0,
+          totalBytes: 0,
+        },
       };
     }
   }
@@ -94,6 +111,35 @@ export class StorageDomain {
     } catch {
       return [];
     }
+  }
+
+  canListDatabases(): boolean {
+    const idb = globalThis.indexedDB as (IDBFactory & { databases?: unknown }) | undefined;
+    return typeof idb?.databases === 'function';
+  }
+
+  /** UI-ready database rows. Unlike listDatabases(), reports unsupported/error states. */
+  async listDatabaseItems(): Promise<StorageItem[]> {
+    const idb = globalThis.indexedDB as
+      | (IDBFactory & { databases?: () => Promise<{ name?: string; version?: number }[]> })
+      | undefined;
+    if (!idb) throw new Error('IndexedDB is not available in this context');
+    if (!idb.databases) throw new Error('This browser cannot enumerate IndexedDB databases');
+
+    const databases = await idb.databases();
+    return databases
+      .filter((database): database is { name: string; version?: number } =>
+        typeof database.name === 'string',
+      )
+      .map((database) => {
+        const value = database.version === undefined ? '版本未知' : `版本 ${database.version}`;
+        return {
+          key: database.name,
+          value,
+          size: byteLengthOf(database.name) + byteLengthOf(value),
+        };
+      })
+      .sort((a, b) => a.key.localeCompare(b.key));
   }
 
   /** Storage quota, so "why is my PWA failing to cache" has an answer. */
