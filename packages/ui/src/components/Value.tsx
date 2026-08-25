@@ -23,6 +23,7 @@ import type {
   PropertyDescriptor,
   RemoteObject,
 } from 'optik-core';
+import { scheduleFrame } from '../platform/frame';
 
 /**
  * 能把 objectId 解回对象的域。日志域和网络域都是这个形状。
@@ -126,7 +127,7 @@ export function ValueView(props: ValueProps): JSX.Element {
   const [children, setChildren] = createSignal<PropertyDescriptor[] | null>(null);
   const [released, setReleased] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
-  let pendingFrame: number | undefined;
+  let cancelPending: (() => void) | undefined;
   let disposed = false;
 
   const depth = () => props.depth ?? 0;
@@ -160,7 +161,7 @@ export function ValueView(props: ValueProps): JSX.Element {
   // 这份句柄是这个组件自己借的（解析出来的副本没有别人引用），谁借谁还。
   onCleanup(() => {
     disposed = true;
-    if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
+    cancelPending?.();
     releaseProperties(children());
     if (jsonMirror?.objectId !== undefined) domain().registry.release(jsonMirror.objectId);
   });
@@ -173,8 +174,8 @@ export function ValueView(props: ValueProps): JSX.Element {
     if (children() !== null || released()) return;
     setLoading(true);
     // 取属性可能触发 getter 求值，放到下一帧避免阻塞本次点击的视觉反馈。
-    pendingFrame = requestAnimationFrame(() => {
-      pendingFrame = undefined;
+    cancelPending = scheduleFrame(() => {
+      cancelPending = undefined;
       if (disposed) return;
       // 不展开原型链、也不调用 getter：在调试器里触发副作用是不可接受的，
       // getter 会以 `(...)` 占位显示，用户想看再单独求值。

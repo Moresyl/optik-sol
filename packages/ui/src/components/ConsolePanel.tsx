@@ -10,13 +10,14 @@
  * 复制出去的是**展开后的完整数据**而不是屏幕上那行带省略号的预览，见 deep-text.ts。
  */
 
-import { createSignal, createEffect, For, Show, on, onMount, type JSX } from 'solid-js';
+import { createSignal, createEffect, For, Show, on, onCleanup, onMount, type JSX } from 'solid-js';
 import type { LogEntry, LogLevel, OptikKernel, RemoteObject } from 'optik-core';
 import { ALL_LEVELS, LEVEL_LABELS, type Store } from '../store';
 import { ValueView } from './Value';
 import { onLongPress } from '../platform/gesture';
 import { remoteObjectToDeepText } from '../deep-text';
 import { CopyButton, type CopyController } from './Copy';
+import { scheduleFrame } from '../platform/frame';
 
 /** 等级 → 配色类名。数据驱动，因此这些类名进了 uno 的 safelist。 */
 const LEVEL_CLASS: Record<LogLevel, string> = {
@@ -484,6 +485,8 @@ export function ConsolePanel(props: {
   let inputRef: HTMLInputElement | undefined;
   const [autoScroll, setAutoScroll] = createSignal(true);
   let scroller: HTMLDivElement | undefined;
+  let cancelAutoScroll: (() => void) | undefined;
+  onCleanup(() => cancelAutoScroll?.());
 
   /**
    * 只有当用户本来就贴在底部时才自动滚动。否则用户往回翻看历史时
@@ -498,7 +501,9 @@ export function ConsolePanel(props: {
   createEffect(
     on(props.store.visibleLogs, () => {
       if (!autoScroll() || !scroller) return;
-      requestAnimationFrame(() => {
+      cancelAutoScroll?.();
+      cancelAutoScroll = scheduleFrame(() => {
+        cancelAutoScroll = undefined;
         if (scroller) scroller.scrollTop = scroller.scrollHeight;
       });
     }),
@@ -540,7 +545,7 @@ export function ConsolePanel(props: {
   const toggleMode = () => {
     const next = mode() === 'command' ? 'input' : 'command';
     setMode(next);
-    if (next === 'input') requestAnimationFrame(() => inputRef?.focus());
+    if (next === 'input') scheduleFrame(() => inputRef?.focus());
   };
 
   const useCommand = (command: Command) => {
@@ -554,7 +559,7 @@ export function ConsolePanel(props: {
     setInput(command.expression);
     setHistoryDraft(command.expression);
     setHistoryCursor(-1);
-    requestAnimationFrame(() => {
+    scheduleFrame(() => {
       if (!inputRef) return;
       inputRef.focus();
       const quotes = command.expression.indexOf("''");

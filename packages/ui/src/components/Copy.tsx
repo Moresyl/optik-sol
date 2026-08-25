@@ -9,6 +9,7 @@
 
 import { createSignal, Show, onCleanup, type JSX } from 'solid-js';
 import { copyText } from '../platform/clipboard';
+import { scheduleFrame } from '../platform/frame';
 
 export interface CopyController {
   /**
@@ -182,18 +183,8 @@ export function CopySheet(props: {
   onClose: () => void;
 }): JSX.Element {
   let textarea: HTMLTextAreaElement | undefined;
-  let selectionFrame: number | null = null;
-  let selectionTimer: ReturnType<typeof setTimeout> | undefined;
-  onCleanup(() => {
-    if (selectionFrame !== null && typeof cancelAnimationFrame === 'function') {
-      try {
-        cancelAnimationFrame(selectionFrame);
-      } catch {
-        // Broken WebView shims must not make dialog teardown throw.
-      }
-    }
-    clearTimeout(selectionTimer);
-  });
+  let cancelSelection: (() => void) | undefined;
+  onCleanup(() => cancelSelection?.());
 
   /**
    * 打开即全选。这样用户只要长按一下就能看到系统的「拷贝」菜单，少一步操作。
@@ -259,19 +250,11 @@ export function CopySheet(props: {
               ref={(element) => {
                 textarea = element;
                 // 等一帧，确保元素已完成布局，否则 iOS 上设置选区不生效。
-                if (typeof requestAnimationFrame === 'function') {
-                  try {
-                    selectionFrame = requestAnimationFrame(() => {
-                      selectionFrame = null;
-                      selectAll();
-                    });
-                    return;
-                  } catch {
-                    // Some embedded browsers expose requestAnimationFrame as a
-                    // throwing stub. The timer below is the reliable fallback.
-                  }
-                }
-                selectionTimer = setTimeout(selectAll, 16);
+                cancelSelection?.();
+                cancelSelection = scheduleFrame(() => {
+                  cancelSelection = undefined;
+                  selectAll();
+                });
               }}
             />
             <div class="row-center justify-end gap-2">

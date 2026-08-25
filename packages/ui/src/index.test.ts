@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CaptureOptions } from 'optik-core';
 import { instance, mount } from './index';
 
@@ -20,7 +20,22 @@ afterEach(() => {
   instance()?.destroy();
   localStorage.clear();
   for (const host of document.querySelectorAll('[data-optik-root]')) host.remove();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
+
+class FakePointerEvent extends Event {
+  constructor(
+    type: string,
+    readonly pointerId: number,
+    readonly clientX: number,
+    readonly clientY: number,
+    readonly button = 0,
+    readonly isPrimary = true,
+  ) {
+    super(type, { bubbles: true, cancelable: true, composed: true });
+  }
+}
 
 describe('mount lifecycle', () => {
   it('deduplicates live mounts and keeps destroy idempotent across a remount', () => {
@@ -56,6 +71,28 @@ describe('mount lifecycle', () => {
       new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }),
     );
     expect(separator.getAttribute('aria-valuenow')).toBe('92');
+    app.destroy();
+  });
+
+  it('recovers launcher clicks when animation-frame scheduling is unavailable', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('PointerEvent', FakePointerEvent);
+    vi.stubGlobal('requestAnimationFrame', () => {
+      throw new Error('broken frame shim');
+    });
+    const app = mount({ capture: NO_CAPTURE });
+    const host = document.querySelector<HTMLElement>('[data-optik-root]')!;
+    const launcher = host.shadowRoot!.querySelector<HTMLButtonElement>('[aria-label="打开调试面板"]')!;
+
+    launcher.dispatchEvent(new FakePointerEvent('pointerdown', 1, 10, 10));
+    launcher.dispatchEvent(new FakePointerEvent('pointermove', 1, 30, 10));
+    launcher.dispatchEvent(new FakePointerEvent('pointerup', 1, 30, 10));
+    launcher.click();
+    expect(host.shadowRoot!.querySelector('[aria-label="关闭面板"]')).toBeNull();
+
+    vi.advanceTimersByTime(0);
+    launcher.click();
+    expect(host.shadowRoot!.querySelector('[aria-label="关闭面板"]')).not.toBeNull();
     app.destroy();
   });
 

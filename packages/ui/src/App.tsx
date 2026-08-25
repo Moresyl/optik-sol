@@ -21,6 +21,7 @@ import { StoragePanel } from './components/StoragePanel';
 import { SystemPanel } from './components/SystemPanel';
 import { PluginRegistry, safely, type OptikPlugin, type PluginContext } from './plugin';
 import { createLayout, LayoutProvider } from './layout';
+import { scheduleFrame } from './platform/frame';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -251,6 +252,8 @@ export function App(props: AppProps): JSX.Element {
    * 否则键盘回车／空格激活按钮、以及测试里的程序化 click 都不会有反应。
    */
   let suppressClick = false;
+  let cancelSuppressReset: (() => void) | undefined;
+  onCleanup(() => cancelSuppressReset?.());
 
   const attachLauncher = (element: HTMLElement) => {
     const dispose = makeDraggable(element, {
@@ -263,9 +266,12 @@ export function App(props: AppProps): JSX.Element {
         writeStored(POSITION_KEY, position());
         suppressClick = true;
         // 一次拖拽只吞一次 click；下一帧恢复，避免误伤后续的正常点击。
-        requestAnimationFrame(() => {
+        cancelSuppressReset?.();
+        // A zero-delay fallback task still runs after the synthetic click following pointerup.
+        cancelSuppressReset = scheduleFrame(() => {
           suppressClick = false;
-        });
+          cancelSuppressReset = undefined;
+        }, 0);
       },
     });
     onCleanup(dispose);

@@ -18,6 +18,7 @@ import { createSignal, createMemo, createEffect, For, Show, onCleanup, type JSX 
 import { CopyButton, type CopyController } from './Copy';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
+import { scheduleFrame } from '../platform/frame';
 
 /** 常看的一批属性，按 DevTools 的分组顺序排列。 */
 const STYLE_GROUPS: { title: string; properties: string[] }[] = [
@@ -462,21 +463,18 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   onCleanup(stopPicking);
 
-  let mutationFrame: number | null = null;
+  let cancelMutation: (() => void) | undefined;
   let mutationObserver: MutationObserver | undefined;
   if (typeof MutationObserver === 'function') {
     try {
       mutationObserver = new MutationObserver((records) => {
         if (records.every(isOwnMutation)) return;
-        if (mutationFrame !== null) return;
+        if (cancelMutation) return;
         const update = () => {
-          mutationFrame = null;
+          cancelMutation = undefined;
           setDomVersion((version) => version + 1);
         };
-        mutationFrame =
-          typeof requestAnimationFrame === 'function'
-            ? requestAnimationFrame(update)
-            : (setTimeout(update, 16) as unknown as number);
+        cancelMutation = scheduleFrame(update);
       });
       mutationObserver.observe(document.documentElement, {
         subtree: true,
@@ -490,11 +488,8 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   }
   onCleanup(() => {
     mutationObserver?.disconnect();
-    if (mutationFrame !== null) {
-      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(mutationFrame);
-      else clearTimeout(mutationFrame);
-      mutationFrame = null;
-    }
+    cancelMutation?.();
+    cancelMutation = undefined;
   });
 
   const attributes = createMemo(() => {
