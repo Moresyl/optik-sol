@@ -158,7 +158,7 @@ export function SystemPanel(props: {
 
   const recentLongTasks = createMemo(() => longTasks().slice(-10).reverse());
 
-  const exportAll = () => {
+  const exportAllText = () => {
     const data = info();
     const lines = [
       `设备信息 · ${new Date().toLocaleString('zh-CN')}`,
@@ -185,7 +185,7 @@ export function SystemPanel(props: {
       '--- 能力探测 ---',
       ...capabilities().map(([label, value]) => `${label}：${value ? '支持' : '不支持'}`),
     ];
-    props.copier.copy(lines.join('\n'), '环境信息');
+    return lines.join('\n');
   };
 
   return (
@@ -199,9 +199,12 @@ export function SystemPanel(props: {
           「导出」会让人以为要存文件或者拉个分享面板出来——
           用户点了「导出」、屏幕上飘出「已复制」，是这个面板里最刺眼的一处不一致。
         */}
-        <button class="chip text-accent" onClick={exportAll}>
-          复制
-        </button>
+        <CopyButton
+          copier={props.copier}
+          text={exportAllText}
+          label="环境信息"
+          class="min-h-8 px-2 text-accent"
+        />
       </div>
 
       <div class="flex-1 min-h-0 overflow-y-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">

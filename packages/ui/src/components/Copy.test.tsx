@@ -52,7 +52,12 @@ describe('copy UI lifecycle', () => {
     const onClose = vi.fn();
     cleanups.push(
       render(
-        () => <CopySheet data={{ text: 'copy me', title: '手动复制日志' }} onClose={onClose} />,
+        () => (
+          <CopySheet
+            data={{ text: 'copy me', title: '手动复制日志', mode: 'fallback' }}
+            onClose={onClose}
+          />
+        ),
         host,
       ),
       () => host.remove(),
@@ -61,6 +66,7 @@ describe('copy UI lifecycle', () => {
     const dialog = host.querySelector<HTMLElement>('[role="dialog"]')!;
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('aria-label')).toBe('手动复制日志');
+    expect(dialog.textContent).toContain('当前环境不允许脚本写剪贴板');
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -103,7 +109,11 @@ describe('copy UI lifecycle', () => {
     cleanups.push(dispose);
 
     controller.reveal('raw', '响应体');
-    expect(controller.sheet()).toEqual({ text: 'raw', title: '响应体' });
+    expect(controller.sheet()).toEqual({ text: 'raw', title: '响应体', mode: 'reveal' });
+    const host = document.createElement('div');
+    cleanups.push(render(() => <CopySheet data={controller.sheet()} onClose={vi.fn()} />, host));
+    expect(host.textContent).toContain('未格式化的原始内容');
+    expect(host.textContent).not.toContain('不允许脚本写剪贴板');
     controller.closeSheet();
     expect(controller.sheet()).toBeNull();
   });
@@ -152,7 +162,12 @@ describe('copy UI lifecycle', () => {
     cleanups.push(
       () => vi.useRealTimers(),
       render(
-        () => <CopySheet data={{ text: 'fallback', title: '复制' }} onClose={vi.fn()} />,
+        () => (
+          <CopySheet
+            data={{ text: 'fallback', title: '复制', mode: 'fallback' }}
+            onClose={vi.fn()}
+          />
+        ),
         host,
       ),
       () => host.remove(),

@@ -100,9 +100,7 @@ describe('SystemPanel long-task diagnostics', () => {
       ],
     });
 
-    const copyButton = [...host.querySelectorAll('button')].find(
-      (button) => button.textContent?.trim() === '复制',
-    );
+    const copyButton = host.querySelector<HTMLButtonElement>('[title="复制环境信息"]');
     copyButton!.click();
     const exported = String(copy.mock.calls[0]?.[0]);
     expect(exported).toContain('https://example.test/embed');

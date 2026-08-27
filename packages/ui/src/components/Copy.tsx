@@ -21,13 +21,19 @@ export interface CopyController {
   /** 直接打开兜底层（用于「查看原文」这类主动入口）。 */
   reveal: (text: string, title?: string) => void;
   toast: () => string | null;
-  sheet: () => { text: string; title: string } | null;
+  sheet: () => CopySheetData | null;
   closeSheet: () => void;
+}
+
+export interface CopySheetData {
+  text: string;
+  title: string;
+  mode: 'fallback' | 'reveal';
 }
 
 export function createCopyController(): CopyController {
   const [toast, setToast] = createSignal<string | null>(null);
-  const [sheet, setSheet] = createSignal<{ text: string; title: string } | null>(null);
+  const [sheet, setSheet] = createSignal<CopySheetData | null>(null);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
@@ -58,7 +64,7 @@ export function createCopyController(): CopyController {
           if (outcome.ok) showToast(`已复制${label}（${formatSize(text.length)}）`);
           else {
             setToast(null);
-            setSheet({ text, title: `手动复制${label}` });
+            setSheet({ text, title: `手动复制${label}`, mode: 'fallback' });
           }
         },
       });
@@ -68,13 +74,13 @@ export function createCopyController(): CopyController {
         showToast(`已复制${label}（${formatSize(text.length)}）`);
         return true;
       }
-      setSheet({ text, title: `手动复制${label}` });
+      setSheet({ text, title: `手动复制${label}`, mode: 'fallback' });
       return false;
     },
 
     reveal(text, title = '原文') {
       if (disposed) return;
-      setSheet({ text, title });
+      setSheet({ text, title, mode: 'reveal' });
     },
 
     toast,
@@ -179,7 +185,7 @@ export function Toast(props: { message: string | null }): JSX.Element {
 }
 
 export function CopySheet(props: {
-  data: { text: string; title: string } | null;
+  data: CopySheetData | null;
   onClose: () => void;
 }): JSX.Element {
   let textarea: HTMLTextAreaElement | undefined;
@@ -235,11 +241,13 @@ export function CopySheet(props: {
               只说下一步该怎么做。
             */}
             <div class="text-fg-secondary leading-5">
-              当前环境不允许脚本写剪贴板。内容已全选，长按下方文本选择「拷贝」即可。
+              {data().mode === 'fallback'
+                ? '当前环境不允许脚本写剪贴板。内容已全选，长按下方文本选择「拷贝」即可。'
+                : '这是未格式化的原始内容，已完整展开并全选，可直接复制或核对差异。'}
             </div>
             <textarea
               readOnly
-              aria-label="待手动复制的文本"
+              aria-label={data().mode === 'fallback' ? '待手动复制的文本' : '原始内容'}
               spellcheck={false}
               autocapitalize="off"
               autocorrect="off"

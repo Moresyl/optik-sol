@@ -19,6 +19,7 @@ import { CopyButton, type CopyController } from './Copy';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
 import { scheduleFrame } from '../platform/frame';
+import { StructuredTextView } from './StructuredText';
 
 /** 常看的一批属性，按 DevTools 的分组顺序排列。 */
 const STYLE_GROUPS: { title: string; properties: string[] }[] = [
@@ -387,7 +388,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   const layout = useLayout();
   const [selected, setSelected] = createSignal<Element | null>(null);
   const [picking, setPicking] = createSignal(false);
-  const [tab, setTab] = createSignal<'tree' | 'style' | 'attrs'>('tree');
+  const [tab, setTab] = createSignal<'tree' | 'style' | 'attrs' | 'html'>('tree');
   const [domVersion, setDomVersion] = createSignal(0);
 
   const highlighter = new Highlighter();
@@ -521,6 +522,21 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
     })).filter((group) => group.entries.length > 0);
   });
 
+  const attributesText = createMemo(() =>
+    attributes()
+      .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
+      .join('\n'),
+  );
+
+  const stylesText = createMemo(() =>
+    styles()
+      .flatMap((group) => [
+        `/* ${group.title} */`,
+        ...group.entries.map(([property, value]) => `${property}: ${value};`),
+      ])
+      .join('\n'),
+  );
+
   const boxModel = createMemo(() => {
     domVersion();
     const node = selected();
@@ -560,8 +576,8 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
   });
 
   /**
-   * 宽屏时结构树常驻左栏，右栏就只剩样式和属性两种；
-   * 窄屏时三者共用一组标签，`tree` 相当于「还没钻进去」。
+   * 宽屏时结构树常驻左栏，右栏显示样式、属性或 HTML；
+   * 窄屏时这些视图共用一组标签，`tree` 相当于「还没钻进去」。
    */
   const detailTab = createMemo(() => (tab() === 'tree' ? 'style' : tab()));
 
@@ -590,6 +606,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
                 ['tree', '结构'],
                 ['style', '样式'],
                 ['attrs', '属性'],
+                ['html', 'HTML'],
               ] as const
             }
           >
@@ -642,7 +659,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
               </button>
               <button
                 class="icon-btn min-h-9 px-2"
-                onClick={() => props.copier.reveal(node().outerHTML, '元素 HTML')}
+                onClick={() => setTab('html')}
               >
                 查看 HTML
               </button>
@@ -669,6 +686,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
             [
               ['style', '样式'],
               ['attrs', '属性'],
+              ['html', 'HTML'],
             ] as const
           }
         >
@@ -682,6 +700,23 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
             </button>
           )}
         </For>
+        <span class="flex-1" />
+        <Show when={detailTab() === 'attrs' && attributes().length > 0}>
+          <CopyButton
+            copier={props.copier}
+            text={attributesText}
+            label="全部元素属性"
+            class="min-h-8 px-2 text-accent"
+          />
+        </Show>
+        <Show when={detailTab() === 'style' && styles().length > 0}>
+          <CopyButton
+            copier={props.copier}
+            text={stylesText}
+            label="全部计算样式"
+            class="min-h-8 px-2 text-accent"
+          />
+        </Show>
       </div>
 
       <div class="flex-1 min-h-0 overflow-auto [overscroll-behavior:contain] [-webkit-overflow-scrolling:touch]">
@@ -742,6 +777,20 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
               </div>
             )}
           </For>
+        </Show>
+
+        <Show when={detailTab() === 'html' && selected()}>
+          {(node) => (
+            <div class="p-2">
+              <StructuredTextView
+                text={node().outerHTML}
+                languageHint="html"
+                label="元素 HTML"
+                copier={props.copier}
+                defaultExpanded
+              />
+            </div>
+          )}
         </Show>
       </div>
     </div>

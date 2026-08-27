@@ -179,6 +179,12 @@ action('logs', '超长文本（验证换行与选中）', () => {
 
 // ---- 复杂值 ----------------------------------------------------------------
 
+action('values', 'JSON 字符串', () => {
+  console.log(
+    JSON.stringify({ 用户: { 姓名: '张三', 权限: ['读取', '写入'] }, 在线: true }),
+  );
+});
+
 action('values', '循环引用', () => {
   const node = { name: '根节点', children: [] };
   const child = { name: '子节点', parent: node };
@@ -296,7 +302,8 @@ action('network', 'fetch 404', () => {
 action('network', 'fetch POST（带请求体）', () => {
   fetch('https://httpbin.org/post', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Demo-Header': '演示' },
+    // Request header values are byte strings in Fetch; non-Latin-1 text throws before sending.
+    headers: { 'Content-Type': 'application/json', 'X-Demo-Header': 'optik-demo' },
     body: JSON.stringify({ 消息: '你好', 时间戳: Date.now() }),
   });
 });

@@ -14,7 +14,7 @@ English | [简体中文](README.zh-CN.md)
 
 ---
 
-Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 67 KB gzipped.
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 73 KB gzipped.
 
 ```html
 <script src="https://unpkg.com/optik-sol"></script>
@@ -26,10 +26,10 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 
 | Panel | What it shows |
 | --- | --- |
-| **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
-| **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — request and response headers and bodies, timing breakdown, per-frame WebSocket records, privacy-safe HAR 1.2 export |
-| **Elements** | Live, lazily expanded DOM tree, in-page picking, highlighting, box model, computed styles, selector copy |
-| **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access |
+| **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, expandable highlighted JSON strings, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
+| **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — formatted and highlighted request/response bodies, timing breakdown, structured WebSocket frames, privacy-safe HAR 1.2 export |
+| **Elements** | Live, lazily expanded DOM tree, in-page picking, highlighting, box model, computed styles, highlighted outer HTML, selector and bulk metadata copy |
+| **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access and collapsible JSON tree/code views |
 | **Environment** | Device, viewport, safe area, memory, load timing, bounded main-thread long-task evidence, capability detection |
 
 ## Design highlights
@@ -37,7 +37,8 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | Behaviour | Detail |
 | --- | --- |
 | **Copy never fails** | Three fallback layers: `execCommand` → async Clipboard API → a pre-selected textarea. The last layer depends on no API at all, so it works on non-secure origins such as `http://192.168.x.x` |
-| **Copy lives at the end of every row** | Every console row has a *Copy* button (timestamp and stack included); every network row has *cURL*. They sit at a fixed x position and never drift with content length |
+| **Structured payloads stay readable** | JSON switches between a collapsible tree and highlighted code; other payloads get language-aware highlighting, line numbers, wrapping, bounded expansion, raw-source access, and contextual copy |
+| **Copy lives at the end of every row** | Every console row has a *Copy* button (timestamp and stack included); every network row copies a replayable cURL command. They sit at a fixed x position and never drift with content length |
 | **Large objects expand instantly** | Only a one-level shallow preview is produced; real objects stay behind opaque handles. A 100k-element array expands immediately, cycles are marked `[Circular]`, and getters render as `(...)` and are never invoked |
 | **Long-press still selects text** | Gesture detection is `passive` throughout and never calls `preventDefault()`, so native long-press selection is left intact |
 | **Laid out by mobile rules** | `100dvh`, `env(safe-area-inset-*)`, touch targets ≥ 44 px, 16 px inputs, sizes in px only — never rem |

@@ -8,18 +8,21 @@ const cleanups: Array<() => void> = [];
 
 afterEach(() => {
   for (const cleanup of cleanups.splice(0).reverse()) cleanup();
+  localStorage.clear();
   vi.restoreAllMocks();
 });
 
 function panel(): {
   host: HTMLDivElement;
   kernel: OptikKernel;
+  copy: ReturnType<typeof vi.fn>;
   reveal: ReturnType<typeof vi.fn>;
 } {
   const kernel = new OptikKernel({ capture: { console: false } });
+  const copy = vi.fn((_text: string, _label?: string) => true);
   const reveal = vi.fn();
   const copier: CopyController = {
-    copy: vi.fn(() => true),
+    copy,
     reveal,
     toast: () => null,
     sheet: () => null,
@@ -29,7 +32,7 @@ function panel(): {
   document.body.appendChild(host);
   const dispose = render(() => <StoragePanel kernel={kernel} copier={copier} />, host);
   cleanups.push(() => kernel.dispose(), dispose, () => host.remove());
-  return { host, kernel, reveal };
+  return { host, kernel, copy, reveal };
 }
 
 function clickButton(host: HTMLElement, label: string): void {
@@ -41,6 +44,30 @@ function clickButton(host: HTMLElement, label: string): void {
 }
 
 describe('StoragePanel', () => {
+  it('renders stored JSON as a collapsible highlighted tree and copies the exact source', () => {
+    localStorage.setItem('profile', '{"user":{"name":"Ada"},"active":true}');
+    const { host, copy } = panel();
+
+    expect(host.textContent).toContain('树形结构');
+    expect(host.textContent).toContain('profile');
+    clickButton(host, '全部展开');
+    expect(host.textContent).toContain('"name"');
+    clickButton(host, '代码');
+    expect(host.querySelector('[data-code-token="boolean"]')?.textContent).toBe('true');
+    host.querySelector<HTMLButtonElement>('[title="复制profile"]')!.click();
+    expect(copy).toHaveBeenCalledWith('{"user":{"name":"Ada"},"active":true}', 'profile');
+  });
+
+  it('keeps short plain values compact while retaining direct copy', () => {
+    localStorage.setItem('theme', 'dark');
+    const { host, copy } = panel();
+
+    expect(host.textContent).toContain('dark');
+    expect(host.querySelector('[role="region"]')).toBeNull();
+    host.querySelector<HTMLButtonElement>('[title="复制theme"]')!.click();
+    expect(copy).toHaveBeenCalledWith('dark', 'theme');
+  });
+
   it('renders unavailable snapshots without repeating the failing storage read', () => {
     const { host, kernel } = panel();
     const snapshot = vi.spyOn(kernel.storage, 'snapshot').mockReturnValue({

@@ -21,6 +21,7 @@ import {
 } from 'solid-js';
 import type { OptikKernel, StorageArea, StorageItem } from 'optik-core';
 import { CopyButton, type CopyController } from './Copy';
+import { StructuredTextView } from './StructuredText';
 
 const AREA_LABELS: Record<StorageArea, string> = {
   localStorage: '本地存储',
@@ -52,11 +53,11 @@ function prettify(value: string): { text: string; json: boolean } {
   }
 }
 
-/** 超过这个规模就折叠。判据同时看行数和字数：一行几千字的 base64 也得折。 */
-function isLong(text: string): boolean {
-  return text.length > 300 || text.split('\n').length > 8;
+function needsStructuredViewer(value: string, json: boolean): boolean {
+  return json || value.length > 800 || value.split(/\r?\n/).length > 12;
 }
 
+/** 超过这个规模就折叠。判据同时看行数和字数：一行几千字的 base64 也得折。 */
 /**
  * 需要二次确认的危险按钮：点第一下变成「确认…」，再点一下才真执行。
  *
@@ -102,11 +103,8 @@ function StorageRow(props: {
   onEdit: () => void;
   onRemove: () => void;
 }): JSX.Element {
-  const [expanded, setExpanded] = createSignal(false);
-
   const body = createMemo(() => prettify(props.item.value));
-  const long = createMemo(() => isLong(body().text));
-  const lines = createMemo(() => body().text.split('\n').length);
+  const structured = createMemo(() => needsStructuredViewer(props.item.value, body().json));
 
   const meta = createMemo(() =>
     [
@@ -136,27 +134,42 @@ function StorageRow(props: {
             JSON
           </span>
         </Show>
+        <Show when={props.item.value && !structured()}>
+          <CopyButton
+            copier={props.copier}
+            text={() => props.item.value}
+            label={props.item.key}
+            class="min-h-8 px-2 text-accent"
+          />
+        </Show>
         <span class="shrink-0 text-fg-tertiary not-selectable">{formatBytes(props.item.size)}</span>
       </div>
 
-      {/*
-        值单独成块并下沉底色——这是键值分区的关键。
-        折叠用 line-clamp 而不是 max-h + overflow：套一层滚动区在触屏上会和外层
-        列表抢手势，滑两下才发现滑错了地方；而且 line-clamp 是按行截断的，
-        不会把最后一行齐腰切一刀。
-      */}
-      <div
-        class="selectable wrap-anywhere font-mono leading-5 text-fg-secondary
- mt-1 px-2 py-1.5 rounded-md bg-bg-sunken"
-        classList={{ 'line-clamp-8': long() && !expanded() }}
-      >
-        {/*
-          空字符串是合法的值，但一个空的灰块看上去像是渲染坏了。
-          写明白它是空的——顺带把「键存在但值为空」和「键不存在」区分开，
-          这两种情况在排查开关位时结论完全相反。
-        */}
-        <Show when={body().text} fallback={<span class="text-fg-tertiary italic">空字符串</span>}>
-          {body().text}
+      <div class="mt-1">
+        <Show
+          when={props.item.value}
+          fallback={
+            <div class="px-2 py-1.5 rounded-md bg-bg-sunken text-fg-tertiary italic">
+              空字符串
+            </div>
+          }
+        >
+          <Show
+            when={structured()}
+            fallback={
+              <div class="selectable wrap-anywhere font-mono leading-5 text-fg-secondary px-2 py-1.5 rounded-md bg-bg-sunken">
+                {props.item.value}
+              </div>
+            }
+          >
+            <StructuredTextView
+              text={props.item.value}
+              mimeType={body().json ? 'application/json' : undefined}
+              label={props.item.key}
+              copier={props.copier}
+              copyText={() => props.item.value}
+            />
+          </Show>
         </Show>
       </div>
 
@@ -165,17 +178,6 @@ function StorageRow(props: {
       </Show>
 
       <div class="row-center gap-1 mt-1 not-selectable">
-        <Show when={long()}>
-          <button class="icon-btn min-h-9 px-2" onClick={() => setExpanded(!expanded())}>
-            {expanded() ? '收起' : `展开（${lines()} 行）`}
-          </button>
-        </Show>
-        <CopyButton
-          copier={props.copier}
-          text={() => props.item.value}
-          label={props.item.key}
-          class="min-h-9 px-2 text-accent"
-        />
         <Show when={!props.readOnly}>
           <button class="icon-btn min-h-9 px-2" onClick={props.onEdit}>
             编辑

@@ -147,7 +147,17 @@ describe('NetworkPanel', () => {
     expect(host.textContent).toContain('cURL 命令');
     expect(host.textContent).toContain('1.25 s');
     expect(host.textContent).toContain('来自缓存');
+    expect(host.textContent).toContain('树形结构');
+    expect(host.textContent).toContain('"hello"');
     expect(host.querySelector<HTMLElement>('[title="DNS 解析"]')!.style.width).toBe('0%');
+
+    button(host, '代码').click();
+    expect(host.querySelector('[data-code-token="key"]')?.textContent).toContain('"hello"');
+    host.querySelector<HTMLButtonElement>('[title="复制请求体"]')!.click();
+    expect(copy).toHaveBeenCalledWith(expect.stringContaining('\n  "hello": "world"'), '请求体');
+
+    host.querySelector<HTMLButtonElement>('[title="复制请求头"]')!.click();
+    expect(copy).toHaveBeenCalledWith("X-Name: o'hara", '请求头');
 
     host.querySelector<HTMLButtonElement>('[title="复制cURL 命令"]')!.click();
     expect(copy).toHaveBeenCalledWith(
@@ -172,7 +182,13 @@ describe('NetworkPanel', () => {
         url: 'wss://example.test/socket',
         name: 'socket',
         frames: [
-          { direction: 'send', timestamp: 1, opcode: 'text', payload: 'ping', size: 4 },
+          {
+            direction: 'send',
+            timestamp: 1,
+            opcode: 'text',
+            payload: '{"event":"ping"}',
+            size: 16,
+          },
           { direction: 'receive', timestamp: 2, opcode: 'text', payload: 'pong', size: 4 },
         ],
       }),
@@ -182,6 +198,8 @@ describe('NetworkPanel', () => {
     expect(host.textContent).toContain('帧记录（2）');
     expect(host.textContent).toContain('↑ 发送');
     expect(host.textContent).toContain('↓ 接收');
+    expect(host.textContent).toContain('树形结构');
+    expect(host.textContent).toContain('"event"');
     expect(host.textContent).not.toContain('cURL 命令');
   });
 

@@ -17,9 +17,10 @@ import {
 } from 'optik-core';
 import type { Store } from '../store';
 import { CopyButton, type CopyController } from './Copy';
-import { ValueView } from './Value';
+import { StructuredTextView } from './StructuredText';
 import { SplitView } from './SplitView';
 import { useLayout } from '../layout';
+import { formattedStructuredText } from '../structured-text';
 
 const INITIATOR_LABELS: Record<RequestInitiator, string> = {
   xhr: 'XHR',
@@ -223,13 +224,25 @@ function recordToText(record: NetworkRecord): string {
     '--- 请求头 ---',
     ...record.requestHeaders.map(([name, value]) => `${name}: ${value}`),
   ];
-  if (record.requestBody?.text) lines.push('', '--- 请求体 ---', record.requestBody.text);
+  if (record.requestBody?.text) {
+    lines.push(
+      '',
+      '--- 请求体 ---',
+      formattedStructuredText(record.requestBody.text, record.requestBody.mimeType),
+    );
+  }
   lines.push(
     '',
     '--- 响应头 ---',
     ...record.responseHeaders.map(([name, value]) => `${name}: ${value}`),
   );
-  if (record.responseBody?.text) lines.push('', '--- 响应体 ---', record.responseBody.text);
+  if (record.responseBody?.text) {
+    lines.push(
+      '',
+      '--- 响应体 ---',
+      formattedStructuredText(record.responseBody.text, record.responseBody.mimeType),
+    );
+  }
   if (record.error) lines.push('', `错误：${record.error}`);
   return lines.join('\n');
 }
@@ -269,9 +282,12 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
   );
 }
 
+function nameValuesToText(items: [string, string][]): string {
+  return items.map(([name, value]) => `${name}: ${value}`).join('\n');
+}
+
 function BodyView(props: {
   body: NetworkBody | undefined;
-  kernel: OptikKernel;
   copier: CopyController;
   label: string;
 }): JSX.Element {
@@ -286,40 +302,18 @@ function BodyView(props: {
             </div>
           </Show>
 
-          {/*
-            JSON 已在内核里做过惰性镜像，直接给树，不必让用户面对一行压缩文本。
-            domain 必须显式给网络域：这些 objectId 是网络域的注册表发的，
-            用默认的日志域去解会解到编号相同的另一个对象上。
-          */}
-          <Show when={body().parsed}>
-            {(parsed) => (
-              <ValueView value={parsed()} kernel={props.kernel} domain={props.kernel.network} />
-            )}
-          </Show>
-
-          <Show when={body().text && !body().parsed}>
-            <div class="selectable wrap-anywhere font-mono leading-5 max-h-80 overflow-y-auto">
-              {body().text}
-            </div>
-          </Show>
-
           <Show when={body().text}>
             {(text) => (
-              <div class="row-center gap-1 mt-2 not-selectable">
-                <CopyButton
-                  copier={props.copier}
-                  text={() => text()!}
+              <div>
+                <StructuredTextView
+                  text={text()!}
+                  mimeType={body().mimeType}
                   label={props.label}
-                  class="min-h-9 px-2 text-accent"
+                  copier={props.copier}
                 />
-                <button
-                  class="icon-btn min-h-9 px-2"
-                  onClick={() => props.copier.reveal(text()!, props.label)}
-                >
-                  查看原文
-                </button>
-                <span class="flex-1" />
-                <span class="text-fg-tertiary">{formatBytes(body().size)}</span>
+                <div class="mt-1 text-right text-fg-tertiary not-selectable">
+                  {formatBytes(body().size)}
+                </div>
               </div>
             )}
           </Show>
@@ -384,7 +378,6 @@ function TimingBar(props: { record: NetworkRecord }): JSX.Element {
 
 function RequestDetail(props: {
   record: NetworkRecord;
-  kernel: OptikKernel;
   copier: CopyController;
   onBack: () => void;
 }): JSX.Element {
@@ -467,25 +460,30 @@ function RequestDetail(props: {
           给一条注定跑不通的命令比不给更糟。
         */}
         <Show when={props.record.initiator !== 'websocket'}>
-          <Section
-            title="cURL 命令"
-            action={
-              <CopyButton
-                copier={props.copier}
-                text={() => toCurl(props.record)}
-                label="cURL 命令"
-                class="min-h-8 px-2 text-accent"
-              />
-            }
-          >
-            <div class="selectable wrap-anywhere font-mono leading-5 text-fg-secondary">
-              {toCurl(props.record)}
-            </div>
+          <Section title="cURL 命令">
+            <StructuredTextView
+              text={toCurl(props.record)}
+              languageHint="shell"
+              label="cURL 命令"
+              copier={props.copier}
+              defaultExpanded
+              showReveal={false}
+            />
           </Section>
         </Show>
 
         <Show when={props.record.query.length > 0}>
-          <Section title="查询参数">
+          <Section
+            title="查询参数"
+            action={
+              <CopyButton
+                copier={props.copier}
+                text={() => nameValuesToText(props.record.query)}
+                label="查询参数"
+                class="min-h-8 px-2 text-accent"
+              />
+            }
+          >
             <KeyValueList items={props.record.query} />
           </Section>
         </Show>
@@ -494,7 +492,19 @@ function RequestDetail(props: {
           <TimingBar record={props.record} />
         </Section>
 
-        <Section title="请求头">
+        <Section
+          title="请求头"
+          action={
+            <Show when={props.record.requestHeaders.length > 0}>
+              <CopyButton
+                copier={props.copier}
+                text={() => nameValuesToText(props.record.requestHeaders)}
+                label="请求头"
+                class="min-h-8 px-2 text-accent"
+              />
+            </Show>
+          }
+        >
           <KeyValueList items={props.record.requestHeaders} />
         </Section>
 
@@ -502,21 +512,31 @@ function RequestDetail(props: {
           <Section title="请求体">
             <BodyView
               body={props.record.requestBody}
-              kernel={props.kernel}
               copier={props.copier}
               label="请求体"
             />
           </Section>
         </Show>
 
-        <Section title="响应头">
+        <Section
+          title="响应头"
+          action={
+            <Show when={props.record.responseHeaders.length > 0}>
+              <CopyButton
+                copier={props.copier}
+                text={() => nameValuesToText(props.record.responseHeaders)}
+                label="响应头"
+                class="min-h-8 px-2 text-accent"
+              />
+            </Show>
+          }
+        >
           <KeyValueList items={props.record.responseHeaders} />
         </Section>
 
         <Section title="响应体">
           <BodyView
             body={props.record.responseBody}
-            kernel={props.kernel}
             copier={props.copier}
             label="响应体"
           />
@@ -539,7 +559,14 @@ function RequestDetail(props: {
                     <span>{new Date(frame.timestamp).toLocaleTimeString('zh-CN')}</span>
                     <span>{formatBytes(frame.size)}</span>
                   </div>
-                  <div class="selectable wrap-anywhere font-mono leading-5">{frame.payload}</div>
+                  <div class="mt-1">
+                    <StructuredTextView
+                      text={frame.payload}
+                      label={`${frame.direction === 'send' ? '发送' : '接收'}帧`}
+                      copier={props.copier}
+                      defaultExpanded={false}
+                    />
+                  </div>
                 </div>
               )}
             </For>
@@ -839,7 +866,6 @@ export function NetworkPanel(props: {
       detail={
         <RequestDetail
           record={selected()!}
-          kernel={props.kernel}
           copier={props.copier}
           onBack={() => setSelectedId(null)}
         />

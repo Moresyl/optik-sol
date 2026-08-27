@@ -22,6 +22,7 @@ describe('ElementPanel live DOM updates', () => {
   let nextFrame: number;
   let cleanup: (() => void) | undefined;
   let host: HTMLDivElement | undefined;
+  let copy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     frames = new Map();
@@ -51,8 +52,10 @@ describe('ElementPanel live DOM updates', () => {
     const shadow = host.attachShadow({ mode: 'open' });
     const point = document.createElement('div');
     shadow.appendChild(point);
+    const copyText = vi.fn((_text: string, _label?: string) => true);
+    copy = copyText;
     const copier: CopyController = {
-      copy: vi.fn(() => true),
+      copy: copyText,
       reveal: vi.fn(),
       toast: () => null,
       sheet: () => null,
@@ -106,5 +109,36 @@ describe('ElementPanel live DOM updates', () => {
     cleanup = undefined;
     expect(FakeMutationObserver.latest.disconnect).toHaveBeenCalledOnce();
     expect(frames.size).toBe(0);
+  });
+
+  it('shows highlighted HTML and exposes bulk attribute/style copy actions', () => {
+    const target = document.createElement('section');
+    target.id = 'inspect-copy';
+    target.setAttribute('data-role', 'card');
+    target.setAttribute('data-element-live-test', '');
+    document.body.appendChild(target);
+    const shadow = mountPanel();
+
+    const treeButton = [...shadow.querySelectorAll('button')].find((candidate) =>
+      candidate.textContent?.includes('inspect-copy'),
+    );
+    treeButton!.click();
+    const htmlButton = [...shadow.querySelectorAll('button')].find(
+      (candidate) => candidate.textContent?.trim() === '查看 HTML',
+    ) ?? [...shadow.querySelectorAll('button')].find(
+      (candidate) => candidate.textContent?.trim() === 'HTML',
+    );
+    htmlButton!.click();
+
+    expect(shadow.textContent).toContain('HTML');
+    expect(shadow.querySelector('[data-code-token="tag"]')?.textContent).toBe('section');
+    expect(shadow.querySelector('[data-code-token="attr"]')?.textContent).toBe('id');
+
+    const attributeButtons = [...shadow.querySelectorAll('button')].filter(
+      (candidate) => candidate.textContent?.trim() === '属性',
+    );
+    attributeButtons[attributeButtons.length - 1]!.click();
+    shadow.querySelector<HTMLButtonElement>('[title="复制全部元素属性"]')!.click();
+    expect(copy).toHaveBeenCalledWith(expect.stringContaining('data-role="card"'), '全部元素属性');
   });
 });

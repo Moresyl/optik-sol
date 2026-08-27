@@ -100,6 +100,38 @@ function renderWithStore(): {
 }
 
 describe('ConsolePanel REPL history', () => {
+  it('recognises a JSON string as expandable structured content', () => {
+    const kernel = new OptikKernel({ capture: NO_CAPTURE });
+    kernel.log.ingest({ level: 'log', origin: 'console', args: ['{"nested":{"value":42}}'] });
+    const store = createStore(kernel);
+    const copy = vi.fn((_text: string, _label?: string) => true);
+    const copier: CopyController = {
+      copy,
+      reveal: vi.fn(),
+      toast: () => null,
+      sheet: () => null,
+      closeSheet: vi.fn(),
+    };
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    cleanups.push(
+      render(() => <ConsolePanel store={store} kernel={kernel} copier={copier} />, host),
+      () => store.dispose(),
+      () => kernel.dispose(),
+      () => host.remove(),
+    );
+
+    [...host.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '展开对象')!
+      .click();
+    expect(host.textContent).toContain('树形结构');
+    expect(host.textContent).toContain('"nested"');
+    [...host.querySelectorAll('button')]
+      .find((candidate) => candidate.textContent?.trim() === '全部展开')!
+      .click();
+    expect(host.textContent).toContain('"value"');
+  });
+
   it('removes log-row long-press listeners when the row is unmounted', () => {
     vi.useFakeTimers();
     vi.stubGlobal('PointerEvent', class extends MouseEvent {

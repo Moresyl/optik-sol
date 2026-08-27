@@ -25,7 +25,7 @@ export interface PluginContext {
   kernel: OptikKernel;
   /** 复用面板的三级复制策略，非安全上下文下也能保证复制成功。 */
   copy: (text: string, label?: string) => void;
-  /** 主动打开「手动复制」弹层，用于展示大段原文。 */
+  /** 主动打开原文弹层，用于展示和选择大段内容。 */
   reveal: (text: string, title?: string) => void;
   /** 往控制台里写一条来源为 `user` 的日志。 */
   log: (level: LogLevel, ...args: unknown[]) => void;

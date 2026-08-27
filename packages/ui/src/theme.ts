@@ -159,6 +159,35 @@ button { cursor: pointer; }
 [data-subtype='null']   { color: var(--optik-token-null); }
 [data-subtype='error']  { color: var(--optik-level-error-text); }
 
+/* 结构化正文与代码高亮。通过 data 属性驱动，避免在渲染器里拼 Uno 类名。 */
+[data-code-token='key']         { color: var(--optik-token-key); }
+[data-code-token='string']      { color: var(--optik-token-string); }
+[data-code-token='number']      { color: var(--optik-token-number); }
+[data-code-token='boolean']     { color: var(--optik-token-boolean); }
+[data-code-token='null'],
+[data-code-token='undefined']   { color: var(--optik-token-null); }
+[data-code-token='keyword']     { color: var(--optik-token-boolean); font-weight: 600; }
+[data-code-token='comment']     { color: var(--optik-text-tertiary); font-style: italic; }
+[data-code-token='tag']         { color: var(--optik-token-tag); }
+[data-code-token='attr']        { color: var(--optik-token-attr); }
+[data-code-token='punctuation'] { color: var(--optik-text-tertiary); }
+
+.optik-code-line:hover,
+.optik-json-row:hover { background: var(--optik-bg-elevated); }
+.optik-code-number {
+  padding-right: 6px;
+  border-right: 1px solid var(--optik-border);
+  color: var(--optik-text-tertiary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.optik-json-copy { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .optik-json-copy { opacity: 0; }
+  .optik-json-row:hover .optik-json-copy,
+  .optik-json-copy:focus-visible { opacity: 1; }
+}
+
 /* 两栏之间的分隔线：视觉上 1px，命中区向两侧各扩 4px */
 .optik-splitter {
   position: relative;

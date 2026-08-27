@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- A shared structured-text viewer with formatted JSON tree/code modes, syntax highlighting, line numbers, wrapping controls, bounded expansion, raw-source access, and contextual copy actions
+
+### Changed
+
+- Applied the structured viewer across request/response bodies, WebSocket frames, console JSON strings, storage values, cURL commands, and element HTML; added bulk copy actions for query parameters, headers, attributes, and computed styles; clarified raw-source viewing separately from clipboard fallback
+- Fixed the playground POST example's invalid non-Latin-1 request header and added a dedicated JSON-string scenario for visual regression testing
+
 ## [0.3.0] - 2026-08-27
 
 ### Added

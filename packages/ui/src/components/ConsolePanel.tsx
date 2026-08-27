@@ -18,6 +18,8 @@ import { onLongPress } from '../platform/gesture';
 import { remoteObjectToDeepText } from '../deep-text';
 import { CopyButton, type CopyController } from './Copy';
 import { scheduleFrame } from '../platform/frame';
+import { isJsonContainerText } from '../structured-text';
+import { StructuredTextView } from './StructuredText';
 
 /** 等级 → 配色类名。数据驱动，因此这些类名进了 uno 的 safelist。 */
 const LEVEL_CLASS: Record<LogLevel, string> = {
@@ -330,7 +332,13 @@ function LogRow(props: {
 }): JSX.Element {
   /** 有可展开参数（对象/数组/函数）时才提供结构化视图。 */
   const hasStructured = () =>
-    props.entry.args.some((arg: RemoteObject) => arg.objectId !== undefined);
+    props.entry.args.some(
+      (arg: RemoteObject) =>
+        arg.objectId !== undefined ||
+        (arg.type === 'string' &&
+          typeof arg.value === 'string' &&
+          isJsonContainerText(arg.value)),
+    );
 
   /**
    * 自己敲进去的表达式，求值结果直接摊开。
@@ -414,12 +422,28 @@ function LogRow(props: {
         <Show when={expanded()}>
           <For each={props.entry.args}>
             {(arg) => (
-              <ValueView
-                value={arg}
-                kernel={props.kernel}
-                // 求值结果连树的根一起摊开，中间不再隔一次点击。
-                defaultExpanded={props.entry.origin === 'user'}
-              />
+              <Show
+                when={
+                  arg.type === 'string' &&
+                  typeof arg.value === 'string' &&
+                  isJsonContainerText(arg.value)
+                }
+                fallback={
+                  <ValueView
+                    value={arg}
+                    kernel={props.kernel}
+                    // 求值结果连树的根一起摊开，中间不再隔一次点击。
+                    defaultExpanded={props.entry.origin === 'user'}
+                  />
+                }
+              >
+                <StructuredTextView
+                  text={String(arg.value)}
+                  mimeType="application/json"
+                  label="JSON 日志"
+                  copier={props.copier}
+                />
+              </Show>
             )}
           </For>
         </Show>
