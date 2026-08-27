@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-27
+
 ### Added
 
 - Privacy-safe HAR 1.2 export with real multipart-field redaction and explicit payload/raw-value opt-ins
@@ -55,6 +57,7 @@ First release.
 - **Full restoration**: `destroy()` restores every hook from its original property descriptor
 - Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Moresyl/optik-sol/releases/tag/v0.1.0

@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [0.3.0] - 2026-08-27
+
 ### 新增
 
 - 新增默认脱敏的 HAR 1.2 导出，支持真实 multipart 字段脱敏，正文和原值必须分别显式开启
@@ -56,6 +58,7 @@
 - **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
 - 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
 
-[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...HEAD
+[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Moresyl/optik-sol/releases/tag/v0.1.0
