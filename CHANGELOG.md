@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-27
+
 ### Added
 
 - A shared structured-text viewer with formatted JSON tree/code modes, syntax highlighting, line numbers, wrapping controls, bounded expansion, raw-source access, and contextual copy actions
@@ -66,7 +68,8 @@ First release.
 - **Full restoration**: `destroy()` restores every hook from its original property descriptor
 - Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Moresyl/optik-sol/releases/tag/v0.1.0

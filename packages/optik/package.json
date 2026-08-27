@@ -1,6 +1,6 @@
 {
   "name": "optik-sol",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Optik Sol — a mobile web debugging console. One script tag, no server, no runtime dependencies.",
   "license": "MIT",
   "type": "module",

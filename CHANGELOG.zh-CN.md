@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [0.4.0] - 2026-08-27
+
 ### 新增
 
 - 新增统一结构化文本查看器，支持 JSON 格式化、树形/代码双视图、语法高亮、行号、自动换行、有上限的展开、原文查看及上下文复制
@@ -67,7 +69,8 @@
 - **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
 - 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
 
-[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...HEAD
+[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Moresyl/optik-sol/releases/tag/v0.1.0
