@@ -6,6 +6,7 @@
 
 [![npm](https://img.shields.io/npm/v/optik-sol.svg)](https://www.npmjs.com/package/optik-sol)
 [![CI](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml/badge.svg)](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml)
+[![文档](https://img.shields.io/badge/文档-Optik_Sol-2668e8.svg)](https://moresyl.github.io/optik-sol/)
 [![license](https://img.shields.io/npm/l/optik-sol.svg)](LICENSE)
 
 [English](README.md) | 简体中文
@@ -193,6 +194,8 @@ pnpm build
 验证台里每个按钮都对应一个已知会让调试工具出问题的场景。详见 [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
 
 ## 文档
+
+优先阅读 **[完整文档站](https://moresyl.github.io/optik-sol/)**：支持全文搜索，并按快速接入、配置/API、协议、架构、安全、性能边界、故障排查与可验证竞品对比组织内容。
 
 [贡献指南](CONTRIBUTING.zh-CN.md) · [设计说明](DESIGN.zh-CN.md) · [安全策略](SECURITY.zh-CN.md) · [行为准则](CODE_OF_CONDUCT.zh-CN.md) · [更新日志](CHANGELOG.zh-CN.md)
 

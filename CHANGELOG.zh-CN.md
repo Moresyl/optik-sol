@@ -6,6 +6,20 @@
 
 ## [未发布]
 
+## [0.4.1] - 2026-09-08
+
+### 新增
+
+- 新增中英双语 VitePress 文档站，支持本地全文搜索，并提供分层使用指南、API/传输参考、架构/安全/性能概念、故障排查及基于证据的竞品对比
+
+### 改进
+
+- CI 新增文档构建与产物检查，增加独立 GitHub Pages 部署流水线，中英文 README 接入新文档入口，并恢复移动验证台的浏览器缩放能力
+
+### 修复
+
+- HAR 导出的生成器版本改为读取核心包元数据，不再错误报告过期的 `0.2.0`
+
 ## [0.4.0] - 2026-08-27
 
 ### 新增
@@ -69,7 +83,8 @@
 - **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
 - 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
 
-[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...HEAD
+[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0

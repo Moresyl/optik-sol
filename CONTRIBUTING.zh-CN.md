@@ -13,9 +13,10 @@ pnpm install
 pnpm dev          # 启动验证台，页面顶部给出局域网地址和二维码
 pnpm typecheck
 pnpm build
+pnpm docs:build
 ```
 
-CI 跑的就是 `typecheck` + `build`，外加检查产物非空。本地过了 CI 基本就过了。
+CI 使用冻结锁文件安装依赖，构建全部软件包与文档，校验三种发布格式，对每个包执行类型检查和完整覆盖率门禁，并确认生产产物非空。
 
 ## 一个必须知道的坑：UnoCSS 不是 Vite 插件
 
@@ -49,6 +50,7 @@ pnpm --filter optik-ui css     # 扫 src/**/*.{ts,tsx} → src/generated/uno.css
 | `packages/ui` | 面板 UI |
 | `packages/optik` | 发布包 `optik-sol`，产出 ESM / CJS / IIFE |
 | `playground` | 验证台，不发布 |
+| `docs` | 中英双语 VitePress 文档站，内置本地全文搜索 |
 
 ## 验证
 

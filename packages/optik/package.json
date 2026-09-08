@@ -1,6 +1,6 @@
 {
   "name": "optik-sol",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Optik Sol — a mobile web debugging console. One script tag, no server, no runtime dependencies.",
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,7 @@
     "url": "git+https://github.com/Moresyl/optik-sol.git",
     "directory": "packages/optik"
   },
-  "homepage": "https://github.com/Moresyl/optik-sol#readme",
+  "homepage": "https://moresyl.github.io/optik-sol/",
   "bugs": "https://github.com/Moresyl/optik-sol/issues",
   "files": [
     "dist"

@@ -13,9 +13,10 @@ pnpm install
 pnpm dev          # starts the playground; the page header shows a LAN address and QR code
 pnpm typecheck
 pnpm build
+pnpm docs:build
 ```
 
-CI runs exactly `typecheck` + `build`, plus a check that the build output is non-empty. If it passes locally, it will almost certainly pass in CI.
+CI installs from the frozen lockfile, builds packages and documentation, verifies all three distributable formats, type-checks every package, runs the full coverage gate, and checks that production artifacts are non-empty.
 
 ## One trap you must know: UnoCSS is not a Vite plugin here
 
@@ -49,6 +50,7 @@ Non-negotiable; the reasoning is in [DESIGN.md](DESIGN.md).
 | `packages/ui` | Panel UI |
 | `packages/optik` | Published package `optik-sol`; emits ESM / CJS / IIFE |
 | `playground` | Verification playground, not published |
+| `docs` | Bilingual VitePress documentation with local full-text search |
 
 ## Verification
 

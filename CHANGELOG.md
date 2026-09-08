@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-08
+
+### Added
+
+- A bilingual VitePress documentation site with local full-text search, structured guides, API and transport reference, architecture/security/performance concepts, troubleshooting, and an evidence-based competitor comparison
+
+### Changed
+
+- Added documentation build and artifact checks to CI, introduced a dedicated GitHub Pages deployment workflow, linked the new site from both READMEs, and restored browser zoom in the mobile playground
+
+### Fixed
+
+- HAR exports now derive their creator version from the core package metadata instead of reporting the stale `0.2.0` value
+
 ## [0.4.0] - 2026-08-27
 
 ### Added
@@ -68,7 +82,8 @@ First release.
 - **Full restoration**: `destroy()` restores every hook from its original property descriptor
 - Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Moresyl/optik-sol/compare/v0.1.0...v0.2.0

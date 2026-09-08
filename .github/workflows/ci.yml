@@ -26,6 +26,7 @@ jobs:
       # 源码里新写的类名如果拼错，这一步会静默少生成规则而不是报错，
       # 所以下面额外核对一次产物非空。
       - run: pnpm build
+      - run: pnpm docs:build
       - run: pnpm test:dist
       - run: pnpm typecheck
       - run: pnpm test:coverage
@@ -35,3 +36,5 @@ jobs:
           test -s packages/optik/dist/optik.global.js
           test -s packages/optik/dist/optik.js
           test -s packages/optik/dist/index.d.ts
+          test -s docs/.vitepress/dist/index.html
+          test -s docs/.vitepress/dist/en/index.html

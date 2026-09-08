@@ -1,6 +1,6 @@
 {
   "name": "optik-core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Optik Sol kernel — CDP-shaped browser instrumentation and bounded data domains with zero dependencies.",
   "license": "MIT",

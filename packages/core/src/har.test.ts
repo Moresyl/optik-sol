@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import packageMetadata from '../package.json';
 import type { NetworkRecord } from './types';
 import { createHar, serializeHar } from './har';
 
@@ -63,7 +64,7 @@ describe('HAR export', () => {
     const entry = archive.log.entries[0]!;
 
     expect(archive.log.version).toBe('1.2');
-    expect(archive.log.creator).toEqual({ name: 'Optik Sol', version: '0.2.0' });
+    expect(archive.log.creator).toEqual({ name: 'Optik Sol', version: packageMetadata.version });
     expect(entry.startedDateTime).toBe(new Date(1_700_000_000_250).toISOString());
     expect(entry.time).toBe(50);
     expect(entry.timings).toEqual({

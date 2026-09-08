@@ -6,6 +6,7 @@
 
 [![npm](https://img.shields.io/npm/v/optik-sol.svg)](https://www.npmjs.com/package/optik-sol)
 [![CI](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml/badge.svg)](https://github.com/Moresyl/optik-sol/actions/workflows/ci.yml)
+[![docs](https://img.shields.io/badge/docs-Optik_Sol-2668e8.svg)](https://moresyl.github.io/optik-sol/)
 [![license](https://img.shields.io/npm/l/optik-sol.svg)](LICENSE)
 
 English | [简体中文](README.zh-CN.md)
@@ -201,6 +202,8 @@ pnpm build
 Every button in the playground maps to a scenario that is known to break debugging tools. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Documentation
+
+Start with the **[documentation site](https://moresyl.github.io/optik-sol/en/)** for full-text search, guided integration, API and protocol reference, architecture, security, performance boundaries, troubleshooting, and an evidence-based competitor comparison.
 
 [Contributing](CONTRIBUTING.md) · [Design notes](DESIGN.md) · [Security policy](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
 

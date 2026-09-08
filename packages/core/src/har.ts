@@ -8,6 +8,7 @@
 
 import { byteLengthOf } from './instrument/body';
 import type { NetworkBody, NetworkRecord, WebSocketFrame } from './types';
+import packageMetadata from '../package.json';
 
 export interface HarExportOptions {
   /** Redact credentials and session identifiers. Default true. */
@@ -157,7 +158,7 @@ export function createHar(
     includeBodies = false,
     includeWebSocketFrames = false,
     creatorName = 'Optik Sol',
-    creatorVersion = '0.2.0',
+    creatorVersion = packageMetadata.version,
   } = options;
   const timeOrigin = Number.isFinite(options.timeOrigin) ? options.timeOrigin! : readTimeOrigin();
 
