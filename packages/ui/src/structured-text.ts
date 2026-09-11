@@ -194,12 +194,16 @@ function tokenizeCssLine(line: string): SyntaxToken[] {
 
 function tokenizeProgramLine(line: string, language: CodeLanguage): SyntaxToken[] {
   const tokens: SyntaxToken[] = [];
-  // Exclude URL separators and quote delimiters while still recognising inline
-  // comments such as `value();// comment`.
-  const comment = language === 'shell' ? /#.*/ : /(?<![A-Za-z0-9'\"])\/\/.*|\/\*.*?\*\//;
+  let quote = '';
+  let commentIndex = -1;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quote) { if (char === '\\') i++; else if (char === quote) quote = ''; continue; }
+    if (char === '"' || char === "'" || char === '`') { quote = char; continue; }
+    if (language === 'shell' ? char === '#' : char === '/' && (line[i + 1] === '/' || line[i + 1] === '*')) { commentIndex = i; break; }
+  }
   const pattern = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|-?(?:0|[1-9]\d*)(?:\.\d+)?|\b(?:true|false)\b|\bnull\b|\b(?:const|let|var|function|return|if|else|for|while|new|class|import|export|async|await|throw|try|catch|finally|typeof|instanceof|in|of|this|undefined)\b/g;
-  const commentMatch = comment.exec(line);
-  const codeEnd = commentMatch?.index ?? line.length;
+  const codeEnd = commentIndex === -1 ? line.length : commentIndex;
   const code = line.slice(0, codeEnd);
   let cursor = 0;
   for (const match of code.matchAll(pattern)) {
@@ -215,7 +219,7 @@ function tokenizeProgramLine(line: string, language: CodeLanguage): SyntaxToken[
     cursor = index + value.length;
   }
   pushToken(tokens, code.slice(cursor), 'plain');
-  if (commentMatch) pushToken(tokens, line.slice(codeEnd), 'comment');
+  if (commentIndex !== -1) pushToken(tokens, line.slice(codeEnd), 'comment');
   return tokens;
 }
 
