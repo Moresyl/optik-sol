@@ -218,6 +218,20 @@ describe('NetworkPanel', () => {
     expect(curl).not.toContain('secret');
   });
 
+  it('redacts sensitive JSON request fields in copied cURL by default', () => {
+    const { host, copy } = mount([record({
+      method: 'POST',
+      requestBody: { text: '{"username":"alice","password":"secret","profile":{"apiToken":"hidden"}}', mimeType: 'application/json' },
+    })]);
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    host.querySelector<HTMLButtonElement>('[title="复制cURL 命令"]')!.click();
+    const curl = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
+    expect(curl).toContain('"password":"[REDACTED]"');
+    expect(curl).toContain('"apiToken":"[REDACTED]"');
+    expect(curl).not.toContain('secret');
+    expect(curl).not.toContain('hidden');
+  });
+
   it('degrades invalid timing and size measurements without emitting invalid UI values', () => {
     const { host } = mount([
       record({

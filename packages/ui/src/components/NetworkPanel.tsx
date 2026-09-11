@@ -221,13 +221,39 @@ function safeCurlUrl(raw: string): string {
   }
 }
 
+function safeCurlBody(body: NetworkBody): string {
+  const text = body.text;
+  if (!text || text.length > 1024 * 1024) return text ?? '';
+  const mime = body.mimeType?.toLowerCase() ?? '';
+  if (mime.includes('json')) {
+    try {
+      const redact = (value: unknown): unknown => {
+        if (Array.isArray(value)) return value.map(redact);
+        if (value && typeof value === 'object') {
+          return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, CURL_SENSITIVE.test(key) ? '[REDACTED]' : redact(item)]));
+        }
+        return value;
+      };
+      return JSON.stringify(redact(JSON.parse(text)));
+    } catch {
+      return text;
+    }
+  }
+  if (mime.includes('x-www-form-urlencoded')) {
+    const params = new URLSearchParams(text);
+    for (const key of [...params.keys()]) if (CURL_SENSITIVE.test(key)) params.set(key, '[REDACTED]');
+    return params.toString();
+  }
+  return text;
+}
+
 function toCurl(record: NetworkRecord): string {
   const quote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
   const parts = [`curl -X ${record.method} ${quote(safeCurlUrl(record.url))}`];
   for (const [name, value] of record.requestHeaders) {
     parts.push(`  -H ${quote(`${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`)}`);
   }
-  if (record.requestBody?.text) parts.push(`  --data-raw ${quote(record.requestBody.text)}`);
+  if (record.requestBody?.text) parts.push(`  --data-raw ${quote(safeCurlBody(record.requestBody))}`);
   return parts.join(' \\\n');
 }
 
