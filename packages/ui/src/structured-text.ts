@@ -194,7 +194,9 @@ function tokenizeCssLine(line: string): SyntaxToken[] {
 
 function tokenizeProgramLine(line: string, language: CodeLanguage): SyntaxToken[] {
   const tokens: SyntaxToken[] = [];
-  const comment = language === 'shell' ? /#.*/ : /\/\/.*|\/\*.*?\*\//;
+  // Require a line boundary/whitespace before `//` so URLs inside strings are
+  // not mistaken for comments (the string tokenizer still owns the full value).
+  const comment = language === 'shell' ? /#.*/ : /(?:^|\s)\/\/.*|\/\*.*?\*\//;
   const pattern = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|-?(?:0|[1-9]\d*)(?:\.\d+)?|\b(?:true|false)\b|\bnull\b|\b(?:const|let|var|function|return|if|else|for|while|new|class|import|export|async|await|throw|try|catch|finally|typeof|instanceof|in|of|this|undefined)\b/g;
   const commentMatch = comment.exec(line);
   const codeEnd = commentMatch?.index ?? line.length;

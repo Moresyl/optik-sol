@@ -73,6 +73,14 @@ describe('structured text helpers', () => {
       ]),
     );
   });
+
+  it('keeps protocol separators inside JavaScript strings', () => {
+    expect(tokenizeCodeLine("const url = 'https://example.test/api';", 'javascript')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: "'https://example.test/api'", kind: 'string' }),
+      ]),
+    );
+  });
 });
 
 describe('StructuredTextView', () => {
