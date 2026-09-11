@@ -333,6 +333,7 @@ function TreeNode(props: {
       >
         <Show when={hasChildren()} fallback={<span class="w-3 shrink-0" />}>
           <button
+            type="button"
             class="shrink-0 w-3 self-stretch min-h-7 text-fg-tertiary not-selectable row-center justify-center"
             aria-expanded={expanded()}
             aria-label={expanded() ? '收起' : '展开'}
@@ -346,6 +347,7 @@ function TreeNode(props: {
         </Show>
 
         <button
+          type="button"
           class="flex-1 min-w-0 text-left truncate py-1 not-selectable"
           onClick={() => props.onSelect(props.node)}
         >
@@ -616,13 +618,14 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
     <div class="flex flex-col h-full min-h-0">
       <div class="shrink-0 row-center gap-1 px-2 py-1.5 border-b border-line bg-bg-elevated overflow-x-auto no-scrollbar">
         <button
+          type="button"
           class="chip shrink-0"
           classList={{ 'bg-accent text-accent-fg': picking() }}
           onClick={togglePicking}
         >
           {picking() ? '拾取中…点击页面' : '拾取元素'}
         </button>
-        <button class="chip shrink-0" onClick={() => setDomVersion((version) => version + 1)}>
+        <button type="button" class="chip shrink-0" onClick={() => setDomVersion((version) => version + 1)}>
           刷新
         </button>
         {/* 分栏时结构和样式同屏，不需要用标签互斥切换 */}
@@ -639,6 +642,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
           >
             {([id, label]) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': tab() === id }}
                 onClick={() => setTab(id)}
@@ -675,16 +679,18 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
                 label="选择器"
                 class="min-h-9 px-2 -ml-2 text-accent"
               />
-              <button class="icon-btn min-h-9 px-2" onClick={() => highlighter.show(node())}>
+              <button type="button" class="icon-btn min-h-9 px-2" onClick={() => highlighter.show(node())}>
                 高亮
               </button>
               <button
+                type="button"
                 class="icon-btn min-h-9 px-2"
                 onClick={() => scrollToElement(node())}
               >
                 滚动到此
               </button>
               <button
+                type="button"
                 class="icon-btn min-h-9 px-2"
                 onClick={() => setTab('html')}
               >
@@ -693,7 +699,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
               <Show
                 when={node().parentElement && node().parentElement !== document.documentElement}
               >
-                <button class="icon-btn min-h-9 px-2" onClick={() => select(node().parentElement!)}>
+                <button type="button" class="icon-btn min-h-9 px-2" onClick={() => select(node().parentElement!)}>
                   选父级
                 </button>
               </Show>
