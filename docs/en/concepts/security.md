@@ -9,6 +9,7 @@
 - The Environment panel redacts credentials, query parameters, and fragments from page URLs by default; raw URLs require an explicit action
 - Network records remove URL usernames and passwords; query parameters still follow HAR redaction rules
 - Copied cURL commands redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default
+- Network detail copies apply the same redaction boundary to query parameters and request/response headers
 - Logs, network records, long tasks, object expansion, and tree rendering are bounded
 
 ## What still needs your judgment
