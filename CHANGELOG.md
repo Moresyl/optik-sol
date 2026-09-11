@@ -17,6 +17,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
 - UI controls now explicitly use non-submit button semantics, preventing accidental host-form submission when the console is embedded in a form.
 
 - Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
