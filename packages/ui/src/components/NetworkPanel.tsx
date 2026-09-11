@@ -250,7 +250,12 @@ function safeCurlBody(body: NetworkBody): string {
 }
 
 function safeFramePayload(payload: string): string {
-  return safeCurlBody({ text: payload, mimeType: 'application/json' });
+  const json = safeCurlBody({ text: payload, mimeType: 'application/json' });
+  if (json !== payload) return json;
+  return payload.replace(
+    /((?:authorization|cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf)\s*[=:]\s*)([^\s,&]+)/gi,
+    '$1[REDACTED]',
+  );
 }
 
 function toCurl(record: NetworkRecord): string {
