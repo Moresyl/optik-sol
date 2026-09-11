@@ -311,10 +311,10 @@ export function JsonTree(props: {
       <div class="row-center gap-1 px-2 py-1 border-b border-line not-selectable overflow-x-auto no-scrollbar">
         <span class="text-fg-tertiary shrink-0">树形结构</span>
         <span class="flex-1" />
-        <button class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set(branches().paths))}>
+        <button type="button" class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set(branches().paths))}>
           全部展开
         </button>
-        <button class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set())}>
+        <button type="button" class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set())}>
           全部收起
         </button>
       </div>
@@ -371,6 +371,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         </span>
         <Show when={hasTree()}>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': mode() === 'tree' }}
             aria-pressed={mode() === 'tree'}
@@ -379,6 +380,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
             树形
           </button>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': mode() === 'code' }}
             aria-pressed={mode() === 'code'}
@@ -389,6 +391,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         </Show>
         <Show when={mode() === 'code'}>
           <button
+            type="button"
             class="chip shrink-0"
             aria-pressed={wrap()}
             title={wrap() ? '当前自动换行' : '当前保持原始行'}
@@ -397,11 +400,12 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
             {wrap() ? '不换行' : '自动换行'}
           </button>
           <Show when={long()}>
-            <button class="chip shrink-0" onClick={() => setExpanded(!expanded())}>
+            <button type="button" class="chip shrink-0" onClick={() => setExpanded(!expanded())}>
               {expanded() ? '收起代码' : `展开代码（${lineCount()} 行）`}
             </button>
             <Show when={expanded() && lineCount() > codeLimit()}>
               <button
+                type="button"
                 class="chip shrink-0"
                 onClick={() => setCodeLimit((limit) => limit + CODE_PAGE_SIZE)}
               >
