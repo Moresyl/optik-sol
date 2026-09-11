@@ -657,6 +657,7 @@ function RequestRow(props: {
   return (
     <div class="optik-row flex items-stretch" data-selected={props.selected ? 'true' : undefined}>
       <button
+        type="button"
         class="flex-1 min-w-0 text-left not-selectable active:bg-bg-sunken"
         classList={{ 'px-2': props.dense, 'px-3 py-2': !props.dense }}
         aria-current={props.selected ? 'true' : undefined}
