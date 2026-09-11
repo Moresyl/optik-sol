@@ -59,7 +59,13 @@ export class PluginRegistry {
   #retired: OptikPlugin[] = [];
 
   register(plugin: OptikPlugin): void {
-    if (typeof plugin.id !== 'string' || !plugin.id.trim() || typeof plugin.label !== 'string' || !plugin.label.trim()) {
+    if (
+      typeof plugin.id !== 'string' ||
+      !plugin.id.trim() ||
+      plugin.id !== plugin.id.trim() ||
+      typeof plugin.label !== 'string' ||
+      !plugin.label.trim()
+    ) {
       throw new Error('[optik] 插件必须提供 id 和 label');
     }
     const previous = this.#plugins.get(plugin.id);
