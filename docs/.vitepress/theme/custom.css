@@ -83,6 +83,29 @@ body {
   max-width: 820px;
 }
 
+.VPDoc .content {
+  padding-bottom: 72px;
+}
+
+.VPSidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-c-divider) transparent;
+}
+
+.VPSidebarItem.level-0 > .item {
+  margin-bottom: 6px;
+  border-radius: 10px;
+}
+
+.VPSidebarItem.level-1 > .item {
+  border-radius: 8px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.VPSidebarItem.level-1 > .item:hover {
+  background: var(--vp-c-bg-soft);
+}
+
 .VPDoc .aside-container {
   padding-left: 28px;
 }
@@ -182,6 +205,23 @@ body {
 .vp-doc div[class*='language-'] {
   border: 1px solid var(--vp-c-divider);
   box-shadow: 0 12px 36px rgba(10, 28, 58, 0.08);
+  border-radius: 12px;
+  background: var(--vp-c-bg-elv);
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.vp-doc .header-anchor {
+  transition: color 160ms ease;
+}
+
+.vp-doc h2 {
+  margin-top: 2.6rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--vp-c-divider);
 }
 
 .vp-doc :not(pre) > code {
