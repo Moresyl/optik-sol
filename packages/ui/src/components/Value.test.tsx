@@ -50,6 +50,30 @@ describe('ValueView object handle lifecycle', () => {
     expect(registry.size).toBe(0);
   });
 
+  it('labels unevaluated getters without reading them and releases their handles', () => {
+    const registry = new ObjectRegistry();
+    const getter = vi.fn(() => 'private value');
+    const object = Object.defineProperty({}, 'computed', { enumerable: true, get: getter });
+    const root = toRemoteObject(object, registry);
+    const domain: ValueDomain = {
+      registry,
+      getProperties: (id, options) => getProperties(id, registry, options),
+    };
+    const host = document.createElement('div');
+    const dispose = render(() => <ValueView value={root} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} defaultExpanded />, host);
+    try {
+      frames[0]!(0);
+      expect(host.textContent).toContain('取值器，未求值');
+      expect(host.textContent).not.toContain('private value');
+      expect(getter).not.toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+    expect(registry.size).toBe(1);
+    registry.release(root.objectId!);
+    expect(registry.size).toBe(0);
+  });
+
   it('cancels a queued expansion when unmounted before the next frame', () => {
     const registry = new ObjectRegistry();
     const root = toRemoteObject({ child: {} }, registry);
