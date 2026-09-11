@@ -60,6 +60,8 @@ body {
 .VPHome .VPFeature {
   min-height: 168px;
   border-radius: 18px;
+  background: var(--vp-c-bg-elv);
+  border: 1px solid var(--vp-c-divider);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
@@ -79,6 +81,7 @@ body {
 
 .VPNavBar:not(.has-sidebar) .content-body,
 .VPNavBar.has-sidebar .content-body {
+  background: var(--vp-c-bg);
   background: color-mix(in srgb, var(--vp-c-bg) 82%, transparent);
   backdrop-filter: blur(18px) saturate(140%);
 }
