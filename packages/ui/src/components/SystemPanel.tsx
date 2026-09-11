@@ -196,7 +196,7 @@ export function SystemPanel(props: {
   return (
     <div class="flex flex-col h-full min-h-0">
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated not-selectable">
-        <button class="chip" onClick={() => setVersion((n) => n + 1)}>
+        <button type="button" class="chip" onClick={() => setVersion((n) => n + 1)}>
           刷新
         </button>
         {/*
@@ -227,6 +227,7 @@ export function SystemPanel(props: {
               <For each={THEME_OPTIONS}>
                 {(option) => (
                   <button
+                    type="button"
                     class="chip"
                     classList={{ 'bg-accent text-accent-fg': props.theme === option.id }}
                     aria-pressed={props.theme === option.id}
