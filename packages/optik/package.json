@@ -2,6 +2,11 @@
   "name": "optik-sol",
   "version": "0.4.1",
   "description": "Optik Sol — a mobile web debugging console. One script tag, no server, no runtime dependencies.",
+  "browserslist": [
+    "defaults",
+    "iOS >= 15",
+    "Android >= 10"
+  ],
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -11,7 +16,10 @@
     "devtools",
     "mobile",
     "inspector",
-    "webview"
+    "webview",
+    "shadow-dom",
+    "network-inspector",
+    "storage-inspector"
   ],
   "author": "Moresyl and contributors",
   "repository": {
