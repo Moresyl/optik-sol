@@ -17,6 +17,14 @@
   --optik-grid: rgba(29, 77, 142, 0.065);
 }
 
+html:not(.dark) {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 .dark {
   --vp-c-brand-1: #72b5ff;
   --vp-c-brand-2: #599cf2;
