@@ -22,6 +22,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Refined the documentation landing page spacing, mobile typography, action wrapping, and background treatment.
 - Clarified runtime trust boundaries and the requirement to use controlled builds and trusted protocol transports in package READMEs.
 - CI now cancels superseded runs for the same workflow/ref, reducing stale verification results and runner usage.
+- Stabilized tab accessibility identifiers so plugin IDs with special characters cannot produce invalid relationships.
 
 ### Fixed
 
