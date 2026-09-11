@@ -259,24 +259,24 @@ function toCurl(record: NetworkRecord): string {
 
 function recordToText(record: NetworkRecord): string {
   const lines = [
-    `${record.method} ${record.url}`,
+    `${record.method} ${safeCurlUrl(record.url)}`,
     `状态：${statusText(record)}${record.statusText ? ` ${record.statusText}` : ''}`,
     `耗时：${formatDuration(record.timing.duration)}`,
     '',
     '--- 请求头 ---',
-    ...record.requestHeaders.map(([name, value]) => `${name}: ${value}`),
+    ...record.requestHeaders.map(([name, value]) => `${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`),
   ];
   if (record.requestBody?.text) {
     lines.push(
       '',
       '--- 请求体 ---',
-      formattedStructuredText(record.requestBody.text, record.requestBody.mimeType),
+      formattedStructuredText(safeCurlBody(record.requestBody), record.requestBody.mimeType),
     );
   }
   lines.push(
     '',
     '--- 响应头 ---',
-    ...record.responseHeaders.map(([name, value]) => `${name}: ${value}`),
+    ...record.responseHeaders.map(([name, value]) => `${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`),
   );
   if (record.responseBody?.text) {
     lines.push(

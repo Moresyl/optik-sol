@@ -232,6 +232,21 @@ describe('NetworkPanel', () => {
     expect(curl).not.toContain('hidden');
   });
 
+  it('keeps full request copy within the same privacy boundary', () => {
+    const { host, copy } = mount([record({
+      url: 'https://alice:secret@example.test/api?token=top-secret',
+      requestHeaders: [['Cookie', 'sid=secret'], ['X-Trace', 'ok']],
+      requestBody: { text: '{"password":"secret"}', mimeType: 'application/json' },
+    })]);
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    host.querySelector<HTMLButtonElement>('[title="复制请求详情"]')!.click();
+    const text = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
+    expect(text).toContain('https://example.test/api?token=%5BREDACTED%5D');
+    expect(text).toContain('Cookie: [REDACTED]');
+    expect(text).toContain('"password":"[REDACTED]"');
+    expect(text).not.toContain('secret');
+  });
+
   it('degrades invalid timing and size measurements without emitting invalid UI values', () => {
     const { host } = mount([
       record({
