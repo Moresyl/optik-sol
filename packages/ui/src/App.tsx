@@ -207,6 +207,10 @@ export function App(props: AppProps): JSX.Element {
   const unsubscribePlugins = props.plugins.subscribe(() => {
     disposeRetired();
     setPluginVersion((n) => n + 1);
+    const active = props.store.activeTab();
+    if (active.startsWith('plugin:') && !props.plugins.get(active.slice(7))) {
+      props.store.setActiveTab('console');
+    }
   });
   // Initial plugin arrays can contain duplicate ids before App subscribes.
   disposeRetired();
