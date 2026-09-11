@@ -462,7 +462,13 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   const onPickMove = (event: Event) => {
     const target = targetOf(event);
-    if (!target) return;
+    if (!target) {
+      pendingHighlight = null;
+      highlightFrame?.();
+      highlightFrame = undefined;
+      highlighter.hide();
+      return;
+    }
     pendingHighlight = target;
     if (highlightFrame) return;
     highlightFrame = scheduleFrame(() => {
