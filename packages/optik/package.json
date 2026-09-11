@@ -34,6 +34,7 @@
   ],
   "main": "./dist/optik.cjs",
   "module": "./dist/optik.js",
+  "browser": "./dist/optik.js",
   "types": "./dist/index.d.ts",
   "unpkg": "./dist/optik.global.js",
   "jsdelivr": "./dist/optik.global.js",
