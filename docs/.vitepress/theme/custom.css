@@ -93,6 +93,16 @@ body {
   box-shadow: 0 5px 18px rgba(29, 92, 204, 0.18);
 }
 
+.VPNavBar a:focus-visible,
+.VPSidebar a:focus-visible,
+.VPDoc a:focus-visible,
+.VPButton:focus-visible,
+.VPMenu button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--vp-c-brand-1) 72%, white);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 .VPHero .name,
 .VPHero .text {
   text-wrap: balance;
@@ -176,6 +186,17 @@ body {
 }
 
 @media (max-width: 640px) {
+  .VPNavBarMenuLink,
+  .VPNavBarAppearance,
+  .VPNavBarSocialLinks {
+    min-height: 44px;
+  }
+
+  .VPHero .image-src {
+    width: 184px;
+    height: 184px;
+  }
+
   .VPHero .tagline {
     font-size: 17px;
   }
