@@ -403,7 +403,7 @@ export function App(props: AppProps): JSX.Element {
             <div class="relative flex-1 min-w-0">
               <div class="row-center overflow-x-auto no-scrollbar" role="tablist" aria-label="调试面板标签">
                 <For each={tabs()}>
-                  {(tab) => (
+                  {(tab, index) => (
                     <button
                       type="button"
                       // -mb-px 让选中态那条 2px 下划线压住容器自己的 1px 边框，
@@ -418,7 +418,7 @@ export function App(props: AppProps): JSX.Element {
                       aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
                       aria-selected={props.store.activeTab() === tab.id}
                       data-tab-id={tab.id}
-                      id={`optik-tab-${tab.id}`}
+                      id={`optik-tab-${index()}`}
                       aria-controls="optik-active-panel"
                       tabIndex={props.store.activeTab() === tab.id ? 0 : -1}
                       role="tab"
@@ -467,7 +467,7 @@ export function App(props: AppProps): JSX.Element {
 
           {/* 内容区 */}
           <LayoutProvider value={layout}>
-            <div class="flex-1 min-h-0" id="optik-active-panel" role="tabpanel" tabIndex={0} aria-labelledby={`optik-tab-${props.store.activeTab()}`}>
+            <div class="flex-1 min-h-0" id="optik-active-panel" role="tabpanel" tabIndex={0} aria-labelledby={`optik-tab-${tabs().findIndex((tab) => tab.id === props.store.activeTab())}`}>
               <Show when={props.store.activeTab() === 'console'}>
                 <ConsolePanel store={props.store} kernel={props.kernel} copier={copier} />
               </Show>
