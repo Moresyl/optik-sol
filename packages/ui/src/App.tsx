@@ -389,7 +389,7 @@ export function App(props: AppProps): JSX.Element {
           <div class="shrink-0 row-center border-b border-line bg-bg-elevated">
             {/* 相对定位是给右侧那道渐变用的：标签能横向滚动时得让人看出来还有 */}
             <div class="relative flex-1 min-w-0">
-              <div class="row-center overflow-x-auto no-scrollbar">
+              <div class="row-center overflow-x-auto no-scrollbar" role="tablist" aria-label="调试面板标签">
                 <For each={tabs()}>
                   {(tab) => (
                     <button
@@ -404,6 +404,8 @@ export function App(props: AppProps): JSX.Element {
                         'text-fg-secondary': props.store.activeTab() !== tab.id,
                       }}
                       aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
+                      aria-selected={props.store.activeTab() === tab.id}
+                      role="tab"
                       onClick={() => props.store.setActiveTab(tab.id)}
                     >
                       {tab.label}

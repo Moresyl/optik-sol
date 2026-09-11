@@ -400,7 +400,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
             {wrap() ? '不换行' : '自动换行'}
           </button>
           <Show when={long()}>
-            <button type="button" class="chip shrink-0" onClick={() => setExpanded(!expanded())}>
+            <button type="button" class="chip shrink-0" aria-expanded={expanded()} onClick={() => setExpanded(!expanded())}>
               {expanded() ? '收起代码' : `展开代码（${lineCount()} 行）`}
             </button>
             <Show when={expanded() && lineCount() > codeLimit()}>
