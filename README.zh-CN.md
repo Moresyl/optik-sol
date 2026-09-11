@@ -17,6 +17,8 @@
 
 Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，当前构建 gzip 约 86 KB。
 
+兼容基线：现代主流浏览器、iOS 15+、Android 10+。npm 提供适用于打包器的 ESM 入口，并提供可直接通过 `<script>` 使用的浏览器 IIFE；无需服务端或运行时依赖。
+
 ```html
 <script src="https://unpkg.com/optik-sol@0.4.1"></script>
 ```
