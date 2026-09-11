@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
-- Copied cURL commands now redact URL credentials, sensitive query parameters, and sensitive request headers by default.
+- Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
 - Network records now remove URL username and password components before they can appear in the panel, protocol events, or HAR exports.
 ### Fixed
 
