@@ -19,6 +19,10 @@ Optik Sol puts a full debugging console inside any page running on a phone or in
 
 Compatibility baseline: modern evergreen browsers, iOS 15+, and Android 10+. The package exposes ESM for bundlers and a browser-ready global IIFE for a direct `<script>` tag; no server or runtime dependency is required.
 
+### Runtime and trust boundary
+
+Optik runs in the inspected page and keeps captured data in that page by default. It is a diagnostics surface, not a security sandbox: any script that can execute in the page may be able to read the same evidence. Enable it only in controlled builds, and attach protocol transports only when they are trusted or authenticated.
+
 ```html
 <script src="https://unpkg.com/optik-sol@0.4.1"></script>
 ```
