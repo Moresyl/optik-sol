@@ -205,11 +205,27 @@ function statusText(record: NetworkRecord): string {
  * 生成 cURL 命令。单引号转义按 shell 规则（'\'' 收尾再起一个引号），
  * 保证包含引号的 body 也能原样粘贴执行。
  */
+const CURL_SENSITIVE = /(?:authorization|cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf)/i;
+
+function safeCurlUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.username = '';
+    url.password = '';
+    for (const key of [...url.searchParams.keys()]) {
+      if (CURL_SENSITIVE.test(key)) url.searchParams.set(key, '[REDACTED]');
+    }
+    return url.href;
+  } catch {
+    return raw;
+  }
+}
+
 function toCurl(record: NetworkRecord): string {
   const quote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
-  const parts = [`curl -X ${record.method} ${quote(record.url)}`];
+  const parts = [`curl -X ${record.method} ${quote(safeCurlUrl(record.url))}`];
   for (const [name, value] of record.requestHeaders) {
-    parts.push(`  -H ${quote(`${name}: ${value}`)}`);
+    parts.push(`  -H ${quote(`${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`)}`);
   }
   if (record.requestBody?.text) parts.push(`  --data-raw ${quote(record.requestBody.text)}`);
   return parts.join(' \\\n');
