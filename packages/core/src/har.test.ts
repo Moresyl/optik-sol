@@ -230,7 +230,7 @@ describe('HAR export', () => {
       { includeWebSocketFrames: true },
     );
     expect(serialized).not.toContain('frame-secret');
-    expect(serialized).toContain('token=[REDACTED]');
+    expect(serialized).toContain('token=%5BREDACTED%5D');
   });
 
   it('falls back to safe finite timestamps for invalid timing input', () => {
