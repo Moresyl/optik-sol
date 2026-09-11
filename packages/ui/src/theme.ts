@@ -218,6 +218,8 @@ button { cursor: pointer; }
    外层容器只负责底色，aria-current 该留在真正被选中的那个按钮上。 */
 .optik-row {
   border-bottom: 1px solid var(--optik-border);
+  content-visibility: auto;
+  contain-intrinsic-size: 0 56px;
 }
 .optik-row:hover {
   background: var(--optik-bg-elevated);

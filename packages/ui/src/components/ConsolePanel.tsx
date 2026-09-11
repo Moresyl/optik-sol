@@ -368,7 +368,7 @@ function LogRow(props: {
   return (
     <div
       ref={attachLongPress}
-      class={`flex items-stretch border-b border-line ${LEVEL_CLASS[props.entry.level]}`}
+      class={`optik-log-row flex items-stretch border-b border-line ${LEVEL_CLASS[props.entry.level]}`}
     >
       <Show when={props.store.selectionMode()}>
         <button
