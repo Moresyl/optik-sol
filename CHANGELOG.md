@@ -11,6 +11,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
 - Network detail copy now applies the same redaction boundary to query parameters and request/response headers.
 - Network records now remove URL username and password components before they can appear in the panel, protocol events, or HAR exports.
+- HAR text and WebSocket frame exports now redact credential-like key/value payloads by default.
 - Environment evidence now redacts page URL credentials, query parameters, and fragments by default, with an explicit raw URL reveal for intentional debugging.
 ## [0.4.1] - 2026-09-08
 
