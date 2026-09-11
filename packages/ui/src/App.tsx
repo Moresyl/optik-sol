@@ -158,6 +158,17 @@ export function App(props: AppProps): JSX.Element {
     return tab.startsWith('plugin:') ? tab.slice(7) : null;
   });
 
+  const onTabKeyDown = (event: KeyboardEvent, id: TabId) => {
+    const list = tabs();
+    const index = list.findIndex((tab) => tab.id === id);
+    if (index < 0 || !['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 :
+      (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+    props.store.setActiveTab(list[nextIndex].id);
+    document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab-id="${CSS.escape(list[nextIndex].id)}"]`)?.focus();
+  };
+
   /** 插件视图渲染一次即缓存，切走再切回不会丢状态。 */
   const pluginNodes = new Map<string, Node>();
 
@@ -405,7 +416,9 @@ export function App(props: AppProps): JSX.Element {
                       }}
                       aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
                       aria-selected={props.store.activeTab() === tab.id}
+                      data-tab-id={tab.id}
                       role="tab"
+                      onKeyDown={(event) => onTabKeyDown(event, tab.id)}
                       onClick={() => props.store.setActiveTab(tab.id)}
                     >
                       {tab.label}
