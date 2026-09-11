@@ -45,6 +45,20 @@ html {
   scroll-behavior: smooth;
 }
 
+::selection {
+  color: var(--vp-c-bg);
+  background: var(--vp-c-brand-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
   background-image:
     linear-gradient(var(--optik-grid) 1px, transparent 1px),
