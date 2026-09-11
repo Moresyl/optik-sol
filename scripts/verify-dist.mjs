@@ -16,6 +16,10 @@ for (const field of ['main', 'module', 'browser', 'unpkg', 'jsdelivr', 'types'])
     throw new Error(`package metadata points to a missing ${field} file: ${packageJson[field]}`);
   }
 }
+const defaultExport = packageJson.exports?.['.']?.default;
+if (defaultExport !== packageJson.module) {
+  throw new Error(`default export must match the ESM module entry: ${defaultExport}`);
+}
 const esm = await import('../packages/optik/dist/optik.js');
 const cjs = require('../packages/optik/dist/optik.cjs');
 
