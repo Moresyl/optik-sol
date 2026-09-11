@@ -232,6 +232,7 @@ export function ValueView(props: ValueProps): JSX.Element {
             否则手机上极难点中。
           */}
           <button
+            type="button"
             class="shrink-0 w-3 h-6 -my-2.5 py-2.5 text-fg-tertiary not-selectable row-center justify-center"
             aria-expanded={expanded()}
             aria-label={expanded() ? '收起' : '展开'}
