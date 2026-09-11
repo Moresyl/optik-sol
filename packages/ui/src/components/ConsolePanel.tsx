@@ -658,6 +658,7 @@ export function ConsolePanel(props: {
           <For each={ALL_LEVELS}>
             {(level) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': props.store.filter().levels.has(level) }}
                 aria-pressed={props.store.filter().levels.has(level)}
@@ -686,6 +687,7 @@ export function ConsolePanel(props: {
             onInput={(event) => props.store.setQuery(event.currentTarget.value)}
           />
           <button
+            type="button"
             class="chip shrink-0 font-mono"
             classList={{ 'bg-accent text-accent-fg': props.store.filter().useRegex }}
             title="正则匹配"
@@ -695,6 +697,7 @@ export function ConsolePanel(props: {
             .*
           </button>
           <button
+            type="button"
             class="chip shrink-0 font-mono"
             classList={{ 'bg-accent text-accent-fg': props.store.filter().caseSensitive }}
             title="区分大小写"
@@ -710,6 +713,7 @@ export function ConsolePanel(props: {
             {props.store.visibleLogs().length}/{props.store.logs().length} 条
           </span>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': props.store.selectionMode() }}
             onClick={() => {
@@ -739,7 +743,7 @@ export function ConsolePanel(props: {
             }
             class={`shrink-0 min-h-8 px-2.5 ${hasSelection() ? 'text-accent' : ''}`}
           />
-          <button class="chip shrink-0 text-danger" onClick={props.store.clearLogs}>
+          <button type="button" class="chip shrink-0 text-danger" onClick={props.store.clearLogs}>
             清空
           </button>
         </div>
@@ -781,6 +785,7 @@ export function ConsolePanel(props: {
       */}
         <Show when={!autoScroll() && props.store.visibleLogs().length > 0}>
           <button
+            type="button"
             class="absolute right-3 bottom-3 px-3 min-h-9 rounded-full not-selectable
  bg-accent text-accent-fg [box-shadow:0_2px_8px_rgba(0,0,0,0.25)]"
             onClick={() => {
@@ -804,7 +809,7 @@ export function ConsolePanel(props: {
           它不是用来开指令列表的：指令列表由右边那条整宽的按钮打开，
           那条按钮在指令态下占满剩余宽度，是这一栏里最容易点中的目标。
         */}
-        <button class="btn shrink-0 px-2.5" onClick={toggleMode}>
+        <button type="button" class="btn shrink-0 px-2.5" onClick={toggleMode}>
           {mode() === 'command' ? '输入框' : '指令'}
         </button>
 
@@ -812,6 +817,7 @@ export function ConsolePanel(props: {
           when={mode() === 'input'}
           fallback={
             <button
+              type="button"
               class="btn flex-1 min-w-0 text-fg-secondary"
               aria-expanded={picker()}
               onClick={() => setPicker(true)}
