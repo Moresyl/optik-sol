@@ -72,8 +72,8 @@ importers:
         specifier: ^6.5.1
         version: 6.5.1(rollup@4.62.4)(typescript@5.9.3)
       solid-js:
-        specifier: ^1.9.14
-        version: 1.9.14
+        specifier: ^1.9.15
+        version: 1.9.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -82,7 +82,7 @@ importers:
         version: 7.3.6(@types/node@24.13.3)(jiti@2.7.0)
       vite-plugin-solid:
         specifier: ^2.11.14
-        version: 2.11.14(solid-js@1.9.14)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0))
+        version: 2.11.14(solid-js@1.9.15)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0))
 
   packages/ui:
     dependencies:
@@ -97,8 +97,8 @@ importers:
         specifier: ^66.7.5
         version: 66.7.5
       solid-js:
-        specifier: ^1.9.14
-        version: 1.9.14
+        specifier: ^1.9.15
+        version: 1.9.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -110,7 +110,7 @@ importers:
         version: 7.3.6(@types/node@24.13.3)(jiti@2.7.0)
       vite-plugin-solid:
         specifier: ^2.11.14
-        version: 2.11.14(solid-js@1.9.14)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0))
+        version: 2.11.14(solid-js@1.9.15)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0))
 
   playground:
     dependencies:
