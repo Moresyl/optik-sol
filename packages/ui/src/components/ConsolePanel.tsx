@@ -856,7 +856,7 @@ export function ConsolePanel(props: {
               }
             }}
           />
-          <button class="btn-primary shrink-0" onClick={() => run()}>
+          <button type="button" class="btn-primary shrink-0" onClick={() => run()}>
             执行
           </button>
         </Show>
@@ -930,7 +930,7 @@ function CommandSheet(props: {
     >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
         <span class="flex-1 min-w-0 not-selectable">内置指令</span>
-        <button ref={closeButton} class="chip shrink-0" onClick={props.onClose}>
+        <button type="button" ref={closeButton} class="chip shrink-0" onClick={props.onClose}>
           关闭
         </button>
       </div>
@@ -942,6 +942,7 @@ function CommandSheet(props: {
           <For each={props.history.slice(0, 5)}>
             {(expression) => (
               <button
+                type="button"
                 class="block w-full text-left px-3 py-2 min-h-11 border-b border-line
  not-selectable active:bg-bg-sunken"
                 onClick={() => props.onPickHistory(expression)}
@@ -959,6 +960,7 @@ function CommandSheet(props: {
               <For each={group.commands}>
                 {(command) => (
                   <button
+                    type="button"
                     class="block w-full text-left px-3 py-2 min-h-11 border-b border-line
  not-selectable active:bg-bg-sunken"
                     classList={{ 'bg-danger-bg': armed() === command.expression }}

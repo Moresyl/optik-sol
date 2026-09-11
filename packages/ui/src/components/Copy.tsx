@@ -266,10 +266,10 @@ export function CopySheet(props: {
               }}
             />
             <div class="row-center justify-end gap-2">
-              <button class="btn tap-target" onClick={selectAll}>
+              <button type="button" class="btn tap-target" onClick={selectAll}>
                 重新全选
               </button>
-              <button class="btn-primary tap-target" onClick={props.onClose}>
+              <button type="button" class="btn-primary tap-target" onClick={props.onClose}>
                 完成
               </button>
             </div>
