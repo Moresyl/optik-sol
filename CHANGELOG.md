@@ -16,11 +16,14 @@ All notable changes to this project are documented here. The format follows [Kee
 - Added matching npm installation snippets to both documentation home pages.
 - Aligned SolidJS patch ranges across the UI and public package workspaces.
 - Documentation now respects reduced-motion preferences and provides a consistent selection highlight.
+- Added cross-section links to both documentation sidebars and navigation for comparison pages.
+- Refined the documentation landing page spacing, mobile typography, action wrapping, and background treatment.
 
 ### Fixed
 
 - Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
 - Added regression coverage for escaped quotes in highlighted source strings.
+- CSS syntax highlighting no longer treats comment markers inside quoted strings as comments.
 - UI controls now explicitly use non-submit button semantics, preventing accidental host-form submission when the console is embedded in a form.
 
 - Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
