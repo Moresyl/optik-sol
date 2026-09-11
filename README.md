@@ -126,6 +126,7 @@ parameters are redacted. Code can call `serializeHar(records)` and explicitly op
 retained payloads with `{ includeBodies: true, includeWebSocketFrames: true }`; supported
 JSON and form fields are then redacted too. Raw export additionally requires
 `{ redactSensitive: false }`.
+Common credential key/value payloads in text and WebSocket frames are redacted by default as well.
 
 The Environment panel also keeps a bounded history of browser-reported main-thread
 long tasks (50ms or longer), including cumulative/maximum duration and available

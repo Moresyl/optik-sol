@@ -124,6 +124,7 @@ optik.destroy();           // 完整还原所有插桩
 同时脱敏请求头、URL 和查询参数中的凭据。代码中可使用 `serializeHar(records)`，并通过
 `{ includeBodies: true, includeWebSocketFrames: true }` 显式加入已留存的正文；支持识别的
 JSON/表单字段仍会脱敏。还需额外传入 `{ redactSensitive: false }` 才会导出原值。
+文本与 WebSocket 帧中的常见凭据键值也会默认脱敏。
 
 环境面板还会保留浏览器报告的主线程长任务（至少 50ms），显示累计/最长耗时及可用的
 浏览上下文归因。记录有固定上限，可用 `capture.longTasks: false` 关闭采集。

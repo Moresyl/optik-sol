@@ -10,6 +10,7 @@
 - Network records remove URL usernames and passwords; query parameters still follow HAR redaction rules
 - Copied cURL commands redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default
 - Network detail copies apply the same redaction boundary to query parameters and request/response headers
+- HAR text and WebSocket frame exports redact common credential key/value payloads (for example, `token=…`) by default
 - Logs, network records, long tasks, object expansion, and tree rendering are bounded
 
 ## What still needs your judgment
