@@ -17,6 +17,8 @@ English | [简体中文](README.zh-CN.md)
 
 Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 86 KB gzipped for the current build.
 
+Compatibility baseline: modern evergreen browsers, iOS 15+, and Android 10+. The package exposes ESM for bundlers and a browser-ready global IIFE for a direct `<script>` tag; no server or runtime dependency is required.
+
 ```html
 <script src="https://unpkg.com/optik-sol@0.4.1"></script>
 ```
