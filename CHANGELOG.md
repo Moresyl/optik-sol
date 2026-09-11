@@ -27,6 +27,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Added regression coverage for blank plugin labels as well as identifiers.
 - Plugin IDs with leading or trailing whitespace are rejected to keep lookup and tab identity stable.
 - Expandable values now expose keyboard activation and keep non-expandable primitives out of the focus order.
+- Unevaluated getters are now shown explicitly instead of being mistaken for `undefined` values.
 
 ### Fixed
 
