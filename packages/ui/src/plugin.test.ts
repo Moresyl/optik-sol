@@ -24,6 +24,7 @@ describe('PluginRegistry', () => {
     const unsubscribe = registry.subscribe(changed);
     expect(() => registry.register(plugin(''))).toThrow('id 和 label');
     expect(() => registry.register(plugin('   '))).toThrow('id 和 label');
+    expect(() => registry.register({ ...plugin('valid'), label: '   ' })).toThrow('id 和 label');
 
     const value = plugin('one');
     registry.register(value);
