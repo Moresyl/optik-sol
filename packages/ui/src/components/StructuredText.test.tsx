@@ -95,6 +95,16 @@ describe('structured text helpers', () => {
       ]),
     );
   });
+
+  it('keeps CSS comment markers inside quoted strings', () => {
+    const tokens = tokenizeCodeLine(".x { content: '/* not a comment */'; }", 'css');
+    expect(tokens).toEqual(expect.arrayContaining([
+      expect.objectContaining({ text: "'/* not a comment */'", kind: 'string' }),
+    ]));
+    expect(tokens).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'comment' }),
+    ]));
+  });
 });
 
 describe('StructuredTextView', () => {

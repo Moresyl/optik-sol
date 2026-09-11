@@ -171,7 +171,18 @@ function tokenizeMarkupLine(line: string): SyntaxToken[] {
 
 function tokenizeCssLine(line: string): SyntaxToken[] {
   const tokens: SyntaxToken[] = [];
-  const commentIndex = line.indexOf('/*');
+  let quote = '';
+  let commentIndex = -1;
+  for (let i = 0; i < line.length - 1; i++) {
+    const char = line[i];
+    if (quote) {
+      if (char === '\\') i++;
+      else if (char === quote) quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'") { quote = char; continue; }
+    if (char === '/' && line[i + 1] === '*') { commentIndex = i; break; }
+  }
   const codeEnd = commentIndex === -1 ? line.length : commentIndex;
   const code = line.slice(0, codeEnd);
   const pattern = /(--?[\w-]+|[\w-]+)(\s*:)|#[\da-f]{3,8}\b|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:px|rem|em|%|s|ms|vh|vw)?\b|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/gi;
