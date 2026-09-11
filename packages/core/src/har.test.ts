@@ -224,6 +224,15 @@ describe('HAR export', () => {
     expect(serialized).toContain('access_token=%5BREDACTED%5D');
   });
 
+  it('redacts credential-like key/value text in WebSocket frames', () => {
+    const serialized = serializeHar(
+      [record({ frames: [{ direction: 'send', timestamp: 1, opcode: 'text', payload: 'token=frame-secret', size: 17 }] })],
+      { includeWebSocketFrames: true },
+    );
+    expect(serialized).not.toContain('frame-secret');
+    expect(serialized).toContain('token=[REDACTED]');
+  });
+
   it('falls back to safe finite timestamps for invalid timing input', () => {
     const entry = createHar([record({ timing: { startTime: Number.NaN } })], {
       timeOrigin: Number.NaN,
