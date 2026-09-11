@@ -324,8 +324,10 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
   );
 }
 
-function nameValuesToText(items: [string, string][]): string {
-  return items.map(([name, value]) => `${name}: ${value}`).join('\n');
+function nameValuesToText(items: [string, string][], redact = false): string {
+  return items
+    .map(([name, value]) => `${name}: ${redact && CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`)
+    .join('\n');
 }
 
 function BodyView(props: {
@@ -520,7 +522,7 @@ function RequestDetail(props: {
             action={
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.query)}
+                text={() => nameValuesToText(props.record.query, true)}
                 label="查询参数"
                 class="min-h-8 px-2 text-accent"
               />
@@ -540,7 +542,7 @@ function RequestDetail(props: {
             <Show when={props.record.requestHeaders.length > 0}>
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.requestHeaders)}
+                text={() => nameValuesToText(props.record.requestHeaders, true)}
                 label="请求头"
                 class="min-h-8 px-2 text-accent"
               />
@@ -566,7 +568,7 @@ function RequestDetail(props: {
             <Show when={props.record.responseHeaders.length > 0}>
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.responseHeaders)}
+                text={() => nameValuesToText(props.record.responseHeaders, true)}
                 label="响应头"
                 class="min-h-8 px-2 text-accent"
               />
