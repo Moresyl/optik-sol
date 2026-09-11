@@ -12,8 +12,16 @@ const sharedTheme = {
 
 export default defineConfig({
   base,
+  title: 'Optik Sol',
+  titleTemplate: ':title · Optik Sol',
+  description: 'A fast, privacy-first debugging console for mobile browsers and WebViews',
   cleanUrls: true,
   lastUpdated: true,
+  appearance: true,
+  markdown: {
+    lineNumbers: true,
+    image: { lazyLoading: true },
+  },
   sitemap: {
     hostname: 'https://moresyl.github.io/optik-sol/',
   },
