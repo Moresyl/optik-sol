@@ -1,11 +1,16 @@
 import { createRequire } from 'node:module';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 
 const require = createRequire(import.meta.url);
 const packageJson = JSON.parse(await readFile(new URL('../packages/optik/package.json', import.meta.url), 'utf8'));
 for (const field of ['main', 'module', 'browser', 'unpkg', 'jsdelivr', 'types']) {
   if (typeof packageJson[field] !== 'string' || !packageJson[field].startsWith('./dist/')) {
     throw new Error(`package metadata has an invalid ${field} entry`);
+  }
+  try {
+    await access(new URL(`../packages/optik/${packageJson[field]}`, import.meta.url));
+  } catch {
+    throw new Error(`package metadata points to a missing ${field} file: ${packageJson[field]}`);
   }
 }
 const esm = await import('../packages/optik/dist/optik.js');
