@@ -320,8 +320,7 @@ function TreeNode(props: {
   });
 
   const hasChildren = () => {
-    props.version();
-    return [...props.node.children].some((child) => !isOwnNode(child));
+    return visibleChildren().length > 0;
   };
   const isSelected = () => props.selected() === props.node;
 
