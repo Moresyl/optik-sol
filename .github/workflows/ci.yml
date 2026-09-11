@@ -30,6 +30,8 @@ jobs:
       - run: pnpm test:dist
       - run: pnpm typecheck
       - run: pnpm test:coverage
+      - name: 检查补丁格式
+        run: git diff --check
 
       - name: 检查构建产物
         run: |
