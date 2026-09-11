@@ -243,7 +243,7 @@ describe('NetworkPanel', () => {
     const text = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
     expect(text).toContain('https://example.test/api?token=%5BREDACTED%5D');
     expect(text).toContain('Cookie: [REDACTED]');
-    expect(text).toContain('"password":"[REDACTED]"');
+    expect(text).toContain('"password": "[REDACTED]"');
     expect(text).not.toContain('secret');
   });
 
