@@ -6,6 +6,7 @@
 - HAR export redacts credentials and omits bodies by default
 - JSON is parsed and rendered in the current page
 - Request and response bodies are capped by `maxBodyBytes`
+- The Environment panel redacts credentials, query parameters, and fragments from page URLs by default; raw URLs require an explicit action
 - Logs, network records, long tasks, object expansion, and tree rendering are bounded
 
 ## What still needs your judgment

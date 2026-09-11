@@ -110,6 +110,11 @@ export function SystemPanel(props: {
   onThemeChange: (mode: ThemeMode) => void;
 }): JSX.Element {
   const [version, setVersion] = createSignal(0);
+  const [showRawUrl, setShowRawUrl] = createSignal(false);
+  const pageUrl = createMemo(() => {
+    version();
+    return location.href;
+  });
   const [longTasks, setLongTasks] = createSignal(props.kernel.performance.longTasks());
 
   // 视口和内存会随旋转、键盘弹出、GC 而变化，定时重读一次。
@@ -162,7 +167,7 @@ export function SystemPanel(props: {
     const data = info();
     const lines = [
       `设备信息 · ${new Date().toLocaleString('zh-CN')}`,
-      `页面地址：${location.href}`,
+      `页面地址：${redactContainerUrl(pageUrl())}`,
       `User-Agent：${data.userAgent}`,
       `客户端：${data.client}`,
       `平台：${data.platform} · 语言：${data.language}`,
@@ -260,13 +265,21 @@ export function SystemPanel(props: {
             label="地址"
             value={
               <>
-                {location.href}
+                {showRawUrl() ? pageUrl() : redactContainerUrl(pageUrl())}
                 <CopyButton
                   copier={props.copier}
-                  text={() => location.href}
-                  label="页面地址"
+                  text={() => showRawUrl() ? pageUrl() : redactContainerUrl(pageUrl())}
+                  label={showRawUrl() ? '页面原始地址' : '页面地址（已脱敏）'}
                   class="mt-1 min-h-9 px-2 -ml-2 text-accent"
                 />
+                <button
+                  type="button"
+                  class="chip"
+                  aria-pressed={showRawUrl()}
+                  onClick={() => setShowRawUrl((value) => !value)}
+                >
+                  {showRawUrl() ? '隐藏原始地址' : '显示原始地址（含敏感参数）'}
+                </button>
               </>
             }
           />

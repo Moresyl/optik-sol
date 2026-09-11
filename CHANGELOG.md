@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- Environment evidence now redacts page URL credentials, query parameters, and fragments by default, with an explicit raw URL reveal for intentional debugging.
 ## [0.4.1] - 2026-09-08
 
 ### Added
