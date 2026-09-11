@@ -20,6 +20,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Documentation now respects reduced-motion preferences and provides a consistent selection highlight.
 - Added cross-section links to both documentation sidebars and navigation for comparison pages.
 - Refined the documentation landing page spacing, mobile typography, action wrapping, and background treatment.
+- Clarified runtime trust boundaries and the requirement to use controlled builds and trusted protocol transports in package READMEs.
 
 ### Fixed
 
