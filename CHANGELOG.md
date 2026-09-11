@@ -14,6 +14,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Added browser/default export conditions and preserved the global IIFE side effect declaration.
 - CI now audits production dependencies, validates package entry files, and checks the publish contract.
 - Added matching npm installation snippets to both documentation home pages.
+- Aligned SolidJS patch ranges across the UI and public package workspaces.
 
 ### Fixed
 
