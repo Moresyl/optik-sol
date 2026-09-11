@@ -113,4 +113,24 @@ describe('ValueView object handle lifecycle', () => {
     host.remove();
     registry.release(root.objectId!);
   });
+
+  it('expands object values from keyboard activation without making primitives focusable', () => {
+    const registry = new ObjectRegistry();
+    const root = toRemoteObject({ answer: 42 }, registry);
+    const domain: ValueDomain = { registry, getProperties: (id, options) => getProperties(id, registry, options) };
+    const host = document.createElement('div');
+    render(() => <ValueView value={root} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} />, host);
+    const value = host.querySelector<HTMLElement>('[role="button"]')!;
+    expect(value.tabIndex).toBe(0);
+    value.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    frames[0]!(0);
+    expect(host.textContent).toContain('answer');
+    expect(host.querySelector('[data-type="number"]')?.textContent).toBe('42');
+    const primitiveHost = document.createElement('div');
+    const primitive = toRemoteObject(42, registry);
+    render(() => <ValueView value={primitive} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} />, primitiveHost);
+    expect(primitiveHost.querySelector('[role="button"]')).toBeNull();
+    registry.release(root.objectId!);
+    registry.release(primitive.objectId!);
+  });
 });
