@@ -51,6 +51,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | **Laid out by mobile rules** | `100dvh`, `env(safe-area-inset-*)`, touch targets ≥ 44 px, 16 px inputs, sizes in px only — never rem |
 | **Split when wide, drill down when narrow** | At a panel width ≥ 640 px the layout splits (the ratio is remembered locally); `pointer: fine` switches to compact rows, while touch keeps full row height |
 | **Never leaks into the host page** | The whole panel lives in a Shadow DOM, isolated in both directions; every hook passes through to the original method, and `destroy()` restores each one from its original property descriptor |
+| **Keyboard and touch friendly** | Tabs support arrow/Home/End navigation, expandable values support Enter/Space, and non-interactive values stay out of the tab order |
 
 It also captures signals that debugging tools commonly miss: resource load failures (`<img>` / `<script>` / CSS 404s — these events do not bubble), CSP violations, whether `sendBeacon` was actually accepted, EventSource streams, requests with no JavaScript API (via Resource Timing), and cache hits.
 
