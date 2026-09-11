@@ -231,13 +231,13 @@ function EditSheet(props: {
       }}
     >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
-        <button class="chip shrink-0" onClick={props.onCancel}>
+        <button type="button" class="chip shrink-0" onClick={props.onCancel}>
           ‹ 取消
         </button>
         <span class="flex-1 min-w-0 truncate not-selectable">
           {props.draft.isNew ? `新增到${AREA_LABELS[props.area]}` : `编辑 ${props.draft.key}`}
         </span>
-        <button class="btn-primary shrink-0 min-h-9" onClick={props.onSave}>
+        <button type="button" class="btn-primary shrink-0 min-h-9" onClick={props.onSave}>
           保存
         </button>
       </div>
@@ -281,7 +281,7 @@ function EditSheet(props: {
           <label class="flex-1 text-fg-tertiary not-selectable">值</label>
           {/* 手机上给一段 JSON 手动排版是不可能的，这个按钮省掉的是整件事 */}
           <Show when={canFormat()}>
-            <button class="icon-btn min-h-8 px-2 text-accent" onClick={format}>
+            <button type="button" class="icon-btn min-h-8 px-2 text-accent" onClick={format}>
               格式化 JSON
             </button>
           </Show>
