@@ -429,6 +429,7 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
           <For each={AREAS}>
             {(candidate) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': area() === candidate }}
                 onClick={() => {
@@ -471,11 +472,12 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
               ? '正在读取…'
               : `${status().itemCount} 项 · ${formatBytes(status().totalBytes)}`}
           </span>
-          <button class="chip shrink-0" onClick={refresh}>
+          <button type="button" class="chip shrink-0" onClick={refresh}>
             刷新
           </button>
           <Show when={!readOnly()}>
             <button
+              type="button"
               class="chip shrink-0 text-accent"
               onClick={() => setEditing({ key: '', value: '', isNew: true })}
             >
