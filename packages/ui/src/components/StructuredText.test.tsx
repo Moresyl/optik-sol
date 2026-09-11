@@ -87,6 +87,14 @@ describe('structured text helpers', () => {
       expect.arrayContaining([expect.objectContaining({ text: '// note', kind: 'comment' })]),
     );
   });
+
+  it('keeps escaped quotes inside strings from ending the string state', () => {
+    expect(tokenizeCodeLine(String.raw`const text = "say \\\"hi\\\" // still text";`, 'javascript')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'string' }),
+      ]),
+    );
+  });
 });
 
 describe('StructuredTextView', () => {
