@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - CI now audits production dependencies, validates package entry files, and checks the publish contract.
 - Added matching npm installation snippets to both documentation home pages.
 - Aligned SolidJS patch ranges across the UI and public package workspaces.
+- Documentation now respects reduced-motion preferences and provides a consistent selection highlight.
 
 ### Fixed
 
