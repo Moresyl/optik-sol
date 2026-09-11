@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Network records now remove URL username and password components before they can appear in the panel, protocol events, or HAR exports.
+### Fixed
+
 - Environment evidence now redacts page URL credentials, query parameters, and fragments by default, with an explicit raw URL reveal for intentional debugging.
 ## [0.4.1] - 2026-09-08
 

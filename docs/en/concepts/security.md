@@ -7,6 +7,7 @@
 - JSON is parsed and rendered in the current page
 - Request and response bodies are capped by `maxBodyBytes`
 - The Environment panel redacts credentials, query parameters, and fragments from page URLs by default; raw URLs require an explicit action
+- Network records remove URL usernames and passwords; query parameters still follow HAR redaction rules
 - Logs, network records, long tasks, object expansion, and tree rendering are bounded
 
 ## What still needs your judgment
