@@ -76,6 +76,7 @@ function DangerButton(props: {
 
   return (
     <button
+      type="button"
       class={`icon-btn text-danger ${props.class ?? ''}`}
       classList={{ 'bg-danger-bg': armed() }}
       onClick={() => {
@@ -179,7 +180,7 @@ function StorageRow(props: {
 
       <div class="row-center gap-1 mt-1 not-selectable">
         <Show when={!props.readOnly}>
-          <button class="icon-btn min-h-9 px-2" onClick={props.onEdit}>
+          <button type="button" class="icon-btn min-h-9 px-2" onClick={props.onEdit}>
             编辑
           </button>
           <DangerButton

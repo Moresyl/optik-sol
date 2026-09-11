@@ -444,12 +444,13 @@ function RequestDetail(props: {
         <Show
           when={layout.wide()}
           fallback={
-            <button class="chip shrink-0" onClick={props.onBack}>
+            <button type="button" class="chip shrink-0" onClick={props.onBack}>
               ‹ 返回
             </button>
           }
         >
           <button
+            type="button"
             class="chip shrink-0 text-fg-tertiary"
             aria-label="关闭详情"
             onClick={props.onBack}

@@ -132,6 +132,7 @@ export function CopyButton(props: {
 
   return (
     <button
+      type="button"
       class={`icon-btn ${props.class ?? ''}`}
       classList={{ 'text-accent': done() }}
       title={name()}

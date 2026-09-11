@@ -710,7 +710,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
       <div class="shrink-0 row-center gap-1 px-2 py-1 border-b border-line bg-bg-elevated">
         <Show when={!layout.wide()}>
-          <button class="chip shrink-0" onClick={() => setTab('tree')}>
+          <button type="button" class="chip shrink-0" onClick={() => setTab('tree')}>
             ‹ 结构
           </button>
         </Show>
@@ -725,6 +725,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
         >
           {([id, label]) => (
             <button
+              type="button"
               class="chip shrink-0"
               classList={{ 'bg-accent text-accent-fg': detailTab() === id }}
               onClick={() => setTab(id)}

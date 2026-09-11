@@ -342,7 +342,7 @@ export function SystemPanel(props: {
               <Row
                 label="操作"
                 value={
-                  <button class="chip text-danger" onClick={() => props.kernel.performance.clear()}>
+                  <button type="button" class="chip text-danger" onClick={() => props.kernel.performance.clear()}>
                     清空记录
                   </button>
                 }

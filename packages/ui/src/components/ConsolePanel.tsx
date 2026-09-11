@@ -372,6 +372,7 @@ function LogRow(props: {
     >
       <Show when={props.store.selectionMode()}>
         <button
+          type="button"
           class="shrink-0 w-6 h-6 mt-1.5 ml-3 rounded border border-line-strong row-center justify-center leading-none not-selectable"
           classList={{ 'bg-accent border-accent text-accent-fg': selected() }}
           aria-label={selected() ? '取消选择' : '选择'}
@@ -469,7 +470,7 @@ function LogRow(props: {
         {/* 「复制」已经移到行尾常驻列，这里只剩展开开关，没有可展开参数时整行不占高度 */}
         <Show when={hasStructured()}>
           <div class="row-center gap-3 mt-1 not-selectable">
-            <button class="text-accent py-1" onClick={() => setExpanded(!expanded())}>
+            <button type="button" class="text-accent py-1" onClick={() => setExpanded(!expanded())}>
               {expanded() ? '收起' : '展开对象'}
             </button>
           </div>
