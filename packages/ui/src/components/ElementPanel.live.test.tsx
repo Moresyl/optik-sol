@@ -149,7 +149,7 @@ describe('ElementPanel live DOM updates', () => {
     document.body.appendChild(target);
     const shadow = mountPanel();
     [...shadow.querySelectorAll('button')].find((candidate) => candidate.textContent?.includes('large-tree'))!.click();
-    const expandButtons = [...shadow.querySelectorAll('button[aria-label="展开"]')];
+    const expandButtons = [...shadow.querySelectorAll<HTMLButtonElement>('button[aria-label="展开"]')];
     expandButtons[expandButtons.length - 1]?.click();
     expect(shadow.textContent).toContain('已限制显示前 500 个子节点');
   });
