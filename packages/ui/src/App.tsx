@@ -166,7 +166,8 @@ export function App(props: AppProps): JSX.Element {
     const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 :
       (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
     props.store.setActiveTab(list[nextIndex].id);
-    document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab-id="${CSS.escape(list[nextIndex].id)}"]`)?.focus();
+    const button = event.currentTarget as HTMLButtonElement;
+    button.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
   };
 
   /** 插件视图渲染一次即缓存，切走再切回不会丢状态。 */
@@ -417,6 +418,9 @@ export function App(props: AppProps): JSX.Element {
                       aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
                       aria-selected={props.store.activeTab() === tab.id}
                       data-tab-id={tab.id}
+                      id={`optik-tab-${tab.id}`}
+                      aria-controls="optik-active-panel"
+                      tabIndex={props.store.activeTab() === tab.id ? 0 : -1}
                       role="tab"
                       onKeyDown={(event) => onTabKeyDown(event, tab.id)}
                       onClick={() => props.store.setActiveTab(tab.id)}
@@ -463,7 +467,7 @@ export function App(props: AppProps): JSX.Element {
 
           {/* 内容区 */}
           <LayoutProvider value={layout}>
-            <div class="flex-1 min-h-0">
+            <div class="flex-1 min-h-0" id="optik-active-panel" role="tabpanel" tabIndex={0} aria-labelledby={`optik-tab-${props.store.activeTab()}`}>
               <Show when={props.store.activeTab() === 'console'}>
                 <ConsolePanel store={props.store} kernel={props.kernel} copier={copier} />
               </Show>
