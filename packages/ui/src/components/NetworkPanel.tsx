@@ -796,6 +796,7 @@ export function NetworkPanel(props: {
             onInput={(event) => setQuery(event.currentTarget.value)}
           />
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': onlyFailed() }}
             onClick={() => setOnlyFailed(!onlyFailed())}
@@ -817,6 +818,7 @@ export function NetworkPanel(props: {
           <div class="relative flex-1 min-w-0">
             <div class="row-center gap-1 overflow-x-auto no-scrollbar">
               <button
+                type="button"
                 class="chip shrink-0 gap-1"
                 classList={{ 'bg-accent text-accent-fg': kindFilter() === null }}
                 aria-pressed={kindFilter() === null}
@@ -830,6 +832,7 @@ export function NetworkPanel(props: {
               <For each={FILTER_ORDER}>
                 {(kind) => (
                   <button
+                    type="button"
                     class="chip shrink-0 gap-1"
                     classList={{
                       'bg-accent text-accent-fg': kindFilter() === kind,
@@ -851,7 +854,7 @@ export function NetworkPanel(props: {
             <div class="optik-fade-right" />
           </div>
           {/* 「清空」留在滚动区外：它要是跟着滑走，想清空得先滑到头 */}
-          <button class="chip shrink-0" onClick={props.store.clearRequests}>
+          <button type="button" class="chip shrink-0" onClick={props.store.clearRequests}>
             清空
           </button>
           <div class="shrink-0 row-center gap-1 text-fg-tertiary" title="默认脱敏后复制 HAR 1.2">
