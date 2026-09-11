@@ -309,7 +309,7 @@ export function ValueView(props: ValueProps): JSX.Element {
         <For each={children() ?? []}>
           {(property) => (
             <ValueView
-              value={property.value ?? UNDEFINED_VALUE}
+              value={property.value ?? (property.get ? { type: 'string', value: '「取值器，未求值」', description: '「取值器，未求值」' } : UNDEFINED_VALUE)}
               kernel={props.kernel}
               domain={props.domain}
               depth={depth() + 1}
