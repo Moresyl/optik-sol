@@ -120,7 +120,7 @@ function StorageRow(props: {
   );
 
   return (
-    <div class="px-3 py-2 border-b border-line">
+    <div class="optik-row px-3 py-2 border-b border-line">
       {/* 键行：键名用 token 色，右侧挂类型与体积，和值区拉开一个层级 */}
       <div class="row-center gap-1.5">
         <span

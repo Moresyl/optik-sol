@@ -224,6 +224,10 @@ button { cursor: pointer; }
 .optik-row:hover {
   background: var(--optik-bg-elevated);
 }
+.optik-element-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 28px;
+}
 .optik-row[data-selected='true'],
 .optik-row[data-selected='true']:hover {
   background: color-mix(in srgb, var(--optik-accent) 16%, transparent);

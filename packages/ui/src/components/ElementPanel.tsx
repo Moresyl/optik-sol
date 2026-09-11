@@ -321,7 +321,7 @@ function TreeNode(props: {
   const isSelected = () => props.selected() === props.node;
 
   return (
-    <div>
+    <div class="optik-element-row">
       <div
         class="row-center gap-1 min-h-7 pr-2 font-mono active:bg-bg-sunken"
         classList={{ 'bg-accent/15': isSelected() }}
