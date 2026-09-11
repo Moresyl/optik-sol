@@ -270,6 +270,18 @@ export function ValueView(props: ValueProps): JSX.Element {
           data-json={jsonMirror !== undefined ? 'true' : undefined}
           class="wrap-anywhere"
           onClick={expandable() ? toggle : undefined}
+          role={expandable() ? 'button' : undefined}
+          tabIndex={expandable() ? 0 : undefined}
+          onKeyDown={
+            expandable()
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggle();
+                  }
+                }
+              : undefined
+          }
         >
           {jsonMirror !== undefined ? remoteObjectToText(jsonMirror) : summarize(props.value)}
         </span>
