@@ -71,7 +71,11 @@ export function remoteObjectToDeepText(remote: RemoteObject, kernel: OptikKernel
     if (path.includes(node.objectId)) return `「循环引用 → ${node.description}」`;
     if (depth >= MAX_DEPTH) return `「${node.description} 层级过深，未展开」`;
 
-    const properties = kernel.log.getProperties(node.objectId, { ownProperties: true });
+    if (budget <= 0) return `「${node.description} 节点上限，未展开」`;
+    const properties = kernel.log.getProperties(node.objectId, {
+      ownProperties: true,
+      maxProperties: budget,
+    });
     // 句柄没了：这条日志已经老到被环形缓冲挤出去，值不再被持有。
     // 这时候安静地打印个 `{}` 是在撒谎，得把「拿不到了」说出来。
     if (properties === null) return `「${node.description}（已不再持有）」`;
@@ -92,7 +96,10 @@ export function remoteObjectToDeepText(remote: RemoteObject, kernel: OptikKernel
     path.push(node.objectId);
     for (const property of properties) {
       // `[[Prototype]]` 这类内部槽位：调试对象结构时有用，复制数据时是噪音。
-      if (property.name.startsWith('[[')) continue;
+      if (property.keyKind === 'internal' && property.name.startsWith('[[')) {
+        if (property.name === '[[Truncated]]') truncated = true;
+        continue;
+      }
       if (budget <= 0) {
         truncated = true;
         break;

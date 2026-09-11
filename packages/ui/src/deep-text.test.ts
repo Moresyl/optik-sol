@@ -74,6 +74,40 @@ describe('remoteObjectToDeepText', () => {
     expect(remoteObjectToDeepText(remote, kernelFor(registry))).toContain('已不再持有');
   });
 
+  it('preserves user properties named like internal slots', () => {
+    const registry = new ObjectRegistry();
+    const remote = toRemoteObject({ '[[Prototype]]': 'data', '[[Truncated]]': 42 }, registry);
+    const text = remoteObjectToDeepText(remote, kernelFor(registry));
+    expect(text).toContain('"[[Prototype]]": "data"');
+    expect(text).toContain('"[[Truncated]]": 42');
+    expect(registry.size).toBe(1);
+  });
+
+  it('passes the remaining node budget to property expansion', () => {
+    const registry = new ObjectRegistry();
+    const remote = toRemoteObject({ child: { value: 1 } }, registry);
+    const kernel = kernelFor(registry);
+    const expand = vi.spyOn(kernel.log, 'getProperties');
+    remoteObjectToDeepText(remote, kernel);
+    expect(expand).toHaveBeenNthCalledWith(1, remote.objectId, {
+      ownProperties: true, maxProperties: 800,
+    });
+    expect(expand).toHaveBeenNthCalledWith(2, expect.any(String), {
+      ownProperties: true, maxProperties: 799,
+    });
+    expect(registry.size).toBe(1);
+  });
+
+  it('retains truncation evidence supplied by a bounded bridge', () => {
+    const registry = new ObjectRegistry();
+    const remote = toRemoteObject({ value: 1 }, registry);
+    const kernel = kernelFor(registry);
+    vi.spyOn(kernel.log, 'getProperties').mockReturnValue([
+      { name: '[[Truncated]]', keyKind: 'internal', isOwn: false },
+    ]);
+    expect(remoteObjectToDeepText(remote, kernel)).toBe('{\n  …\n}');
+  });
+
   it('bounds wide objects and releases every materialised child handle', () => {
     const registry = new ObjectRegistry();
     const wide = Object.fromEntries(
