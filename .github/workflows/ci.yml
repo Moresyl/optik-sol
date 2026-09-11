@@ -28,6 +28,9 @@ jobs:
       - run: pnpm build
       - run: pnpm docs:build
       - run: pnpm test:dist
+      # 发布入口与产物契约由 test:dist 统一校验，防止包元数据漂移。
+      - name: 验证发布包契约
+        run: pnpm --filter optik-sol pack --dry-run
       - run: pnpm check:buttons
       - run: pnpm typecheck
       - run: pnpm test:coverage
