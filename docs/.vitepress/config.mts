@@ -67,6 +67,14 @@ export default defineConfig({
                 { text: '故障排查', link: '/guide/troubleshooting' },
               ],
             },
+            {
+              text: '深入参考',
+              items: [
+                { text: '公开 API', link: '/reference/api' },
+                { text: '隐私与安全', link: '/concepts/security' },
+                { text: '能力对比', link: '/comparison' },
+              ],
+            },
           ],
           '/reference/': [
             {
@@ -76,6 +84,14 @@ export default defineConfig({
                 { text: '协议与传输', link: '/reference/protocol' },
               ],
             },
+            {
+              text: '使用与边界',
+              items: [
+                { text: '快速开始', link: '/guide/getting-started' },
+                { text: '配置参考', link: '/guide/configuration' },
+                { text: '隐私与安全', link: '/concepts/security' },
+              ],
+            },
           ],
           '/concepts/': [
             {
@@ -83,6 +99,28 @@ export default defineConfig({
               items: [
                 { text: '架构', link: '/concepts/architecture' },
                 { text: '隐私与安全', link: '/concepts/security' },
+                { text: '性能边界', link: '/concepts/performance' },
+              ],
+            },
+            {
+              text: '马上开始',
+              items: [
+                { text: '快速开始', link: '/guide/getting-started' },
+                { text: '公开 API', link: '/reference/api' },
+                { text: '能力对比', link: '/comparison' },
+              ],
+            },
+          ],
+          '/comparison': [
+            {
+              text: '能力对比',
+              items: [{ text: '能力矩阵', link: '/comparison' }],
+            },
+            {
+              text: '继续阅读',
+              items: [
+                { text: '快速开始', link: '/guide/getting-started' },
+                { text: '公开 API', link: '/reference/api' },
                 { text: '性能边界', link: '/concepts/performance' },
               ],
             },
@@ -133,6 +171,14 @@ export default defineConfig({
                 { text: 'Troubleshooting', link: '/en/guide/troubleshooting' },
               ],
             },
+            {
+              text: 'Deep dive',
+              items: [
+                { text: 'Public API', link: '/en/reference/api' },
+                { text: 'Privacy & Security', link: '/en/concepts/security' },
+                { text: 'Comparison', link: '/en/comparison' },
+              ],
+            },
           ],
           '/en/reference/': [
             {
@@ -142,6 +188,14 @@ export default defineConfig({
                 { text: 'Protocol & Transport', link: '/en/reference/protocol' },
               ],
             },
+            {
+              text: 'Usage & boundaries',
+              items: [
+                { text: 'Getting Started', link: '/en/guide/getting-started' },
+                { text: 'Configuration', link: '/en/guide/configuration' },
+                { text: 'Privacy & Security', link: '/en/concepts/security' },
+              ],
+            },
           ],
           '/en/concepts/': [
             {
@@ -149,6 +203,28 @@ export default defineConfig({
               items: [
                 { text: 'Architecture', link: '/en/concepts/architecture' },
                 { text: 'Privacy & Security', link: '/en/concepts/security' },
+                { text: 'Performance Boundaries', link: '/en/concepts/performance' },
+              ],
+            },
+            {
+              text: 'Get started',
+              items: [
+                { text: 'Getting Started', link: '/en/guide/getting-started' },
+                { text: 'Public API', link: '/en/reference/api' },
+                { text: 'Comparison', link: '/en/comparison' },
+              ],
+            },
+          ],
+          '/en/comparison': [
+            {
+              text: 'Comparison',
+              items: [{ text: 'Capability matrix', link: '/en/comparison' }],
+            },
+            {
+              text: 'Continue reading',
+              items: [
+                { text: 'Getting Started', link: '/en/guide/getting-started' },
+                { text: 'Public API', link: '/en/reference/api' },
                 { text: 'Performance Boundaries', link: '/en/concepts/performance' },
               ],
             },
