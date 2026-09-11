@@ -81,6 +81,12 @@ describe('structured text helpers', () => {
       ]),
     );
   });
+
+  it('recognises inline JavaScript comments after code', () => {
+    expect(tokenizeCodeLine('const value = 1;// note', 'javascript')).toEqual(
+      expect.arrayContaining([expect.objectContaining({ text: '// note', kind: 'comment' })]),
+    );
+  });
 });
 
 describe('StructuredTextView', () => {
