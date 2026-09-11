@@ -270,7 +270,6 @@ function JsonNode(props: {
         <Show when={count() > entries().length}>
           <button
             type="button"
-            type="button"
             class="min-h-8 text-accent hover:text-fg-secondary"
             style={{ 'margin-left': `${(props.depth + 1) * 12 + 20}px` }}
             onClick={() => setVisibleLimit((limit) => limit + TREE_PAGE_SIZE)}
