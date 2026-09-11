@@ -402,8 +402,12 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   const highlighter = new Highlighter();
   let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+  let highlightFrame: (() => void) | undefined;
+  let pendingHighlight: Element | null = null;
   onCleanup(() => {
     clearTimeout(highlightTimer);
+    highlightFrame?.();
+    pendingHighlight = null;
     highlighter.dispose();
   });
 
@@ -458,7 +462,15 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   const onPickMove = (event: Event) => {
     const target = targetOf(event);
-    if (target) highlighter.show(target);
+    if (!target) return;
+    pendingHighlight = target;
+    if (highlightFrame) return;
+    highlightFrame = scheduleFrame(() => {
+      highlightFrame = undefined;
+      const next = pendingHighlight;
+      pendingHighlight = null;
+      if (next) highlighter.show(next);
+    });
   };
 
   const onPick = (event: Event) => {
