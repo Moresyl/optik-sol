@@ -45,6 +45,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/optik.js",
       "import": "./dist/optik.js",
       "require": "./dist/optik.cjs"
     }
