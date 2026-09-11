@@ -423,6 +423,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         />
         <Show when={props.showReveal !== false}>
           <button
+            type="button"
             class="icon-btn min-h-8 px-2"
             onClick={() => props.copier.reveal(props.text, props.label)}
           >
