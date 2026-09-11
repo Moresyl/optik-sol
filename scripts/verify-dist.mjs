@@ -20,6 +20,12 @@ const defaultExport = packageJson.exports?.['.']?.default;
 if (defaultExport !== packageJson.module) {
   throw new Error(`default export must match the ESM module entry: ${defaultExport}`);
 }
+const rootExports = packageJson.exports?.['.'];
+for (const [condition, field] of [['types', 'types'], ['browser', 'browser'], ['import', 'module'], ['require', 'main']]) {
+  if (rootExports?.[condition] !== packageJson[field]) {
+    throw new Error(`exports.${condition} must match package ${field} entry`);
+  }
+}
 const esm = await import('../packages/optik/dist/optik.js');
 const cjs = require('../packages/optik/dist/optik.cjs');
 
