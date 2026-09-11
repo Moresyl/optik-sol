@@ -64,7 +64,8 @@ export class PluginRegistry {
       !plugin.id.trim() ||
       plugin.id !== plugin.id.trim() ||
       typeof plugin.label !== 'string' ||
-      !plugin.label.trim()
+      !plugin.label.trim() ||
+      plugin.label !== plugin.label.trim()
     ) {
       throw new Error('[optik] 插件必须提供 id 和 label');
     }

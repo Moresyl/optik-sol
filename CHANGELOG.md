@@ -28,6 +28,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Plugin registration now rejects blank identifiers, and removing the active plugin safely returns to the Console tab.
 - Added regression coverage for blank plugin labels as well as identifiers.
 - Plugin IDs with leading or trailing whitespace are rejected to keep lookup and tab identity stable.
+- Plugin labels now apply the same whitespace validation for predictable tab names.
 - Expandable values now expose keyboard activation and keep non-expandable primitives out of the focus order.
 - Unevaluated getters are now shown explicitly instead of being mistaken for `undefined` values.
 - README design highlights now document keyboard and touch interaction guarantees.

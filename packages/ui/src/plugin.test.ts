@@ -26,6 +26,7 @@ describe('PluginRegistry', () => {
     expect(() => registry.register(plugin('   '))).toThrow('id 和 label');
     expect(() => registry.register(plugin(' padded '))).toThrow('id 和 label');
     expect(() => registry.register({ ...plugin('valid'), label: '   ' })).toThrow('id 和 label');
+    expect(() => registry.register({ ...plugin('valid-label'), label: ' Label ' })).toThrow('id 和 label');
 
     const value = plugin('one');
     registry.register(value);
