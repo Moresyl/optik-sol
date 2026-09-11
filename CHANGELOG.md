@@ -13,6 +13,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Documented the supported browser baseline and clarified ESM/IIFE package entry points.
 - Added browser/default export conditions and preserved the global IIFE side effect declaration.
 - CI now audits production dependencies, validates package entry files, and checks the publish contract.
+- Added matching npm installation snippets to both documentation home pages.
 
 ### Fixed
 
