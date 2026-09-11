@@ -18,7 +18,7 @@
 Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，当前构建 gzip 约 86 KB。
 
 ```html
-<script src="https://unpkg.com/optik-sol"></script>
+<script src="https://unpkg.com/optik-sol@0.4.1"></script>
 ```
 
 脚本一执行就开始记录，放在 `<head>` 里也不用等 `DOMContentLoaded`，页面启动阶段的报错和请求一条都不会丢。
@@ -55,7 +55,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 ### script 标签
 
 ```html
-<script src="https://unpkg.com/optik-sol" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.1" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | 属性 | 说明 |
@@ -72,7 +72,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 ### 打包器
 
 ```bash
-npm i optik-sol
+npm i optik-sol@0.4.1
 ```
 
 ```js

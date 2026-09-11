@@ -18,7 +18,7 @@ English | [简体中文](README.zh-CN.md)
 Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 86 KB gzipped for the current build.
 
 ```html
-<script src="https://unpkg.com/optik-sol"></script>
+<script src="https://unpkg.com/optik-sol@0.4.1"></script>
 ```
 
 Recording starts the moment the script executes. Drop it in `<head>` and there is no wait for `DOMContentLoaded`: errors and requests fired during page startup are all captured.
@@ -55,7 +55,7 @@ The full reasoning behind these trade-offs is in [DESIGN.md](DESIGN.md).
 ### Script tag
 
 ```html
-<script src="https://unpkg.com/optik-sol" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.1" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | Attribute | Description |
@@ -72,7 +72,7 @@ Once mounted, `window.Optik` is available.
 ### Bundler
 
 ```bash
-npm i optik-sol
+npm i optik-sol@0.4.1
 ```
 
 ```js
