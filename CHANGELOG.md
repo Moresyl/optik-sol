@@ -24,6 +24,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - CI now cancels superseded runs for the same workflow/ref, reducing stale verification results and runner usage.
 - Stabilized tab accessibility identifiers so plugin IDs with special characters cannot produce invalid relationships.
 - Plugin registration now rejects blank identifiers, and removing the active plugin safely returns to the Console tab.
+- Expandable values now expose keyboard activation and keep non-expandable primitives out of the focus order.
 
 ### Fixed
 
