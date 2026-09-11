@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Added keyboard-friendly tab navigation with roving focus, arrow/Home/End controls, and linked tab panels.
+- Deep object copy now forwards the remaining node budget to property expansion and preserves truncation evidence.
 - Refined the documentation theme for clearer navigation, readable code blocks, responsive spacing, and keyboard-visible focus states.
 - Pinned README installation examples to the current release and refreshed Solid and happy-dom patch dependencies.
 - Documented the supported browser baseline and clarified ESM/IIFE package entry points.
@@ -21,6 +23,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Deep copy no longer drops user properties whose names resemble internal slots.
 - Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
 - Added regression coverage for escaped quotes in highlighted source strings.
 - CSS syntax highlighting no longer treats comment markers inside quoted strings as comments.
