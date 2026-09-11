@@ -25,7 +25,7 @@ export function parseStack(stack: string, skipFrames = 0): CallFrame[] {
     if (match) {
       frames.push({
         functionName: match[1] ?? '(anonymous)',
-        url: match[2] ?? '',
+        url: sanitizeFrameUrl(match[2] ?? ''),
         lineNumber: Number(match[3]) || 0,
         columnNumber: Number(match[4]) || 0,
       });
@@ -36,7 +36,7 @@ export function parseStack(stack: string, skipFrames = 0): CallFrame[] {
     if (match) {
       frames.push({
         functionName: match[1] || '(anonymous)',
-        url: match[2] ?? '',
+        url: sanitizeFrameUrl(match[2] ?? ''),
         lineNumber: Number(match[3]) || 0,
         columnNumber: Number(match[4]) || 0,
       });
@@ -44,6 +44,21 @@ export function parseStack(stack: string, skipFrames = 0): CallFrame[] {
   }
 
   return frames.slice(skipFrames);
+}
+
+/** Stack locations are routinely copied into tickets; strip URL credentials and secrets. */
+function sanitizeFrameUrl(value: string): string {
+  if (!value) return value;
+  try {
+    const url = new URL(value);
+    url.username = '';
+    url.password = '';
+    url.search = '';
+    url.hash = '';
+    return url.href;
+  } catch {
+    return value;
+  }
 }
 
 /** True for frames inside Optik itself, which must never be shown as a call site. */
