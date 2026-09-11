@@ -149,6 +149,7 @@ describe('ElementPanel live DOM updates', () => {
     document.body.appendChild(target);
     const shadow = mountPanel();
     [...shadow.querySelectorAll('button')].find((candidate) => candidate.textContent?.includes('large-tree'))!.click();
+    [...shadow.querySelectorAll('button[aria-label="展开"]')].at(-1)?.click();
     expect(shadow.textContent).toContain('已限制显示前 500 个子节点');
   });
 });
