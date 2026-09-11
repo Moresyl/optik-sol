@@ -6,7 +6,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Refined the documentation theme for clearer navigation, readable code blocks, responsive spacing, and keyboard-visible focus states.
+- Pinned README installation examples to the current release and refreshed Solid and happy-dom patch dependencies.
+
 ### Fixed
+
+- UI controls now explicitly use non-submit button semantics, preventing accidental host-form submission when the console is embedded in a form.
 
 - Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
 - Network detail copy now applies the same redaction boundary to query parameters and request/response headers.
