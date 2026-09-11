@@ -22,6 +22,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Refined the documentation landing page spacing, mobile typography, action wrapping, and background treatment.
 - Clarified runtime trust boundaries and the requirement to use controlled builds and trusted protocol transports in package READMEs.
 - CI now cancels superseded runs for the same workflow/ref, reducing stale verification results and runner usage.
+- CI jobs now have a bounded execution timeout so hung verification cannot consume runners indefinitely.
 - Stabilized tab accessibility identifiers so plugin IDs with special characters cannot produce invalid relationships.
 - Plugin registration now rejects blank identifiers, and removing the active plugin safely returns to the Console tab.
 - Added regression coverage for blank plugin labels as well as identifiers.
