@@ -21,6 +21,8 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      - name: 审计生产依赖
+        run: pnpm audit --prod --audit-level high
 
       # 构建同时也是一道回归检查：UnoCSS 产物由 build 重新生成，
       # 源码里新写的类名如果拼错，这一步会静默少生成规则而不是报错，
