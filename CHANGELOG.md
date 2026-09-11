@@ -10,6 +10,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Refined the documentation theme for clearer navigation, readable code blocks, responsive spacing, and keyboard-visible focus states.
 - Pinned README installation examples to the current release and refreshed Solid and happy-dom patch dependencies.
+- Documented the supported browser baseline and clarified ESM/IIFE package entry points.
+- Added browser/default export conditions and preserved the global IIFE side effect declaration.
+- CI now audits production dependencies, validates package entry files, and checks the publish contract.
 
 ### Fixed
 
