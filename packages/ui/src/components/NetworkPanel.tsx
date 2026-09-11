@@ -316,7 +316,7 @@ function Section(props: {
   );
 }
 
-function KeyValueList(props: { items: [string, string][] }): JSX.Element {
+function KeyValueList(props: { items: [string, string][]; redact?: boolean }): JSX.Element {
   return (
     <Show
       when={props.items.length > 0}
@@ -327,7 +327,7 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
           <div class="selectable wrap-anywhere font-mono leading-5 py-0.5">
             <span style={{ color: 'var(--optik-token-key)' }}>{name}</span>
             <span class="text-fg-tertiary">: </span>
-            <span>{value}</span>
+            <span>{props.redact && CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}</span>
           </div>
         )}
       </For>
@@ -539,7 +539,7 @@ function RequestDetail(props: {
               />
             }
           >
-            <KeyValueList items={props.record.query} />
+            <KeyValueList items={props.record.query} redact />
           </Section>
         </Show>
 
@@ -560,7 +560,7 @@ function RequestDetail(props: {
             </Show>
           }
         >
-          <KeyValueList items={props.record.requestHeaders} />
+          <KeyValueList items={props.record.requestHeaders} redact />
         </Section>
 
         <Show when={props.record.requestBody}>
@@ -586,7 +586,7 @@ function RequestDetail(props: {
             </Show>
           }
         >
-          <KeyValueList items={props.record.responseHeaders} />
+          <KeyValueList items={props.record.responseHeaders} redact />
         </Section>
 
         <Section title="响应体">
