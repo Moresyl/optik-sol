@@ -205,7 +205,9 @@ function statusText(record: NetworkRecord): string {
  * 生成 cURL 命令。单引号转义按 shell 规则（'\'' 收尾再起一个引号），
  * 保证包含引号的 body 也能原样粘贴执行。
  */
-const CURL_SENSITIVE = /(?:authorization|cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf)/i;
+// Keep copy surfaces conservative: match both exact credential names and the
+// suffix/prefix variants commonly used by APIs (accessToken, id_token, x-api-key…).
+const CURL_SENSITIVE = /(?:authorization|proxy[-_]?authorization|cookie|set[-_]?cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf|auth|private[-_]?key|client[-_]?secret)/i;
 
 function safeCurlUrl(raw: string): string {
   try {
