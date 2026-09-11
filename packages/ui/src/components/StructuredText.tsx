@@ -223,6 +223,7 @@ function JsonNode(props: {
           <span data-code-token="punctuation">{Array.isArray(props.value) ? '[' : '{'}</span>
           <Show when={!empty()}>
             <button
+              type="button"
               class="min-h-6 px-1 text-fg-tertiary hover:text-fg-secondary"
               onClick={() => props.onToggle(props.path)}
               aria-label={`${expanded() ? '收起' : '展开'} ${props.name ?? 'JSON 根节点'}`}
@@ -268,6 +269,7 @@ function JsonNode(props: {
         </For>
         <Show when={count() > entries().length}>
           <button
+            type="button"
             class="min-h-8 text-accent hover:text-fg-secondary"
             style={{ 'margin-left': `${(props.depth + 1) * 12 + 20}px` }}
             onClick={() => setVisibleLimit((limit) => limit + TREE_PAGE_SIZE)}
