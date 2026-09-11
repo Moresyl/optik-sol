@@ -30,7 +30,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | **控制台** | 各级别日志、分组、重复合并、`%c` 样式、正则搜索与高亮、JSON 字符串展开与高亮、勾选批量复制、表达式求值（`$_` 引用上次结果） |
 | **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，格式化并高亮的请求/响应正文、分段耗时、结构化 WebSocket 帧、默认脱敏的 HAR 1.2 导出 |
 | **元素** | 实时更新并惰性展开的 DOM 树、页面内拾取、高亮、盒模型、计算样式、高亮外层 HTML、选择器及元数据批量复制 |
-| **存储** | localStorage / sessionStorage / Cookie / IndexedDB，可增删改查并以可折叠 JSON 树/代码查看值 |
+| **存储** | localStorage / sessionStorage / Cookie 支持读写；IndexedDB 提供只读检查，并以可折叠 JSON 树/代码查看值 |
 | **环境** | 设备、视口、安全区、内存、加载时序、有上限的主线程长任务证据、能力探测 |
 
 ## 特点

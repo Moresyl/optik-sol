@@ -30,7 +30,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, expandable highlighted JSON strings, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
 | **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — formatted and highlighted request/response bodies, timing breakdown, structured WebSocket frames, privacy-safe HAR 1.2 export |
 | **Elements** | Live, lazily expanded DOM tree, in-page picking, highlighting, box model, computed styles, highlighted outer HTML, selector and bulk metadata copy |
-| **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access and collapsible JSON tree/code views |
+| **Storage** | localStorage / sessionStorage / Cookie with read-write access, plus read-only IndexedDB inspection and collapsible JSON tree/code views |
 | **Environment** | Device, viewport, safe area, memory, load timing, bounded main-thread long-task evidence, capability detection |
 
 ## Design highlights
