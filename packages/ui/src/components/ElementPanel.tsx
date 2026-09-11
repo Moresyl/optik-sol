@@ -301,10 +301,14 @@ function TreeNode(props: {
   const MAX_VISIBLE_CHILDREN = 500;
   const [expanded, setExpanded] = createSignal(props.depth < 2);
 
+  const visibleChildren = createMemo(() => {
+    props.version();
+    return [...props.node.children].filter((child) => !isOwnNode(child));
+  });
+
   const children = createMemo(() => {
     if (!expanded()) return [];
-    props.version();
-    return [...props.node.children].filter((child) => !isOwnNode(child)).slice(0, MAX_VISIBLE_CHILDREN);
+    return visibleChildren().slice(0, MAX_VISIBLE_CHILDREN);
   });
 
   /** 只有一个文本子节点时直接内联显示，省掉一层无意义的展开。 */
@@ -380,7 +384,7 @@ function TreeNode(props: {
             />
           )}
         </For>
-        <Show when={props.node.children.length > MAX_VISIBLE_CHILDREN}>
+        <Show when={visibleChildren().length > MAX_VISIBLE_CHILDREN}>
           <div class="px-3 py-1 text-fg-tertiary text-xs" style={{ 'padding-left': `${16 + props.depth * 12}px` }}>
             已限制显示前 {MAX_VISIBLE_CHILDREN} 个子节点
           </div>
