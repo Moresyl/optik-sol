@@ -141,4 +141,14 @@ describe('ElementPanel live DOM updates', () => {
     shadow.querySelector<HTMLButtonElement>('[title="复制全部元素属性"]')!.click();
     expect(copy).toHaveBeenCalledWith(expect.stringContaining('data-role="card"'), '全部元素属性');
   });
+
+  it('caps very large child lists and explains the truncation', () => {
+    const target = document.createElement('section');
+    target.id = 'large-tree';
+    for (let index = 0; index < 501; index += 1) target.appendChild(document.createElement('span'));
+    document.body.appendChild(target);
+    const shadow = mountPanel();
+    [...shadow.querySelectorAll('button')].find((candidate) => candidate.textContent?.includes('large-tree'))!.click();
+    expect(shadow.textContent).toContain('已限制显示前 500 个子节点');
+  });
 });
