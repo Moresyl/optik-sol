@@ -318,6 +318,7 @@ export function App(props: AppProps): JSX.Element {
       */}
       <Show when={!open()}>
         <button
+          type="button"
           ref={attachLauncher}
           aria-label="打开调试面板"
           onClick={() => {
@@ -392,6 +393,7 @@ export function App(props: AppProps): JSX.Element {
                 <For each={tabs()}>
                   {(tab) => (
                     <button
+                      type="button"
                       // -mb-px 让选中态那条 2px 下划线压住容器自己的 1px 边框，
                       // 否则两条线并排，看着像描歪了
                       class="optik-tab shrink-0 row-center gap-1 px-3.5 min-h-11 -mb-px
@@ -434,6 +436,7 @@ export function App(props: AppProps): JSX.Element {
                 这也是 Shadow DOM 里最后一个 <svg>，去掉之后面板里不再有任何图标。
               */}
               <button
+                type="button"
                 class="icon-btn min-h-11 px-4 font-600 text-fg"
                 aria-label="关闭面板"
                 onClick={() => setOpen(false)}
