@@ -23,6 +23,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Clarified runtime trust boundaries and the requirement to use controlled builds and trusted protocol transports in package READMEs.
 - CI now cancels superseded runs for the same workflow/ref, reducing stale verification results and runner usage.
 - Stabilized tab accessibility identifiers so plugin IDs with special characters cannot produce invalid relationships.
+- Plugin registration now rejects blank identifiers, and removing the active plugin safely returns to the Console tab.
 
 ### Fixed
 
