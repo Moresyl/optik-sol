@@ -90,5 +90,10 @@ describe('network body helpers', () => {
       origin: '',
       query: [],
     });
+    expect(splitUrl('https://alice:secret@example.test/private?x=1')).toMatchObject({
+      url: 'https://example.test/private?x=1',
+      origin: 'https://example.test',
+      query: [['x', '1']],
+    });
   });
 });
