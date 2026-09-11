@@ -98,7 +98,7 @@ body {
 .VPDoc a:focus-visible,
 .VPButton:focus-visible,
 .VPMenu button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--vp-c-brand-1) 72%, white);
+  outline: 3px solid var(--vp-c-brand-1);
   outline-offset: 3px;
   border-radius: 6px;
 }
