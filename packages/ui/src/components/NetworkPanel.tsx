@@ -249,6 +249,10 @@ function safeCurlBody(body: NetworkBody): string {
   return text;
 }
 
+function safeFramePayload(payload: string): string {
+  return safeCurlBody({ text: payload, mimeType: 'application/json' });
+}
+
 function toCurl(record: NetworkRecord): string {
   const quote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
   const parts = [`curl -X ${record.method} ${quote(safeCurlUrl(record.url))}`];
@@ -607,10 +611,11 @@ function RequestDetail(props: {
                   </div>
                   <div class="mt-1">
                     <StructuredTextView
-                      text={frame.payload}
+                      text={safeFramePayload(frame.payload)}
                       label={`${frame.direction === 'send' ? '发送' : '接收'}帧`}
                       copier={props.copier}
                       defaultExpanded={false}
+                      showReveal={false}
                     />
                   </div>
                 </div>
