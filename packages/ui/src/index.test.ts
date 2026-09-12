@@ -74,6 +74,17 @@ describe('mount lifecycle', () => {
     app.destroy();
   });
 
+  it('supports roving keyboard navigation across panel tabs', () => {
+    mount({ capture: NO_CAPTURE, defaultOpen: true });
+    const root = document.querySelector<HTMLElement>('[data-optik-root]')!;
+    const tabs = [...root.shadowRoot!.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    expect(tabs[0]?.tabIndex).toBe(0);
+    expect(tabs[1]?.tabIndex).toBe(-1);
+    tabs[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }));
+    expect(tabs[1]?.tabIndex).toBe(0);
+    expect(tabs[1]?.getAttribute('aria-selected')).toBe('true');
+  });
+
   it('recovers launcher clicks when animation-frame scheduling is unavailable', () => {
     vi.useFakeTimers();
     vi.stubGlobal('PointerEvent', FakePointerEvent);
