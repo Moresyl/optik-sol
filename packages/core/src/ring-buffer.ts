@@ -45,7 +45,7 @@ export class RingBuffer<T> {
     this.#items[tail] = item;
     if (wasFull) {
       try {
-        this.#onEvict?.(evicted as T);
+      this.#safeEvict(evicted as T);
       } catch {
         // Cleanup hooks are best-effort; eviction must never break host instrumentation.
       }
@@ -70,7 +70,7 @@ export class RingBuffer<T> {
 
   clear(): void {
     if (this.#onEvict) {
-      for (const item of this) this.#onEvict(item);
+      for (const item of this) this.#safeEvict(item);
     }
     this.#items = new Array(this.#capacity);
     this.#head = 0;
@@ -90,7 +90,7 @@ export class RingBuffer<T> {
     const kept = existing.slice(overflow);
 
     if (this.#onEvict) {
-      for (let i = 0; i < overflow; i++) this.#onEvict(existing[i]!);
+      for (let i = 0; i < overflow; i++) this.#safeEvict(existing[i]!);
     }
 
     this.#capacity = capacity;
@@ -98,6 +98,14 @@ export class RingBuffer<T> {
     this.#head = 0;
     this.#size = kept.length;
     for (let i = 0; i < kept.length; i++) this.#items[i] = kept[i];
+  }
+
+  #safeEvict(item: T): void {
+    try {
+      this.#onEvict?.(item);
+    } catch {
+      // Cleanup hooks are best-effort and must not interrupt collection.
+    }
   }
 }
 

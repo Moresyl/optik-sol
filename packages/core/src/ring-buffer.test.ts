@@ -65,6 +65,14 @@ describe('RingBuffer', () => {
     expect(buffer.toArray()).toEqual([2]);
   });
 
+  it('isolates cleanup failures during clear and resize', () => {
+    const buffer = new RingBuffer<number>(2, () => { throw new Error('cleanup failed'); });
+    buffer.push(1); buffer.push(2);
+    expect(() => buffer.resize(1)).not.toThrow();
+    expect(() => buffer.clear()).not.toThrow();
+    expect(buffer.size).toBe(0);
+  });
+
   it.each([0, -1, 1_000_001, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects an invalid capacity: %s',
     (capacity) => {
