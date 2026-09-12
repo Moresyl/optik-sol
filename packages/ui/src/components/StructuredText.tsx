@@ -334,7 +334,7 @@ export function JsonTree(props: {
         />
       </div>
       <Show when={branches().truncated}>
-        <div class="px-2 py-1 border-t border-line text-fg-tertiary not-selectable">
+        <div class="px-2 py-1 border-t border-line text-fg-tertiary not-selectable" role="status" aria-live="polite">
           “全部展开”最多展开 {EXPAND_ALL_NODE_LIMIT} 个节点，避免阻塞被调试页面。
         </div>
       </Show>
