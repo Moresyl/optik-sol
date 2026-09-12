@@ -172,7 +172,8 @@ export class ObjectRegistry {
   }
 
   #allocateId(): string {
-    for (let attempts = 0; attempts < 1024; attempts++) {
+    const attemptsLimit = Math.min(this.#byId.size + 1, 1_000_000);
+    for (let attempts = 0; attempts < attemptsLimit; attempts++) {
       const numeric = this.#nextId;
       this.#nextId = numeric >= Number.MAX_SAFE_INTEGER ? 1 : numeric + 1;
       const id = `obj:${numeric}`;
