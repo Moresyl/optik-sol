@@ -271,13 +271,14 @@ export function ValueView(props: ValueProps): JSX.Element {
           class="wrap-anywhere"
           onClick={expandable() ? toggle : undefined}
           role={expandable() ? 'button' : undefined}
+          aria-expanded={expandable() ? expanded() : undefined}
           tabIndex={expandable() ? 0 : undefined}
           onKeyDown={
             expandable()
               ? (event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    toggle();
+                    if (!event.repeat) toggle();
                   }
                 }
               : undefined
