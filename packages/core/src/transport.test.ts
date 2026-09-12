@@ -173,6 +173,7 @@ describe('protocol transport orchestration', () => {
     ).rejects.toThrow();
     expect(() => sendEvent(serverTransport, 'x'.repeat(257), {})).toThrow(TypeError);
     expect(() => sendEvent(serverTransport, 42 as never, {})).toThrow(TypeError);
+    expect(() => sendEvent(serverTransport, 'Bad\nMethod', {})).toThrow(TypeError);
     expect(() => router.register(42 as never, () => null)).toThrow(TypeError);
     await expect(client.request(42 as never)).rejects.toThrow(TypeError);
   });

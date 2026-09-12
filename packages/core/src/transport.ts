@@ -311,7 +311,12 @@ function closedError(): ProtocolRequestError {
 }
 
 function assertMethod(method: string): void {
-  if (typeof method !== 'string' || method.length < 1 || method.length > 256) {
+  if (
+    typeof method !== 'string' ||
+    method.length < 1 ||
+    method.length > 256 ||
+    /[\u0000-\u001f\u007f]/.test(method)
+  ) {
     throw new TypeError('Protocol method must contain between 1 and 256 characters');
   }
 }
