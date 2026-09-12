@@ -27,6 +27,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:dist": "node scripts/verify-dist.mjs",
+    "check": "pnpm typecheck && pnpm test && pnpm test:dist && pnpm docs:build && pnpm check:buttons",
     "check:buttons": "node scripts/check-button-types.mjs",
     "typecheck": "tsc -p packages/core/tsconfig.json && tsc -p packages/ui/tsconfig.json && tsc -p packages/optik/tsconfig.json",
     "clean": "pnpm -r exec rimraf dist .turbo tsconfig.tsbuildinfo"
