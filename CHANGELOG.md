@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Network requests now expose classified badges and composable API/resource/stream filters with counts.
 - Distribution checks now smoke-test the core ESM/CJS public exports alongside the main package.
 - Protocol method names reject Unicode control and formatting characters for unambiguous transport logs.
 
