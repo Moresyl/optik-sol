@@ -55,6 +55,16 @@ describe('RingBuffer', () => {
     expect(onEvict).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the committed buffer state when an eviction callback throws', () => {
+    const buffer = new RingBuffer<number>(1, () => {
+      throw new Error('cleanup failed');
+    });
+    buffer.push(1);
+    expect(() => buffer.push(2)).toThrow('cleanup failed');
+    expect(buffer.size).toBe(1);
+    expect(buffer.toArray()).toEqual([2]);
+  });
+
   it.each([0, -1, 1_000_001, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects an invalid capacity: %s',
     (capacity) => {
