@@ -159,7 +159,7 @@ export class ProtocolClient {
       );
     }
 
-    const id = this.#nextId++;
+    const id = this.#allocateId();
     return new Promise<R>((resolve, reject) => {
       const pending: PendingRequest = {
         resolve: resolve as (value: unknown) => void,
@@ -244,6 +244,17 @@ export class ProtocolClient {
     if (pending.timer !== undefined) clearTimeout(pending.timer);
     if (ok) pending.resolve(value);
     else pending.reject(value);
+  }
+
+  #allocateId(): number {
+    // Keep identifiers exact even after a very long-lived session crosses the
+    // safe-integer boundary; never reuse an in-flight id.
+    for (let attempts = 0; attempts < Number.MAX_SAFE_INTEGER; attempts++) {
+      const id = this.#nextId;
+      this.#nextId = id >= Number.MAX_SAFE_INTEGER ? 1 : id + 1;
+      if (!this.#pending.has(id)) return id;
+    }
+    throw new Error('Protocol request id space exhausted');
   }
 }
 
