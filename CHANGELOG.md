@@ -45,6 +45,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Fixed
 
 - Ring-buffer eviction callbacks are isolated from host instrumentation, including `undefined` entries, so cleanup failures cannot interrupt collection.
+- The same cleanup isolation now applies when clearing or resizing a ring buffer.
 
 - Deep copy no longer drops user properties whose names resemble internal slots.
 - Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
