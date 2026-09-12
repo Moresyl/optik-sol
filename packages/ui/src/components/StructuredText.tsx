@@ -315,8 +315,8 @@ export function JsonTree(props: {
       <div class="row-center gap-1 px-2 py-1 border-b border-line not-selectable overflow-x-auto no-scrollbar">
         <span class="text-fg-tertiary shrink-0">树形结构</span>
         <span class="flex-1" />
-        <button type="button" class="icon-btn min-h-8 px-2" aria-label="展开全部 JSON 节点" onClick={() => setOpen(new Set(branches().paths))}>
-          全部展开
+        <button type="button" class="icon-btn min-h-8 px-2" aria-label="展开全部 JSON 节点（每层分页）" onClick={() => setOpen(new Set(branches().paths))}>
+          全部展开（分页）
         </button>
         <button type="button" class="icon-btn min-h-8 px-2" aria-label="收起全部 JSON 节点" onClick={() => setOpen(new Set())}>
           全部收起
