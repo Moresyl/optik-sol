@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- CI now covers Node.js 20, 22, and 24; all three workspace packages declare a Node.js 20+ runtime requirement.
+- Public API docs now document IIFE `autoMount()`, all supported `data-*` options, and invalid-value handling.
+
 - Network requests now expose classified badges and composable API/resource/stream filters with counts.
 - Distribution checks now smoke-test the core ESM/CJS public exports alongside the main package.
 - Protocol method names reject Unicode control and formatting characters for unambiguous transport logs.
