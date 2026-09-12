@@ -44,6 +44,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Ring-buffer eviction callbacks are isolated from host instrumentation, including `undefined` entries, so cleanup failures cannot interrupt collection.
+
 - Deep copy no longer drops user properties whose names resemble internal slots.
 - Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
 - Added regression coverage for escaped quotes in highlighted source strings.
