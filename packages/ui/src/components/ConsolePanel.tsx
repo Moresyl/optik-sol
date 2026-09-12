@@ -607,6 +607,16 @@ export function ConsolePanel(props: {
       } catch {
         // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
       }
+      // Some WebViews expose the input before selection APIs are ready; retry once
+      // on the next task so the command remains immediately editable.
+      setTimeout(() => {
+        if (!inputRef || document.activeElement !== inputRef) return;
+        try {
+          inputRef.setSelectionRange(caret, caret);
+        } catch {
+          // Best-effort enhancement; focus and value remain usable.
+        }
+      }, 0);
     });
   };
 
