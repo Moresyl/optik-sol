@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Distribution checks now smoke-test the core ESM/CJS public exports alongside the main package.
+- Protocol method names reject Unicode control and formatting characters for unambiguous transport logs.
+
 - `optik-core` now declares browser/default export conditions and the distribution gate smoke-tests its ESM/CJS public exports.
 - Protocol method validation rejects non-string values and control characters; request IDs remain safe across long-lived sessions.
 - Empty event-listener sets are pruned after unsubscribe to reduce retained state in long-running sessions.
