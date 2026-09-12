@@ -34,7 +34,8 @@ export class RingBuffer<T> {
     const tail = (this.#head + this.#size) % this.#capacity;
     let evicted: T | undefined;
 
-    if (this.#size === this.#capacity) {
+    const wasFull = this.#size === this.#capacity;
+    if (wasFull) {
       evicted = this.#items[this.#head];
       this.#head = (this.#head + 1) % this.#capacity;
     } else {
@@ -42,7 +43,7 @@ export class RingBuffer<T> {
     }
 
     this.#items[tail] = item;
-    if (evicted !== undefined) this.#onEvict?.(evicted);
+    if (wasFull) this.#onEvict?.(evicted as T);
     return evicted;
   }
 
