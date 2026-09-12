@@ -65,8 +65,7 @@ jobs:
 
       - name: Verify and build release artifacts
         run: |
-          pnpm build
-          pnpm typecheck
+          pnpm check
 
       - name: Pack npm packages
         run: |
