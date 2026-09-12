@@ -79,7 +79,11 @@ export function HighlightedCode(props: {
         )}
       </For>
       <Show when={lines().length > visible().length}>
-        <div class="px-2 py-1 text-fg-tertiary not-selectable">
+        <div
+          class="px-2 py-1 text-fg-tertiary not-selectable"
+          role="status"
+          aria-live="polite"
+        >
           还有 {lines().length - visible().length} 行…
         </div>
       </Show>
