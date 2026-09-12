@@ -27,7 +27,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:dist": "node scripts/verify-dist.mjs",
-    "check": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high && pnpm build && pnpm typecheck && pnpm test && pnpm test:dist && pnpm docs:build && pnpm check:buttons",
+    "check": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high && pnpm build && pnpm typecheck && pnpm test && pnpm test:dist && pnpm docs:build && pnpm check:buttons && pnpm check:docs-version",
     "check:offline": "pnpm install --frozen-lockfile --offline && pnpm check",
     "check:docs-version": "node scripts/verify-doc-version.mjs",
     "check:buttons": "node scripts/check-button-types.mjs",
