@@ -39,6 +39,13 @@ for (const [condition, field] of [['types', 'types'], ['browser', 'browser'], ['
 }
 const esm = await import('../packages/optik/dist/optik.js');
 const cjs = require('../packages/optik/dist/optik.cjs');
+const coreEsm = await import('../packages/core/dist/index.js');
+const coreCjs = require('../packages/core/dist/index.cjs');
+for (const [format, api] of [['core ESM', coreEsm], ['core CJS', coreCjs]]) {
+  for (const name of ['createKernel', 'ProtocolClient']) {
+    if (typeof api[name] !== 'function') throw new Error(`${format} build is missing the ${name} export`);
+  }
+}
 
 for (const [format, api] of [
   ['ESM', esm],
