@@ -60,7 +60,7 @@ describe('RingBuffer', () => {
       throw new Error('cleanup failed');
     });
     buffer.push(1);
-    expect(() => buffer.push(2)).toThrow('cleanup failed');
+    expect(() => buffer.push(2)).not.toThrow();
     expect(buffer.size).toBe(1);
     expect(buffer.toArray()).toEqual([2]);
   });

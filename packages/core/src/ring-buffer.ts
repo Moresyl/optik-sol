@@ -43,7 +43,13 @@ export class RingBuffer<T> {
     }
 
     this.#items[tail] = item;
-    if (wasFull) this.#onEvict?.(evicted as T);
+    if (wasFull) {
+      try {
+        this.#onEvict?.(evicted as T);
+      } catch {
+        // Cleanup hooks are best-effort; eviction must never break host instrumentation.
+      }
+    }
     return evicted;
   }
 
