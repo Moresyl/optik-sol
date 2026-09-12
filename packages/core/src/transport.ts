@@ -249,7 +249,10 @@ export class ProtocolClient {
   #allocateId(): number {
     // Keep identifiers exact even after a very long-lived session crosses the
     // safe-integer boundary; never reuse an in-flight id.
-    for (let attempts = 0; attempts < Number.MAX_SAFE_INTEGER; attempts++) {
+    // A transport cannot realistically have more than this many simultaneous
+    // requests; keep pathological exhaustion from turning into a long main-thread loop.
+    const attemptsLimit = Math.min(this.#pending.size + 1, 1024);
+    for (let attempts = 0; attempts < attemptsLimit; attempts++) {
       const id = this.#nextId;
       this.#nextId = id >= Number.MAX_SAFE_INTEGER ? 1 : id + 1;
       if (!this.#pending.has(id)) return id;
