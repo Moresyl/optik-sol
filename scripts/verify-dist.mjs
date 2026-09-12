@@ -2,6 +2,17 @@ import { createRequire } from 'node:module';
 import { access, readFile } from 'node:fs/promises';
 
 const require = createRequire(import.meta.url);
+const corePackage = JSON.parse(await readFile(new URL('../packages/core/package.json', import.meta.url), 'utf8'));
+const coreExports = corePackage.exports?.['.'];
+for (const [condition, field] of [['types', 'types'], ['browser', 'browser'], ['import', 'module'], ['require', 'main']]) {
+  if (coreExports?.[condition] !== corePackage[field]) {
+    throw new Error(`optik-core exports.${condition} must match package ${field} entry`);
+  }
+  await access(new URL(`../packages/core/${corePackage[field]}`, import.meta.url));
+}
+if (coreExports?.default !== corePackage.module) {
+  throw new Error('optik-core default export must match the ESM module entry');
+}
 const packageJson = JSON.parse(await readFile(new URL('../packages/optik/package.json', import.meta.url), 'utf8'));
 if (!Array.isArray(packageJson.sideEffects) || !packageJson.sideEffects.includes('./dist/optik.global.js')) {
   throw new Error('package metadata must preserve the global entry side effect');
