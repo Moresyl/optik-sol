@@ -44,6 +44,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Object-registry handles now use bounded safe IDs and skip live IDs when wrapping, preventing long-lived sessions from losing object references.
 - Ring-buffer eviction callbacks are isolated from host instrumentation, including `undefined` entries, so cleanup failures cannot interrupt collection.
 - The same cleanup isolation now applies when clearing or resizing a ring buffer.
 
