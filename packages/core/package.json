@@ -3,6 +3,9 @@
   "version": "0.4.1",
   "private": true,
   "description": "Optik Sol kernel — CDP-shaped browser instrumentation and bounded data domains with zero dependencies.",
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
