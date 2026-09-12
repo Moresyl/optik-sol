@@ -172,6 +172,9 @@ describe('protocol transport orchestration', () => {
       client.request('Data.clone', { callback: () => undefined }, { timeoutMs: 1 }),
     ).rejects.toThrow();
     expect(() => sendEvent(serverTransport, 'x'.repeat(257), {})).toThrow(TypeError);
+    expect(() => sendEvent(serverTransport, 42 as never, {})).toThrow(TypeError);
+    expect(() => router.register(42 as never, () => null)).toThrow(TypeError);
+    await expect(client.request(42 as never)).rejects.toThrow(TypeError);
   });
 
   it('validates registrations and ignores a late async result after disposal', async () => {
