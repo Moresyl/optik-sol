@@ -17,6 +17,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v6
 
@@ -25,13 +29,14 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - name: 统一质量门禁
         run: pnpm check
       - run: pnpm test:coverage
+        if: matrix.node-version == 24
       - name: 验证发布包契约
         run: pnpm --filter optik-sol pack --dry-run
       - name: 检查补丁格式
