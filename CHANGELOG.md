@@ -32,6 +32,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Expandable values now expose keyboard activation and keep non-expandable primitives out of the focus order.
 - Unevaluated getters are now shown explicitly instead of being mistaken for `undefined` values.
 - README design highlights now document keyboard and touch interaction guarantees.
+- Added regression coverage for roving focus and arrow-key panel tab navigation.
 
 ### Fixed
 
