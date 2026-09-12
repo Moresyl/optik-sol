@@ -8,6 +8,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- `optik-core` now declares browser/default export conditions and the distribution gate smoke-tests its ESM/CJS public exports.
+- Protocol method validation rejects non-string values and control characters; request IDs remain safe across long-lived sessions.
+- Empty event-listener sets are pruned after unsubscribe to reduce retained state in long-running sessions.
+- JSON tree truncation and expand-all limits are announced to assistive technologies; persisted layout storage failures degrade safely.
+
 - Added keyboard-friendly tab navigation with roving focus, arrow/Home/End controls, and linked tab panels.
 - Deep object copy now forwards the remaining node budget to property expansion and preserves truncation evidence.
 - Refined the documentation theme for clearer navigation, readable code blocks, responsive spacing, and keyboard-visible focus states.
