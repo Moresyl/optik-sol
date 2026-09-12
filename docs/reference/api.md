@@ -8,6 +8,12 @@
 
 返回当前实例。尚未挂载或已销毁时返回 `null`。
 
+## `autoMount(): void`
+
+仅供 IIFE/`<script>` 入口使用：读取当前脚本的 `data-*` 配置并立即挂载。ESM 不会自动调用它；需要手动挂载时，在脚本标签上加入 `data-optik-manual`。
+
+支持的脚本属性：`data-theme="light|dark"`、`data-open`、`data-max-logs`、`data-max-requests`、`data-max-long-tasks`。容量必须为 1 到内核上限之间的整数，非法值会被安全忽略。
+
 ## `OptikInstance`
 
 | 成员 | 说明 |
