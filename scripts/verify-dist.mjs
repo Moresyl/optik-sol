@@ -14,6 +14,13 @@ if (coreExports?.default !== corePackage.module) {
   throw new Error('optik-core default export must match the ESM module entry');
 }
 const packageJson = JSON.parse(await readFile(new URL('../packages/optik/package.json', import.meta.url), 'utf8'));
+const uiPackage = JSON.parse(await readFile(new URL('../packages/ui/package.json', import.meta.url), 'utf8'));
+for (const field of ['main', 'module', 'types']) {
+  if (uiPackage.exports?.['.']?.[field === 'module' ? 'import' : field] !== uiPackage[field]) {
+    throw new Error(`optik-ui exports metadata must match package ${field} entry`);
+  }
+  await access(new URL(`../packages/ui/${uiPackage[field]}`, import.meta.url));
+}
 if (!Array.isArray(packageJson.sideEffects) || !packageJson.sideEffects.includes('./dist/optik.global.js')) {
   throw new Error('package metadata must preserve the global entry side effect');
 }
