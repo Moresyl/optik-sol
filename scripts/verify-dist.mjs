@@ -16,7 +16,7 @@ if (coreExports?.default !== corePackage.module) {
 const packageJson = JSON.parse(await readFile(new URL('../packages/optik/package.json', import.meta.url), 'utf8'));
 const uiPackage = JSON.parse(await readFile(new URL('../packages/ui/package.json', import.meta.url), 'utf8'));
 for (const field of ['main', 'module', 'browser', 'types']) {
-  const condition = field === 'main' ? 'require' : field === 'module' ? 'import' : 'types';
+  const condition = field === 'main' ? 'require' : field === 'module' ? 'import' : field === 'browser' ? 'browser' : 'types';
   if (uiPackage.exports?.['.']?.[condition] !== uiPackage[field]) {
     throw new Error(`optik-ui exports metadata must match package ${field} entry`);
   }
