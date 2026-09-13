@@ -598,25 +598,22 @@ export function ConsolePanel(props: {
     setHistoryDraft(command.expression);
     setHistoryCursor(-1);
     afterFrame(() => {
-      if (!inputRef) return;
-      inputRef.focus();
       const quotes = command.expression.indexOf("''");
       const caret = quotes === -1 ? command.expression.length : quotes + 1;
-      try {
-        inputRef.setSelectionRange(caret, caret);
-      } catch {
-        // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
-      }
-      // Some WebViews expose the input before selection APIs are ready; retry once
-      // on the next task so the command remains immediately editable.
-      setTimeout(() => {
-        if (!inputRef || document.activeElement !== inputRef) return;
+      const focusAndPlaceCaret = () => {
+        if (!inputRef) return false;
+        inputRef.focus();
         try {
           inputRef.setSelectionRange(caret, caret);
         } catch {
-          // Best-effort enhancement; focus and value remain usable.
+          // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
         }
-      }, 0);
+        return document.activeElement === inputRef;
+      };
+      if (!focusAndPlaceCaret()) {
+        // The input can appear one task after the mode switch in slow WebViews.
+        setTimeout(focusAndPlaceCaret, 0);
+      }
     });
   };
 
