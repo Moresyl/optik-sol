@@ -43,13 +43,13 @@ features:
 ## 一行开始
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 或使用 npm：
 
 ```bash
-npm i optik-sol@0.4.1
+npm i optik-sol@0.4.2
 ```
 
 脚本执行后立刻开始采集，点击页面右下角的 **Optik** 即可打开面板。需要打包器、按需挂载或严格的生产环境控制？继续阅读[快速开始](/guide/getting-started)。

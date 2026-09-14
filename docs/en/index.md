@@ -43,13 +43,13 @@ features:
 ## Start with one line
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 Or install from npm:
 
 ```bash
-npm i optik-sol@0.4.1
+npm i optik-sol@0.4.2
 ```
 
 Collection starts as soon as the script executes. Tap **Optik** in the bottom-right corner to open the panel. Continue with [Getting Started](/en/guide/getting-started) for bundlers, controlled mounting, and production-safe patterns.

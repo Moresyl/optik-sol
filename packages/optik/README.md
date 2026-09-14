@@ -5,11 +5,11 @@ A mobile web debugging console. One `<script>` tag, no server, no runtime depend
 English | [简体中文](https://github.com/Moresyl/optik-sol/blob/main/README.zh-CN.md)
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 ```bash
-npm i optik-sol@0.4.1
+npm i optik-sol@0.4.2
 ```
 
 ```ts

@@ -24,7 +24,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 Optik 运行在被调试页面内，采集数据默认只保留在当前页面。它是诊断面板而不是安全沙箱：任何能在页面执行的脚本都可能读取同一份证据。请仅在受控构建中启用，并且只为可信或已认证的对象连接协议传输。
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 脚本一执行就开始记录，放在 `<head>` 里也不用等 `DOMContentLoaded`，页面启动阶段的报错和请求一条都不会丢。
@@ -62,7 +62,7 @@ Optik 运行在被调试页面内，采集数据默认只保留在当前页面�
 ### script 标签
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | 属性 | 说明 |
@@ -79,7 +79,7 @@ Optik 运行在被调试页面内，采集数据默认只保留在当前页面�
 ### 打包器
 
 ```bash
-npm i optik-sol@0.4.1
+npm i optik-sol@0.4.2
 ```
 
 ```js

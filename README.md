@@ -24,7 +24,7 @@ Compatibility baseline: modern evergreen browsers, iOS 15+, and Android 10+. The
 Optik runs in the inspected page and keeps captured data in that page by default. It is a diagnostics surface, not a security sandbox: any script that can execute in the page may be able to read the same evidence. Enable it only in controlled builds, and attach protocol transports only when they are trusted or authenticated.
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 Recording starts the moment the script executes. Drop it in `<head>` and there is no wait for `DOMContentLoaded`: errors and requests fired during page startup are all captured.
@@ -62,7 +62,7 @@ The full reasoning behind these trade-offs is in [DESIGN.md](DESIGN.md).
 ### Script tag
 
 ```html
-<script src="https://unpkg.com/optik-sol@0.4.1" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | Attribute | Description |
@@ -79,7 +79,7 @@ Once mounted, `window.Optik` is available.
 ### Bundler
 
 ```bash
-npm i optik-sol@0.4.1
+npm i optik-sol@0.4.2
 ```
 
 ```js

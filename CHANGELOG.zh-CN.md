@@ -6,6 +6,8 @@
 
 ## [未发布]
 
+## [0.4.2] - 2026-09-14
+
 ### 改进
 
 - CI 现在覆盖 Node.js 20、22、24；三个 workspace 包明确声明 Node.js 20+ 运行时要求。
@@ -141,7 +143,8 @@
 - **完整还原**：`destroy()` 按原始属性描述符逐一还原所有插桩
 - 产物三份：ESM、CJS、单文件 IIFE（gzip 约 46 KB）
 
-[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...HEAD
+[未发布]: https://github.com/Moresyl/optik-sol/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0

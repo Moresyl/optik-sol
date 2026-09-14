@@ -14,7 +14,7 @@ Pin the version so the debugging environment remains reproducible:
 
 ```html
 <script
-  src="https://unpkg.com/optik-sol@0.4.1"
+  src="https://unpkg.com/optik-sol@0.4.2"
   data-theme="light"
   data-max-logs="2000"
   data-max-requests="500"
@@ -26,7 +26,7 @@ Instrumentation starts when the script executes. It does not wait for `DOMConten
 ## Option 2: Mount through npm
 
 ```bash
-npm install optik-sol@0.4.1
+npm install optik-sol@0.4.2
 ```
 
 ```ts
@@ -46,7 +46,7 @@ Repeated `mount()` calls reuse the active instance instead of stacking panels.
 
 ```html
 <script
-  src="https://unpkg.com/optik-sol@0.4.1"
+  src="https://unpkg.com/optik-sol@0.4.2"
   data-optik-manual
 ></script>
 <script>

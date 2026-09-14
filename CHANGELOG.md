@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-14
+
 ### Changed
 
 - CI now covers Node.js 20, 22, and 24; all three workspace packages declare a Node.js 20+ runtime requirement.
@@ -140,7 +142,8 @@ First release.
 - **Full restoration**: `destroy()` restores every hook from its original property descriptor
 - Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0
