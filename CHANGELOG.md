@@ -6,6 +6,66 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-14
+
+### Changed
+
+- CI now covers Node.js 20, 22, and 24; all three workspace packages declare a Node.js 20+ runtime requirement.
+- Public API docs now document IIFE `autoMount()`, all supported `data-*` options, and invalid-value handling.
+
+- Network requests now expose classified badges and composable API/resource/stream filters with counts.
+- Distribution checks now smoke-test the core ESM/CJS public exports alongside the main package.
+- Protocol method names reject Unicode control and formatting characters for unambiguous transport logs.
+
+- `optik-core` now declares browser/default export conditions and the distribution gate smoke-tests its ESM/CJS public exports.
+- Protocol method validation rejects non-string values and control characters; request IDs remain safe across long-lived sessions.
+- Empty event-listener sets are pruned after unsubscribe to reduce retained state in long-running sessions.
+- JSON tree truncation and expand-all limits are announced to assistive technologies; persisted layout storage failures degrade safely.
+
+- Added keyboard-friendly tab navigation with roving focus, arrow/Home/End controls, and linked tab panels.
+- Deep object copy now forwards the remaining node budget to property expansion and preserves truncation evidence.
+- Refined the documentation theme for clearer navigation, readable code blocks, responsive spacing, and keyboard-visible focus states.
+- Pinned README installation examples to the current release and refreshed Solid and happy-dom patch dependencies.
+- Documented the supported browser baseline and clarified ESM/IIFE package entry points.
+- Added browser/default export conditions and preserved the global IIFE side effect declaration.
+- CI now audits production dependencies, validates package entry files, and checks the publish contract.
+- Added matching npm installation snippets to both documentation home pages.
+- Aligned SolidJS patch ranges across the UI and public package workspaces.
+- Documentation now respects reduced-motion preferences and provides a consistent selection highlight.
+- Added cross-section links to both documentation sidebars and navigation for comparison pages.
+- Refined the documentation landing page spacing, mobile typography, action wrapping, and background treatment.
+- Clarified runtime trust boundaries and the requirement to use controlled builds and trusted protocol transports in package READMEs.
+- CI now cancels superseded runs for the same workflow/ref, reducing stale verification results and runner usage.
+- CI jobs now have a bounded execution timeout so hung verification cannot consume runners indefinitely.
+- CI now declares a least-privilege read-only repository permission.
+- Stabilized tab accessibility identifiers so plugin IDs with special characters cannot produce invalid relationships.
+- Plugin registration now rejects blank identifiers, and removing the active plugin safely returns to the Console tab.
+- Added regression coverage for blank plugin labels as well as identifiers.
+- Plugin IDs with leading or trailing whitespace are rejected to keep lookup and tab identity stable.
+- Plugin labels now apply the same whitespace validation for predictable tab names.
+- Expandable values now expose keyboard activation and keep non-expandable primitives out of the focus order.
+- Unevaluated getters are now shown explicitly instead of being mistaken for `undefined` values.
+- README design highlights now document keyboard and touch interaction guarantees.
+- Added regression coverage for roving focus and arrow-key panel tab navigation.
+
+### Fixed
+
+- Object-registry handles now use bounded safe IDs and skip live IDs when wrapping, preventing long-lived sessions from losing object references.
+- Ring-buffer eviction callbacks are isolated from host instrumentation, including `undefined` entries, so cleanup failures cannot interrupt collection.
+- The same cleanup isolation now applies when clearing or resizing a ring buffer.
+
+- Deep copy no longer drops user properties whose names resemble internal slots.
+- Code highlighting now keeps URL separators inside quoted strings and recognises inline comments safely.
+- Added regression coverage for escaped quotes in highlighted source strings.
+- CSS syntax highlighting no longer treats comment markers inside quoted strings as comments.
+- UI controls now explicitly use non-submit button semantics, preventing accidental host-form submission when the console is embedded in a form.
+
+- Copied cURL commands now redact URL credentials, sensitive query parameters, sensitive request headers, and structured request-body fields by default.
+- Network detail copy now applies the same redaction boundary to query parameters and request/response headers.
+- Network detail views now redact sensitive query parameters and request/response header values by default.
+- Network records now remove URL username and password components before they can appear in the panel, protocol events, or HAR exports.
+- HAR text and WebSocket frame exports now redact credential-like key/value payloads by default.
+- Environment evidence now redacts page URL credentials, query parameters, and fragments by default, with an explicit raw URL reveal for intentional debugging.
 ## [0.4.1] - 2026-09-08
 
 ### Added
@@ -82,7 +142,8 @@ First release.
 - **Full restoration**: `destroy()` restores every hook from its original property descriptor
 - Three build outputs: ESM, CJS, and a single-file IIFE (~46 KB gzipped)
 
-[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Moresyl/optik-sol/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Moresyl/optik-sol/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Moresyl/optik-sol/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Moresyl/optik-sol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Moresyl/optik-sol/compare/v0.2.0...v0.3.0

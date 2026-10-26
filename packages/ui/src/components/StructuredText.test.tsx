@@ -73,6 +73,38 @@ describe('structured text helpers', () => {
       ]),
     );
   });
+
+  it('keeps protocol separators inside JavaScript strings', () => {
+    expect(tokenizeCodeLine("const url = 'https://example.test/api';", 'javascript')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: "'https://example.test/api'", kind: 'string' }),
+      ]),
+    );
+  });
+
+  it('recognises inline JavaScript comments after code', () => {
+    expect(tokenizeCodeLine('const value = 1;// note', 'javascript')).toEqual(
+      expect.arrayContaining([expect.objectContaining({ text: '// note', kind: 'comment' })]),
+    );
+  });
+
+  it('keeps escaped quotes inside strings from ending the string state', () => {
+    expect(tokenizeCodeLine(String.raw`const text = "say \\\"hi\\\" // still text";`, 'javascript')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'string' }),
+      ]),
+    );
+  });
+
+  it('keeps CSS comment markers inside quoted strings', () => {
+    const tokens = tokenizeCodeLine(".x { content: '/* not a comment */'; }", 'css');
+    expect(tokens).toEqual(expect.arrayContaining([
+      expect.objectContaining({ text: "'/* not a comment */'", kind: 'string' }),
+    ]));
+    expect(tokens).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'comment' }),
+    ]));
+  });
 });
 
 describe('StructuredTextView', () => {

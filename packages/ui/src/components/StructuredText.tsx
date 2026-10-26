@@ -79,7 +79,11 @@ export function HighlightedCode(props: {
         )}
       </For>
       <Show when={lines().length > visible().length}>
-        <div class="px-2 py-1 text-fg-tertiary not-selectable">
+        <div
+          class="px-2 py-1 text-fg-tertiary not-selectable"
+          role="status"
+          aria-live="polite"
+        >
           还有 {lines().length - visible().length} 行…
         </div>
       </Show>
@@ -223,6 +227,7 @@ function JsonNode(props: {
           <span data-code-token="punctuation">{Array.isArray(props.value) ? '[' : '{'}</span>
           <Show when={!empty()}>
             <button
+              type="button"
               class="min-h-6 px-1 text-fg-tertiary hover:text-fg-secondary"
               onClick={() => props.onToggle(props.path)}
               aria-label={`${expanded() ? '收起' : '展开'} ${props.name ?? 'JSON 根节点'}`}
@@ -268,6 +273,7 @@ function JsonNode(props: {
         </For>
         <Show when={count() > entries().length}>
           <button
+            type="button"
             class="min-h-8 text-accent hover:text-fg-secondary"
             style={{ 'margin-left': `${(props.depth + 1) * 12 + 20}px` }}
             onClick={() => setVisibleLimit((limit) => limit + TREE_PAGE_SIZE)}
@@ -309,10 +315,10 @@ export function JsonTree(props: {
       <div class="row-center gap-1 px-2 py-1 border-b border-line not-selectable overflow-x-auto no-scrollbar">
         <span class="text-fg-tertiary shrink-0">树形结构</span>
         <span class="flex-1" />
-        <button class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set(branches().paths))}>
+        <button type="button" class="icon-btn min-h-8 px-2" aria-label="展开全部 JSON 节点（每层分页）" title="每层最多显示 100 项，可继续分页" onClick={() => setOpen(new Set(branches().paths))}>
           全部展开
         </button>
-        <button class="icon-btn min-h-8 px-2" onClick={() => setOpen(new Set())}>
+        <button type="button" class="icon-btn min-h-8 px-2" aria-label="收起全部 JSON 节点" onClick={() => setOpen(new Set())}>
           全部收起
         </button>
       </div>
@@ -328,7 +334,7 @@ export function JsonTree(props: {
         />
       </div>
       <Show when={branches().truncated}>
-        <div class="px-2 py-1 border-t border-line text-fg-tertiary not-selectable">
+        <div class="px-2 py-1 border-t border-line text-fg-tertiary not-selectable" role="status" aria-live="polite">
           “全部展开”最多展开 {EXPAND_ALL_NODE_LIMIT} 个节点，避免阻塞被调试页面。
         </div>
       </Show>
@@ -369,6 +375,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         </span>
         <Show when={hasTree()}>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': mode() === 'tree' }}
             aria-pressed={mode() === 'tree'}
@@ -377,6 +384,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
             树形
           </button>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': mode() === 'code' }}
             aria-pressed={mode() === 'code'}
@@ -387,6 +395,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         </Show>
         <Show when={mode() === 'code'}>
           <button
+            type="button"
             class="chip shrink-0"
             aria-pressed={wrap()}
             title={wrap() ? '当前自动换行' : '当前保持原始行'}
@@ -395,11 +404,12 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
             {wrap() ? '不换行' : '自动换行'}
           </button>
           <Show when={long()}>
-            <button class="chip shrink-0" onClick={() => setExpanded(!expanded())}>
+            <button type="button" class="chip shrink-0" aria-expanded={expanded()} onClick={() => setExpanded(!expanded())}>
               {expanded() ? '收起代码' : `展开代码（${lineCount()} 行）`}
             </button>
             <Show when={expanded() && lineCount() > codeLimit()}>
               <button
+                type="button"
                 class="chip shrink-0"
                 onClick={() => setCodeLimit((limit) => limit + CODE_PAGE_SIZE)}
               >
@@ -417,6 +427,7 @@ export function StructuredTextView(props: StructuredTextProps): JSX.Element {
         />
         <Show when={props.showReveal !== false}>
           <button
+            type="button"
             class="icon-btn min-h-8 px-2"
             onClick={() => props.copier.reveal(props.text, props.label)}
           >

@@ -368,10 +368,11 @@ function LogRow(props: {
   return (
     <div
       ref={attachLongPress}
-      class={`flex items-stretch border-b border-line ${LEVEL_CLASS[props.entry.level]}`}
+      class={`optik-log-row flex items-stretch border-b border-line ${LEVEL_CLASS[props.entry.level]}`}
     >
       <Show when={props.store.selectionMode()}>
         <button
+          type="button"
           class="shrink-0 w-6 h-6 mt-1.5 ml-3 rounded border border-line-strong row-center justify-center leading-none not-selectable"
           classList={{ 'bg-accent border-accent text-accent-fg': selected() }}
           aria-label={selected() ? '取消选择' : '选择'}
@@ -469,7 +470,7 @@ function LogRow(props: {
         {/* 「复制」已经移到行尾常驻列，这里只剩展开开关，没有可展开参数时整行不占高度 */}
         <Show when={hasStructured()}>
           <div class="row-center gap-3 mt-1 not-selectable">
-            <button class="text-accent py-1" onClick={() => setExpanded(!expanded())}>
+            <button type="button" class="text-accent py-1" onClick={() => setExpanded(!expanded())}>
               {expanded() ? '收起' : '展开对象'}
             </button>
           </div>
@@ -597,14 +598,21 @@ export function ConsolePanel(props: {
     setHistoryDraft(command.expression);
     setHistoryCursor(-1);
     afterFrame(() => {
-      if (!inputRef) return;
-      inputRef.focus();
       const quotes = command.expression.indexOf("''");
       const caret = quotes === -1 ? command.expression.length : quotes + 1;
-      try {
-        inputRef.setSelectionRange(caret, caret);
-      } catch {
-        // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
+      const focusAndPlaceCaret = () => {
+        if (!inputRef) return false;
+        inputRef.focus();
+        try {
+          inputRef.setSelectionRange(caret, caret);
+        } catch {
+          // 个别 WebView 在未完成布局时会抛，位置不对不影响输入
+        }
+        return document.activeElement === inputRef;
+      };
+      if (!focusAndPlaceCaret()) {
+        // The input can appear one task after the mode switch in slow WebViews.
+        setTimeout(focusAndPlaceCaret, 0);
       }
     });
   };
@@ -658,6 +666,7 @@ export function ConsolePanel(props: {
           <For each={ALL_LEVELS}>
             {(level) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': props.store.filter().levels.has(level) }}
                 aria-pressed={props.store.filter().levels.has(level)}
@@ -686,6 +695,7 @@ export function ConsolePanel(props: {
             onInput={(event) => props.store.setQuery(event.currentTarget.value)}
           />
           <button
+            type="button"
             class="chip shrink-0 font-mono"
             classList={{ 'bg-accent text-accent-fg': props.store.filter().useRegex }}
             title="正则匹配"
@@ -695,6 +705,7 @@ export function ConsolePanel(props: {
             .*
           </button>
           <button
+            type="button"
             class="chip shrink-0 font-mono"
             classList={{ 'bg-accent text-accent-fg': props.store.filter().caseSensitive }}
             title="区分大小写"
@@ -710,6 +721,7 @@ export function ConsolePanel(props: {
             {props.store.visibleLogs().length}/{props.store.logs().length} 条
           </span>
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': props.store.selectionMode() }}
             onClick={() => {
@@ -739,7 +751,7 @@ export function ConsolePanel(props: {
             }
             class={`shrink-0 min-h-8 px-2.5 ${hasSelection() ? 'text-accent' : ''}`}
           />
-          <button class="chip shrink-0 text-danger" onClick={props.store.clearLogs}>
+          <button type="button" class="chip shrink-0 text-danger" onClick={props.store.clearLogs}>
             清空
           </button>
         </div>
@@ -781,6 +793,7 @@ export function ConsolePanel(props: {
       */}
         <Show when={!autoScroll() && props.store.visibleLogs().length > 0}>
           <button
+            type="button"
             class="absolute right-3 bottom-3 px-3 min-h-9 rounded-full not-selectable
  bg-accent text-accent-fg [box-shadow:0_2px_8px_rgba(0,0,0,0.25)]"
             onClick={() => {
@@ -804,7 +817,7 @@ export function ConsolePanel(props: {
           它不是用来开指令列表的：指令列表由右边那条整宽的按钮打开，
           那条按钮在指令态下占满剩余宽度，是这一栏里最容易点中的目标。
         */}
-        <button class="btn shrink-0 px-2.5" onClick={toggleMode}>
+        <button type="button" class="btn shrink-0 px-2.5" onClick={toggleMode}>
           {mode() === 'command' ? '输入框' : '指令'}
         </button>
 
@@ -812,6 +825,7 @@ export function ConsolePanel(props: {
           when={mode() === 'input'}
           fallback={
             <button
+              type="button"
               class="btn flex-1 min-w-0 text-fg-secondary"
               aria-expanded={picker()}
               onClick={() => setPicker(true)}
@@ -850,7 +864,7 @@ export function ConsolePanel(props: {
               }
             }}
           />
-          <button class="btn-primary shrink-0" onClick={() => run()}>
+          <button type="button" class="btn-primary shrink-0" onClick={() => run()}>
             执行
           </button>
         </Show>
@@ -924,7 +938,7 @@ function CommandSheet(props: {
     >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
         <span class="flex-1 min-w-0 not-selectable">内置指令</span>
-        <button ref={closeButton} class="chip shrink-0" onClick={props.onClose}>
+        <button type="button" ref={closeButton} class="chip shrink-0" onClick={props.onClose}>
           关闭
         </button>
       </div>
@@ -936,6 +950,7 @@ function CommandSheet(props: {
           <For each={props.history.slice(0, 5)}>
             {(expression) => (
               <button
+                type="button"
                 class="block w-full text-left px-3 py-2 min-h-11 border-b border-line
  not-selectable active:bg-bg-sunken"
                 onClick={() => props.onPickHistory(expression)}
@@ -953,6 +968,7 @@ function CommandSheet(props: {
               <For each={group.commands}>
                 {(command) => (
                   <button
+                    type="button"
                     class="block w-full text-left px-3 py-2 min-h-11 border-b border-line
  not-selectable active:bg-bg-sunken"
                     classList={{ 'bg-danger-bg': armed() === command.expression }}

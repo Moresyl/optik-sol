@@ -1,17 +1,30 @@
 {
   "name": "optik-sol",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Optik Sol — a mobile web debugging console. One script tag, no server, no runtime dependencies.",
+  "engines": {
+    "node": ">=20"
+  },
+  "browserslist": [
+    "defaults",
+    "iOS >= 15",
+    "Android >= 10"
+  ],
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/optik.global.js"
+  ],
   "keywords": [
     "debug",
     "console",
     "devtools",
     "mobile",
     "inspector",
-    "webview"
+    "webview",
+    "shadow-dom",
+    "network-inspector",
+    "storage-inspector"
   ],
   "author": "Moresyl and contributors",
   "repository": {
@@ -26,6 +39,7 @@
   ],
   "main": "./dist/optik.cjs",
   "module": "./dist/optik.js",
+  "browser": "./dist/optik.js",
   "types": "./dist/index.d.ts",
   "unpkg": "./dist/optik.global.js",
   "jsdelivr": "./dist/optik.global.js",
@@ -36,8 +50,10 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/optik.js",
       "import": "./dist/optik.js",
-      "require": "./dist/optik.cjs"
+      "require": "./dist/optik.cjs",
+      "default": "./dist/optik.js"
     }
   },
   "scripts": {
@@ -51,7 +67,7 @@
     "rimraf": "^6.1.3",
     "rollup": "^4.62.4",
     "rollup-plugin-dts": "^6.5.1",
-    "solid-js": "^1.9.14",
+    "solid-js": "^1.9.15",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
     "vite-plugin-solid": "^2.11.14"

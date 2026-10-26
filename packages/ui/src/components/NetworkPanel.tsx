@@ -205,36 +205,89 @@ function statusText(record: NetworkRecord): string {
  * 生成 cURL 命令。单引号转义按 shell 规则（'\'' 收尾再起一个引号），
  * 保证包含引号的 body 也能原样粘贴执行。
  */
+// Keep copy surfaces conservative: match both exact credential names and the
+// suffix/prefix variants commonly used by APIs (accessToken, id_token, x-api-key…).
+const CURL_SENSITIVE = /(?:authorization|proxy[-_]?authorization|cookie|set[-_]?cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf|auth|private[-_]?key|client[-_]?secret)/i;
+
+function safeCurlUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.username = '';
+    url.password = '';
+    for (const key of [...url.searchParams.keys()]) {
+      if (CURL_SENSITIVE.test(key)) url.searchParams.set(key, '[REDACTED]');
+    }
+    return url.href;
+  } catch {
+    return raw;
+  }
+}
+
+function safeCurlBody(body: NetworkBody): string {
+  const text = body.text;
+  if (!text || text.length > 1024 * 1024) return text ?? '';
+  const mime = body.mimeType?.toLowerCase() ?? '';
+  if (mime.includes('json')) {
+    try {
+      const redact = (value: unknown): unknown => {
+        if (Array.isArray(value)) return value.map(redact);
+        if (value && typeof value === 'object') {
+          return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, CURL_SENSITIVE.test(key) ? '[REDACTED]' : redact(item)]));
+        }
+        return value;
+      };
+      return JSON.stringify(redact(JSON.parse(text)));
+    } catch {
+      return text;
+    }
+  }
+  if (mime.includes('x-www-form-urlencoded')) {
+    const params = new URLSearchParams(text);
+    for (const key of [...params.keys()]) if (CURL_SENSITIVE.test(key)) params.set(key, '[REDACTED]');
+    return params.toString();
+  }
+  return text;
+}
+
+function safeFramePayload(payload: string): string {
+  const json = safeCurlBody({ text: payload, mimeType: 'application/json' });
+  if (json !== payload) return json;
+  return payload.replace(
+    /((?:authorization|cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf)\s*[=:]\s*)([^\s,&]+)/gi,
+    '$1[REDACTED]',
+  );
+}
+
 function toCurl(record: NetworkRecord): string {
   const quote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
-  const parts = [`curl -X ${record.method} ${quote(record.url)}`];
+  const parts = [`curl -X ${record.method} ${quote(safeCurlUrl(record.url))}`];
   for (const [name, value] of record.requestHeaders) {
-    parts.push(`  -H ${quote(`${name}: ${value}`)}`);
+    parts.push(`  -H ${quote(`${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`)}`);
   }
-  if (record.requestBody?.text) parts.push(`  --data-raw ${quote(record.requestBody.text)}`);
+  if (record.requestBody?.text) parts.push(`  --data-raw ${quote(safeCurlBody(record.requestBody))}`);
   return parts.join(' \\\n');
 }
 
 function recordToText(record: NetworkRecord): string {
   const lines = [
-    `${record.method} ${record.url}`,
+    `${record.method} ${safeCurlUrl(record.url)}`,
     `状态：${statusText(record)}${record.statusText ? ` ${record.statusText}` : ''}`,
     `耗时：${formatDuration(record.timing.duration)}`,
     '',
     '--- 请求头 ---',
-    ...record.requestHeaders.map(([name, value]) => `${name}: ${value}`),
+    ...record.requestHeaders.map(([name, value]) => `${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`),
   ];
   if (record.requestBody?.text) {
     lines.push(
       '',
       '--- 请求体 ---',
-      formattedStructuredText(record.requestBody.text, record.requestBody.mimeType),
+      formattedStructuredText(safeCurlBody(record.requestBody), record.requestBody.mimeType),
     );
   }
   lines.push(
     '',
     '--- 响应头 ---',
-    ...record.responseHeaders.map(([name, value]) => `${name}: ${value}`),
+    ...record.responseHeaders.map(([name, value]) => `${name}: ${CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`),
   );
   if (record.responseBody?.text) {
     lines.push(
@@ -263,7 +316,7 @@ function Section(props: {
   );
 }
 
-function KeyValueList(props: { items: [string, string][] }): JSX.Element {
+function KeyValueList(props: { items: [string, string][]; redact?: boolean }): JSX.Element {
   return (
     <Show
       when={props.items.length > 0}
@@ -274,7 +327,7 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
           <div class="selectable wrap-anywhere font-mono leading-5 py-0.5">
             <span style={{ color: 'var(--optik-token-key)' }}>{name}</span>
             <span class="text-fg-tertiary">: </span>
-            <span>{value}</span>
+            <span>{props.redact && CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}</span>
           </div>
         )}
       </For>
@@ -282,8 +335,10 @@ function KeyValueList(props: { items: [string, string][] }): JSX.Element {
   );
 }
 
-function nameValuesToText(items: [string, string][]): string {
-  return items.map(([name, value]) => `${name}: ${value}`).join('\n');
+function nameValuesToText(items: [string, string][], redact = false): string {
+  return items
+    .map(([name, value]) => `${name}: ${redact && CURL_SENSITIVE.test(name) ? '[REDACTED]' : value}`)
+    .join('\n');
 }
 
 function BodyView(props: {
@@ -389,12 +444,13 @@ function RequestDetail(props: {
         <Show
           when={layout.wide()}
           fallback={
-            <button class="chip shrink-0" onClick={props.onBack}>
+            <button type="button" class="chip shrink-0" onClick={props.onBack}>
               ‹ 返回
             </button>
           }
         >
           <button
+            type="button"
             class="chip shrink-0 text-fg-tertiary"
             aria-label="关闭详情"
             onClick={props.onBack}
@@ -478,13 +534,13 @@ function RequestDetail(props: {
             action={
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.query)}
+                text={() => nameValuesToText(props.record.query, true)}
                 label="查询参数"
                 class="min-h-8 px-2 text-accent"
               />
             }
           >
-            <KeyValueList items={props.record.query} />
+            <KeyValueList items={props.record.query} redact />
           </Section>
         </Show>
 
@@ -498,14 +554,14 @@ function RequestDetail(props: {
             <Show when={props.record.requestHeaders.length > 0}>
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.requestHeaders)}
+                text={() => nameValuesToText(props.record.requestHeaders, true)}
                 label="请求头"
                 class="min-h-8 px-2 text-accent"
               />
             </Show>
           }
         >
-          <KeyValueList items={props.record.requestHeaders} />
+          <KeyValueList items={props.record.requestHeaders} redact />
         </Section>
 
         <Show when={props.record.requestBody}>
@@ -524,14 +580,14 @@ function RequestDetail(props: {
             <Show when={props.record.responseHeaders.length > 0}>
               <CopyButton
                 copier={props.copier}
-                text={() => nameValuesToText(props.record.responseHeaders)}
+                text={() => nameValuesToText(props.record.responseHeaders, true)}
                 label="响应头"
                 class="min-h-8 px-2 text-accent"
               />
             </Show>
           }
         >
-          <KeyValueList items={props.record.responseHeaders} />
+          <KeyValueList items={props.record.responseHeaders} redact />
         </Section>
 
         <Section title="响应体">
@@ -561,10 +617,11 @@ function RequestDetail(props: {
                   </div>
                   <div class="mt-1">
                     <StructuredTextView
-                      text={frame.payload}
+                      text={safeFramePayload(frame.payload)}
                       label={`${frame.direction === 'send' ? '发送' : '接收'}帧`}
                       copier={props.copier}
                       defaultExpanded={false}
+                      showReveal={false}
                     />
                   </div>
                 </div>
@@ -601,6 +658,7 @@ function RequestRow(props: {
   return (
     <div class="optik-row flex items-stretch" data-selected={props.selected ? 'true' : undefined}>
       <button
+        type="button"
         class="flex-1 min-w-0 text-left not-selectable active:bg-bg-sunken"
         classList={{ 'px-2': props.dense, 'px-3 py-2': !props.dense }}
         aria-current={props.selected ? 'true' : undefined}
@@ -740,6 +798,7 @@ export function NetworkPanel(props: {
             onInput={(event) => setQuery(event.currentTarget.value)}
           />
           <button
+            type="button"
             class="chip shrink-0"
             classList={{ 'bg-accent text-accent-fg': onlyFailed() }}
             onClick={() => setOnlyFailed(!onlyFailed())}
@@ -761,6 +820,7 @@ export function NetworkPanel(props: {
           <div class="relative flex-1 min-w-0">
             <div class="row-center gap-1 overflow-x-auto no-scrollbar">
               <button
+                type="button"
                 class="chip shrink-0 gap-1"
                 classList={{ 'bg-accent text-accent-fg': kindFilter() === null }}
                 aria-pressed={kindFilter() === null}
@@ -774,6 +834,7 @@ export function NetworkPanel(props: {
               <For each={FILTER_ORDER}>
                 {(kind) => (
                   <button
+                    type="button"
                     class="chip shrink-0 gap-1"
                     classList={{
                       'bg-accent text-accent-fg': kindFilter() === kind,
@@ -795,7 +856,7 @@ export function NetworkPanel(props: {
             <div class="optik-fade-right" />
           </div>
           {/* 「清空」留在滚动区外：它要是跟着滑走，想清空得先滑到头 */}
-          <button class="chip shrink-0" onClick={props.store.clearRequests}>
+          <button type="button" class="chip shrink-0" onClick={props.store.clearRequests}>
             清空
           </button>
           <div class="shrink-0 row-center gap-1 text-fg-tertiary" title="默认脱敏后复制 HAR 1.2">

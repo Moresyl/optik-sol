@@ -6,10 +6,13 @@ import { SystemPanel } from './SystemPanel';
 
 const kernels: OptikKernel[] = [];
 const disposers: Array<() => void> = [];
+const initialUrl = location.href;
 
 afterEach(() => {
   for (const dispose of disposers.splice(0)) dispose();
   for (const kernel of kernels.splice(0)) kernel.dispose();
+  window.history.replaceState({}, '', initialUrl);
+  vi.restoreAllMocks();
 });
 
 function systemInfo(longTaskTiming: boolean): SystemInfo {
@@ -62,6 +65,34 @@ function renderPanel(longTaskTiming = true): {
 }
 
 describe('SystemPanel long-task diagnostics', () => {
+  it('redacts page query and fragment by default, with explicit raw-address access', () => {
+    window.history.pushState({}, '', '/checkout?token=secret#payment');
+    const { host, copy } = renderPanel();
+
+    expect(host.textContent).toContain(`${location.origin}/checkout`);
+    expect(host.textContent).not.toContain('token=secret');
+    expect(host.textContent).not.toContain('#payment');
+
+    host.querySelector<HTMLButtonElement>('[title="复制环境信息"]')!.click();
+    const exported = String(copy.mock.calls[0]?.[0]);
+    expect(exported).toContain(`${location.origin}/checkout`);
+    expect(exported).not.toContain('token=secret');
+    expect(exported).not.toContain('#payment');
+
+    host.querySelector<HTMLButtonElement>('[title="复制页面地址（已脱敏）"]')!.click();
+    expect(copy.mock.calls[1]?.[0]).toBe(`${location.origin}/checkout`);
+    host.querySelector<HTMLButtonElement>('[aria-pressed="false"].chip:last-child')?.click();
+    const rawToggle = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent?.includes('显示原始地址'),
+    );
+    rawToggle!.click();
+    expect(host.textContent).toContain('token=secret#payment');
+    host.querySelector<HTMLButtonElement>('[title="复制页面原始地址"]')!.click();
+    expect(copy.mock.calls[2]?.[0]).toBe(location.href);
+    host.querySelector<HTMLButtonElement>('[title="复制环境信息"]')!.click();
+    expect(copy.mock.calls[3]?.[0]).not.toContain('token=secret');
+  });
+
   it('reacts to records, presents a bounded recent list, and clears it', () => {
     const { host, kernel } = renderPanel();
     kernel.performance.onLongTask({

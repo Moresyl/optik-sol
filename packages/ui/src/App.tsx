@@ -158,6 +158,18 @@ export function App(props: AppProps): JSX.Element {
     return tab.startsWith('plugin:') ? tab.slice(7) : null;
   });
 
+  const onTabKeyDown = (event: KeyboardEvent, id: TabId) => {
+    const list = tabs();
+    const index = list.findIndex((tab) => tab.id === id);
+    if (index < 0 || !['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 :
+      (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+    props.store.setActiveTab(list[nextIndex].id);
+    const button = event.currentTarget as HTMLButtonElement;
+    button.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+  };
+
   /** 插件视图渲染一次即缓存，切走再切回不会丢状态。 */
   const pluginNodes = new Map<string, Node>();
 
@@ -195,6 +207,10 @@ export function App(props: AppProps): JSX.Element {
   const unsubscribePlugins = props.plugins.subscribe(() => {
     disposeRetired();
     setPluginVersion((n) => n + 1);
+    const active = props.store.activeTab();
+    if (active.startsWith('plugin:') && !props.plugins.get(active.slice(7))) {
+      props.store.setActiveTab('console');
+    }
   });
   // Initial plugin arrays can contain duplicate ids before App subscribes.
   disposeRetired();
@@ -318,6 +334,7 @@ export function App(props: AppProps): JSX.Element {
       */}
       <Show when={!open()}>
         <button
+          type="button"
           ref={attachLauncher}
           aria-label="打开调试面板"
           onClick={() => {
@@ -388,10 +405,11 @@ export function App(props: AppProps): JSX.Element {
           <div class="shrink-0 row-center border-b border-line bg-bg-elevated">
             {/* 相对定位是给右侧那道渐变用的：标签能横向滚动时得让人看出来还有 */}
             <div class="relative flex-1 min-w-0">
-              <div class="row-center overflow-x-auto no-scrollbar">
+              <div class="row-center overflow-x-auto no-scrollbar" role="tablist" aria-label="调试面板标签">
                 <For each={tabs()}>
-                  {(tab) => (
+                  {(tab, index) => (
                     <button
+                      type="button"
                       // -mb-px 让选中态那条 2px 下划线压住容器自己的 1px 边框，
                       // 否则两条线并排，看着像描歪了
                       class="optik-tab shrink-0 row-center gap-1 px-3.5 min-h-11 -mb-px
@@ -402,6 +420,13 @@ export function App(props: AppProps): JSX.Element {
                         'text-fg-secondary': props.store.activeTab() !== tab.id,
                       }}
                       aria-current={props.store.activeTab() === tab.id ? 'page' : undefined}
+                      aria-selected={props.store.activeTab() === tab.id}
+                      data-tab-id={tab.id}
+                      id={`optik-tab-${index()}`}
+                      aria-controls="optik-active-panel"
+                      tabIndex={props.store.activeTab() === tab.id ? 0 : -1}
+                      role="tab"
+                      onKeyDown={(event) => onTabKeyDown(event, tab.id)}
                       onClick={() => props.store.setActiveTab(tab.id)}
                     >
                       {tab.label}
@@ -434,6 +459,7 @@ export function App(props: AppProps): JSX.Element {
                 这也是 Shadow DOM 里最后一个 <svg>，去掉之后面板里不再有任何图标。
               */}
               <button
+                type="button"
                 class="icon-btn min-h-11 px-4 font-600 text-fg"
                 aria-label="关闭面板"
                 onClick={() => setOpen(false)}
@@ -445,7 +471,7 @@ export function App(props: AppProps): JSX.Element {
 
           {/* 内容区 */}
           <LayoutProvider value={layout}>
-            <div class="flex-1 min-h-0">
+            <div class="flex-1 min-h-0" id="optik-active-panel" role="tabpanel" tabIndex={0} aria-labelledby={`optik-tab-${tabs().findIndex((tab) => tab.id === props.store.activeTab())}`}>
               <Show when={props.store.activeTab() === 'console'}>
                 <ConsolePanel store={props.store} kernel={props.kernel} copier={copier} />
               </Show>

@@ -161,7 +161,7 @@ describe('NetworkPanel', () => {
 
     host.querySelector<HTMLButtonElement>('[title="复制cURL 命令"]')!.click();
     expect(copy).toHaveBeenCalledWith(
-      expect.stringContaining("'https://example.test/api?name=o'\\''hara'"),
+      expect.stringContaining("'https://example.test/api?name=o%27hara'"),
       'cURL 命令',
     );
     expect(String(copy.mock.calls[copy.mock.calls.length - 1]?.[0])).toContain(
@@ -201,6 +201,50 @@ describe('NetworkPanel', () => {
     expect(host.textContent).toContain('树形结构');
     expect(host.textContent).toContain('"event"');
     expect(host.textContent).not.toContain('cURL 命令');
+  });
+
+  it('redacts URL and header credentials in copied cURL by default', () => {
+    const { host, copy } = mount([
+      record({
+        url: 'https://alice:secret@example.test/api?access_token=top-secret&safe=1',
+        requestHeaders: [['Authorization', 'Bearer secret'], ['X-Trace', 'ok']],
+      }),
+    ]);
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    host.querySelector<HTMLButtonElement>('[title="复制cURL 命令"]')!.click();
+    const curl = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
+    expect(curl).toContain("'https://example.test/api?access_token=%5BREDACTED%5D&safe=1'");
+    expect(curl).toContain("-H 'Authorization: [REDACTED]'");
+    expect(curl).not.toContain('secret');
+  });
+
+  it('redacts sensitive JSON request fields in copied cURL by default', () => {
+    const { host, copy } = mount([record({
+      method: 'POST',
+      requestBody: { text: '{"username":"alice","password":"secret","profile":{"apiToken":"hidden"}}', mimeType: 'application/json' },
+    })]);
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    host.querySelector<HTMLButtonElement>('[title="复制cURL 命令"]')!.click();
+    const curl = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
+    expect(curl).toContain('"password":"[REDACTED]"');
+    expect(curl).toContain('"apiToken":"[REDACTED]"');
+    expect(curl).not.toContain('secret');
+    expect(curl).not.toContain('hidden');
+  });
+
+  it('keeps full request copy within the same privacy boundary', () => {
+    const { host, copy } = mount([record({
+      url: 'https://alice:secret@example.test/api?token=top-secret',
+      requestHeaders: [['Cookie', 'sid=secret'], ['X-Trace', 'ok']],
+      requestBody: { text: '{"password":"secret"}', mimeType: 'application/json' },
+    })]);
+    host.querySelector<HTMLButtonElement>('.optik-row > button')!.click();
+    host.querySelector<HTMLButtonElement>('[title="复制请求详情"]')!.click();
+    const text = String(copy.mock.calls[copy.mock.calls.length - 1]?.[0]);
+    expect(text).toContain('https://example.test/api?token=%5BREDACTED%5D');
+    expect(text).toContain('Cookie: [REDACTED]');
+    expect(text).toContain('"password": "[REDACTED]"');
+    expect(text).not.toContain('secret');
   });
 
   it('degrades invalid timing and size measurements without emitting invalid UI values', () => {

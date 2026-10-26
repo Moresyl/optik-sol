@@ -142,7 +142,7 @@ export class ObjectRegistry {
       }
       // Previously released; fall through and mint a fresh id.
     }
-    id = `obj:${this.#nextId++}`;
+    id = this.#allocateId();
     this.#idByValue.set(value, id);
     this.#byId.set(id, { value, refs: 1 });
     return id;
@@ -169,6 +169,17 @@ export class ObjectRegistry {
 
   get size(): number {
     return this.#byId.size;
+  }
+
+  #allocateId(): string {
+    const attemptsLimit = Math.min(this.#byId.size + 1, 1_000_000);
+    for (let attempts = 0; attempts < attemptsLimit; attempts++) {
+      const numeric = this.#nextId;
+      this.#nextId = numeric >= Number.MAX_SAFE_INTEGER ? 1 : numeric + 1;
+      const id = `obj:${numeric}`;
+      if (!this.#byId.has(id)) return id;
+    }
+    throw new Error('Object handle id space exhausted');
   }
 }
 

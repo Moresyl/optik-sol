@@ -232,6 +232,7 @@ export function ValueView(props: ValueProps): JSX.Element {
             否则手机上极难点中。
           */}
           <button
+            type="button"
             class="shrink-0 w-3 h-6 -my-2.5 py-2.5 text-fg-tertiary not-selectable row-center justify-center"
             aria-expanded={expanded()}
             aria-label={expanded() ? '收起' : '展开'}
@@ -269,6 +270,19 @@ export function ValueView(props: ValueProps): JSX.Element {
           data-json={jsonMirror !== undefined ? 'true' : undefined}
           class="wrap-anywhere"
           onClick={expandable() ? toggle : undefined}
+          role={expandable() ? 'button' : undefined}
+          aria-expanded={expandable() ? expanded() : undefined}
+          tabIndex={expandable() ? 0 : undefined}
+          onKeyDown={
+            expandable()
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    if (!event.repeat) toggle();
+                  }
+                }
+              : undefined
+          }
         >
           {jsonMirror !== undefined ? remoteObjectToText(jsonMirror) : summarize(props.value)}
         </span>
@@ -296,7 +310,7 @@ export function ValueView(props: ValueProps): JSX.Element {
         <For each={children() ?? []}>
           {(property) => (
             <ValueView
-              value={property.value ?? UNDEFINED_VALUE}
+              value={property.value ?? (property.get ? { type: 'undefined', description: '「取值器，未求值」' } : UNDEFINED_VALUE)}
               kernel={props.kernel}
               domain={props.domain}
               depth={depth() + 1}

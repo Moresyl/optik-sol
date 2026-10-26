@@ -5,11 +5,11 @@ A mobile web debugging console. One `<script>` tag, no server, no runtime depend
 English | [简体中文](https://github.com/Moresyl/optik-sol/blob/main/README.zh-CN.md)
 
 ```html
-<script src="https://unpkg.com/optik-sol"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 ```bash
-npm i optik-sol
+npm i optik-sol@0.4.2
 ```
 
 ```ts
@@ -20,7 +20,11 @@ if (import.meta.env.DEV) {
 }
 ```
 
-Console, Network, Elements, Storage and Environment panels, in a single file of roughly 67 KB gzipped. Recording starts the moment the script executes, and `destroy()` restores every hook it installed. Network captures can be copied as a safe-mode HAR 1.2 archive with credentials redacted and payload bodies omitted by default.
+Console, Network, Elements, Storage and Environment panels, in a single file of roughly 86 KB gzipped for the current build. Recording starts the moment the script executes, and `destroy()` restores every hook it installed. Network captures can be copied as a safe-mode HAR 1.2 archive with credentials redacted and payload bodies omitted by default.
+
+## Compatibility
+
+The supported baseline is modern evergreen browsers, iOS 15+ and Android 10+. The package exposes ESM for bundlers and a browser-safe global IIFE for a direct `<script>` tag; no server or runtime dependency is required.
 
 > Do not mount unconditionally in production: the panel reads request headers, request bodies and local storage, and is reachable by any script on the page.
 

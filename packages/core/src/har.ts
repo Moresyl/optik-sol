@@ -333,7 +333,11 @@ function redactBody(text: string, mimeType: string | undefined): string {
   ) {
     return redactSearchParams(new URLSearchParams(text)).toString();
   }
-  return text;
+  // Text/WebSocket payload fallback: redact common key=value or key: value pairs.
+  return text.replace(
+    /((?:authorization|cookie|token|secret|password|passwd|api[-_]?key|signature|credential|session|csrf|xsrf)\s*[=:]\s*)([^\s,&]+)/gi,
+    `$1${REDACTED}`,
+  );
 }
 
 function redactMultipart(text: string, mimeType: string): string {

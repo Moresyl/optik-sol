@@ -298,12 +298,17 @@ function TreeNode(props: {
   selected: () => Element | null;
   onSelect: (node: Element) => void;
 }): JSX.Element {
+  const MAX_VISIBLE_CHILDREN = 500;
   const [expanded, setExpanded] = createSignal(props.depth < 2);
+
+  const visibleChildren = createMemo(() => {
+    props.version();
+    return [...props.node.children].filter((child) => !isOwnNode(child));
+  });
 
   const children = createMemo(() => {
     if (!expanded()) return [];
-    props.version();
-    return [...props.node.children].filter((child) => !isOwnNode(child));
+    return visibleChildren().slice(0, MAX_VISIBLE_CHILDREN);
   });
 
   /** 只有一个文本子节点时直接内联显示，省掉一层无意义的展开。 */
@@ -315,13 +320,12 @@ function TreeNode(props: {
   });
 
   const hasChildren = () => {
-    props.version();
-    return [...props.node.children].some((child) => !isOwnNode(child));
+    return visibleChildren().length > 0;
   };
   const isSelected = () => props.selected() === props.node;
 
   return (
-    <div>
+    <div class="optik-element-row">
       <div
         class="row-center gap-1 min-h-7 pr-2 font-mono active:bg-bg-sunken"
         classList={{ 'bg-accent/15': isSelected() }}
@@ -329,6 +333,7 @@ function TreeNode(props: {
       >
         <Show when={hasChildren()} fallback={<span class="w-3 shrink-0" />}>
           <button
+            type="button"
             class="shrink-0 w-3 self-stretch min-h-7 text-fg-tertiary not-selectable row-center justify-center"
             aria-expanded={expanded()}
             aria-label={expanded() ? '收起' : '展开'}
@@ -342,6 +347,7 @@ function TreeNode(props: {
         </Show>
 
         <button
+          type="button"
           class="flex-1 min-w-0 text-left truncate py-1 not-selectable"
           onClick={() => props.onSelect(props.node)}
         >
@@ -379,6 +385,11 @@ function TreeNode(props: {
             />
           )}
         </For>
+        <Show when={visibleChildren().length > MAX_VISIBLE_CHILDREN}>
+          <div class="px-3 py-1 text-fg-tertiary text-xs" style={{ 'padding-left': `${16 + props.depth * 12}px` }}>
+            已限制显示前 {MAX_VISIBLE_CHILDREN} 个子节点
+          </div>
+        </Show>
       </Show>
     </div>
   );
@@ -393,8 +404,12 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   const highlighter = new Highlighter();
   let highlightTimer: ReturnType<typeof setTimeout> | undefined;
+  let highlightFrame: (() => void) | undefined;
+  let pendingHighlight: Element | null = null;
   onCleanup(() => {
     clearTimeout(highlightTimer);
+    highlightFrame?.();
+    pendingHighlight = null;
     highlighter.dispose();
   });
 
@@ -449,7 +464,21 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
   const onPickMove = (event: Event) => {
     const target = targetOf(event);
-    if (target) highlighter.show(target);
+    if (!target) {
+      pendingHighlight = null;
+      highlightFrame?.();
+      highlightFrame = undefined;
+      highlighter.hide();
+      return;
+    }
+    pendingHighlight = target;
+    if (highlightFrame) return;
+    highlightFrame = scheduleFrame(() => {
+      highlightFrame = undefined;
+      const next = pendingHighlight;
+      pendingHighlight = null;
+      if (next) highlighter.show(next);
+    });
   };
 
   const onPick = (event: Event) => {
@@ -589,13 +618,14 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
     <div class="flex flex-col h-full min-h-0">
       <div class="shrink-0 row-center gap-1 px-2 py-1.5 border-b border-line bg-bg-elevated overflow-x-auto no-scrollbar">
         <button
+          type="button"
           class="chip shrink-0"
           classList={{ 'bg-accent text-accent-fg': picking() }}
           onClick={togglePicking}
         >
           {picking() ? '拾取中…点击页面' : '拾取元素'}
         </button>
-        <button class="chip shrink-0" onClick={() => setDomVersion((version) => version + 1)}>
+        <button type="button" class="chip shrink-0" onClick={() => setDomVersion((version) => version + 1)}>
           刷新
         </button>
         {/* 分栏时结构和样式同屏，不需要用标签互斥切换 */}
@@ -612,6 +642,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
           >
             {([id, label]) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': tab() === id }}
                 onClick={() => setTab(id)}
@@ -648,16 +679,18 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
                 label="选择器"
                 class="min-h-9 px-2 -ml-2 text-accent"
               />
-              <button class="icon-btn min-h-9 px-2" onClick={() => highlighter.show(node())}>
+              <button type="button" class="icon-btn min-h-9 px-2" onClick={() => highlighter.show(node())}>
                 高亮
               </button>
               <button
+                type="button"
                 class="icon-btn min-h-9 px-2"
                 onClick={() => scrollToElement(node())}
               >
                 滚动到此
               </button>
               <button
+                type="button"
                 class="icon-btn min-h-9 px-2"
                 onClick={() => setTab('html')}
               >
@@ -666,7 +699,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
               <Show
                 when={node().parentElement && node().parentElement !== document.documentElement}
               >
-                <button class="icon-btn min-h-9 px-2" onClick={() => select(node().parentElement!)}>
+                <button type="button" class="icon-btn min-h-9 px-2" onClick={() => select(node().parentElement!)}>
                   选父级
                 </button>
               </Show>
@@ -677,7 +710,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
 
       <div class="shrink-0 row-center gap-1 px-2 py-1 border-b border-line bg-bg-elevated">
         <Show when={!layout.wide()}>
-          <button class="chip shrink-0" onClick={() => setTab('tree')}>
+          <button type="button" class="chip shrink-0" onClick={() => setTab('tree')}>
             ‹ 结构
           </button>
         </Show>
@@ -692,6 +725,7 @@ export function ElementPanel(props: { copier: CopyController }): JSX.Element {
         >
           {([id, label]) => (
             <button
+              type="button"
               class="chip shrink-0"
               classList={{ 'bg-accent text-accent-fg': detailTab() === id }}
               onClick={() => setTab(id)}

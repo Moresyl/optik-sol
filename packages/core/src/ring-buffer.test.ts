@@ -47,6 +47,32 @@ describe('RingBuffer', () => {
     expect(onEvict.mock.calls).toEqual([['a'], ['b']]);
   });
 
+  it('runs eviction callbacks even when the stored value is undefined', () => {
+    const onEvict = vi.fn();
+    const buffer = new RingBuffer<undefined>(1, onEvict);
+    buffer.push(undefined);
+    expect(buffer.push(undefined)).toBeUndefined();
+    expect(onEvict).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the committed buffer state when an eviction callback throws', () => {
+    const buffer = new RingBuffer<number>(1, () => {
+      throw new Error('cleanup failed');
+    });
+    buffer.push(1);
+    expect(() => buffer.push(2)).not.toThrow();
+    expect(buffer.size).toBe(1);
+    expect(buffer.toArray()).toEqual([2]);
+  });
+
+  it('isolates cleanup failures during clear and resize', () => {
+    const buffer = new RingBuffer<number>(2, () => { throw new Error('cleanup failed'); });
+    buffer.push(1); buffer.push(2);
+    expect(() => buffer.resize(1)).not.toThrow();
+    expect(() => buffer.clear()).not.toThrow();
+    expect(buffer.size).toBe(0);
+  });
+
   it.each([0, -1, 1_000_001, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects an invalid capacity: %s',
     (capacity) => {

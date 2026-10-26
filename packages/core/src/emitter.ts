@@ -26,6 +26,7 @@ export class Emitter<Events extends object> {
     set.add(listener as Listener<never>);
     return () => {
       set!.delete(listener as Listener<never>);
+      if (set!.size === 0 && this.#listeners.get(event) === set) this.#listeners.delete(event);
     };
   }
 

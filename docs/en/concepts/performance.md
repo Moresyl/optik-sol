@@ -14,3 +14,6 @@ Optik is designed to collect useful evidence without becoming the incident.
 Objects are shallow-mirrored at capture time and expanded only on demand. Lists use ring buffers and pagination; structured code renders by page. Closing the panel disconnects layout observers so detached DOM is not retained.
 
 When measuring page performance, compare identical “unmounted” and “mounted” configurations. The debugger adds some serialization, DOM, and observer work; it is evidence tooling, not a production performance baseline.
+## Large-list fallback
+
+Network, Console, Storage, and Elements rows use `content-visibility: auto` with `contain-intrinsic-size` for off-screen sizing. Older WebViews simply ignore unsupported declarations, keeping the full list content and functionality intact.

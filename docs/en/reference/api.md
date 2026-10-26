@@ -8,6 +8,12 @@ Starts the kernel, installs instrumentation, and mounts the Shadow DOM panel. Mo
 
 Returns the active instance, or `null` before mounting and after destruction.
 
+## `autoMount(): void`
+
+Used by the IIFE/script entry to read `data-*` options and mount immediately. ESM never calls it automatically; add `data-optik-manual` to disable script auto-mounting.
+
+Supported attributes: `data-theme="light|dark"`, `data-open`, `data-max-logs`, `data-max-requests`, and `data-max-long-tasks`. Values outside the safe capacity range are ignored.
+
 ## `OptikInstance`
 
 | Member | Purpose |

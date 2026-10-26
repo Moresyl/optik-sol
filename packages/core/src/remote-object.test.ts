@@ -18,6 +18,9 @@ describe('ObjectRegistry', () => {
     expect(second).not.toBe(first);
     registry.clear();
     expect(registry.size).toBe(0);
+    const afterClear = registry.retain(value);
+    expect(afterClear).not.toBe(second);
+    expect(registry.resolve(afterClear)).toBe(value);
   });
 });
 

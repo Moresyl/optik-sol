@@ -15,10 +15,16 @@
 
 ---
 
-Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，gzip 约 73 KB。
+Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何页面——单文件，当前构建 gzip 约 86 KB。
+
+兼容基线：现代主流浏览器、iOS 15+、Android 10+。npm 提供适用于打包器的 ESM 入口，并提供可直接通过 `<script>` 使用的浏览器 IIFE；无需服务端或运行时依赖。
+
+### 运行模型与信任边界
+
+Optik 运行在被调试页面内，采集数据默认只保留在当前页面。它是诊断面板而不是安全沙箱：任何能在页面执行的脚本都可能读取同一份证据。请仅在受控构建中启用，并且只为可信或已认证的对象连接协议传输。
 
 ```html
-<script src="https://unpkg.com/optik-sol"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 脚本一执行就开始记录，放在 `<head>` 里也不用等 `DOMContentLoaded`，页面启动阶段的报错和请求一条都不会丢。
@@ -30,7 +36,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | **控制台** | 各级别日志、分组、重复合并、`%c` 样式、正则搜索与高亮、JSON 字符串展开与高亮、勾选批量复制、表达式求值（`$_` 引用上次结果） |
 | **网络** | XHR / Fetch / sendBeacon / WebSocket / EventSource / 静态资源，格式化并高亮的请求/响应正文、分段耗时、结构化 WebSocket 帧、默认脱敏的 HAR 1.2 导出 |
 | **元素** | 实时更新并惰性展开的 DOM 树、页面内拾取、高亮、盒模型、计算样式、高亮外层 HTML、选择器及元数据批量复制 |
-| **存储** | localStorage / sessionStorage / Cookie / IndexedDB，可增删改查并以可折叠 JSON 树/代码查看值 |
+| **存储** | localStorage / sessionStorage / Cookie 支持读写；IndexedDB 提供只读检查，并以可折叠 JSON 树/代码查看值 |
 | **环境** | 设备、视口、安全区、内存、加载时序、有上限的主线程长任务证据、能力探测 |
 
 ## 特点
@@ -45,6 +51,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 | **按移动端规则布局** | `100dvh`、`env(safe-area-inset-*)`、触控目标 ≥ 44px、输入框 16px、尺寸只用 px 不用 rem |
 | **宽了分栏，窄了钻入** | 面板宽度 ≥ 640px 分栏（比例记在本地），`pointer: fine` 下切紧凑排版，触屏下行高不变 |
 | **不污染宿主页面** | 整个面板活在 Shadow DOM 里双向隔离；所有插桩透传原方法，`destroy()` 按原始属性描述符逐一还原 |
+| **键盘与触控友好** | 标签支持方向键/Home/End 导航，可展开值支持 Enter/空格，非交互值不会进入 Tab 顺序 |
 
 还捕获一些常被漏掉的信号：资源加载失败（`<img>` / `<script>` / CSS 404，这类事件不冒泡）、CSP 违规、sendBeacon 的实际接受与否、EventSource、没有 JS API 的请求（走 Resource Timing）、缓存命中。
 
@@ -55,7 +62,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 ### script 标签
 
 ```html
-<script src="https://unpkg.com/optik-sol" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | 属性 | 说明 |
@@ -72,7 +79,7 @@ Optik Sol 把一整套调试面板放进手机浏览器或 WebView 里的任何�
 ### 打包器
 
 ```bash
-npm i optik-sol
+npm i optik-sol@0.4.2
 ```
 
 ```js
@@ -124,6 +131,7 @@ optik.destroy();           // 完整还原所有插桩
 同时脱敏请求头、URL 和查询参数中的凭据。代码中可使用 `serializeHar(records)`，并通过
 `{ includeBodies: true, includeWebSocketFrames: true }` 显式加入已留存的正文；支持识别的
 JSON/表单字段仍会脱敏。还需额外传入 `{ redactSensitive: false }` 才会导出原值。
+文本与 WebSocket 帧中的常见凭据键值也会默认脱敏。
 
 环境面板还会保留浏览器报告的主线程长任务（至少 50ms），显示累计/最长耗时及可用的
 浏览上下文归因。记录有固定上限，可用 `capture.longTasks: false` 关闭采集。

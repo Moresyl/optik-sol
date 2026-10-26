@@ -59,4 +59,15 @@ describe('stack parsing', () => {
     const frames = captureStack(2);
     expect(frames === undefined || frames.length <= 2).toBe(true);
   });
+
+  it('redacts credentials, query parameters, and fragments from frame URLs', () => {
+    expect(parseStack('    at app (https://alice:secret@example.test/app.js?token=x#frag:4:2)')).toEqual([
+      {
+        functionName: 'app',
+        url: 'https://example.test/app.js',
+        lineNumber: 4,
+        columnNumber: 2,
+      },
+    ]);
+  });
 });

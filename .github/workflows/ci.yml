@@ -6,30 +6,41 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22, 24]
     steps:
       - uses: actions/checkout@v6
 
       # pnpm 的版本取自根 package.json 的 packageManager 字段，不在这里写死
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
-      # 构建同时也是一道回归检查：UnoCSS 产物由 build 重新生成，
-      # 源码里新写的类名如果拼错，这一步会静默少生成规则而不是报错，
-      # 所以下面额外核对一次产物非空。
-      - run: pnpm build
-      - run: pnpm docs:build
-      - run: pnpm test:dist
-      - run: pnpm typecheck
+      - name: 统一质量门禁
+        run: pnpm check
       - run: pnpm test:coverage
+        if: matrix.node-version == 24
+      - name: 验证发布包契约
+        run: pnpm --filter optik-sol pack --dry-run
+      - name: 检查补丁格式
+        run: git diff --check
 
       - name: 检查构建产物
         run: |

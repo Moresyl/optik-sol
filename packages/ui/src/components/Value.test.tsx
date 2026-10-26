@@ -50,6 +50,30 @@ describe('ValueView object handle lifecycle', () => {
     expect(registry.size).toBe(0);
   });
 
+  it('labels unevaluated getters without reading them and releases their handles', () => {
+    const registry = new ObjectRegistry();
+    const getter = vi.fn(() => 'private value');
+    const object = Object.defineProperty({}, 'computed', { enumerable: true, get: getter });
+    const root = toRemoteObject(object, registry);
+    const domain: ValueDomain = {
+      registry,
+      getProperties: (id, options) => getProperties(id, registry, options),
+    };
+    const host = document.createElement('div');
+    const dispose = render(() => <ValueView value={root} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} defaultExpanded />, host);
+    try {
+      frames[0]!(0);
+      expect(host.textContent).toContain('取值器，未求值');
+      expect(host.textContent).not.toContain('private value');
+      expect(getter).not.toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+    expect(registry.size).toBe(1);
+    registry.release(root.objectId!);
+    expect(registry.size).toBe(0);
+  });
+
   it('cancels a queued expansion when unmounted before the next frame', () => {
     const registry = new ObjectRegistry();
     const root = toRemoteObject({ child: {} }, registry);
@@ -112,5 +136,36 @@ describe('ValueView object handle lifecycle', () => {
     dispose();
     host.remove();
     registry.release(root.objectId!);
+  });
+
+  it('expands object values from keyboard activation without making primitives focusable', () => {
+    const registry = new ObjectRegistry();
+    const root = toRemoteObject({ answer: 42 }, registry);
+    const domain: ValueDomain = { registry, getProperties: (id, options) => getProperties(id, registry, options) };
+    const host = document.createElement('div');
+    const dispose = render(() => <ValueView value={root} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} />, host);
+    const value = host.querySelector<HTMLElement>('[role="button"]')!;
+    expect(value.tabIndex).toBe(0);
+    expect(value.getAttribute('aria-expanded')).toBe('false');
+    value.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    frames[0]!(0);
+    expect(host.textContent).toContain('answer');
+    expect(host.querySelector('[data-type="number"]')?.textContent).toBe('42');
+    expect(value.getAttribute('aria-expanded')).toBe('true');
+    value.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }));
+    expect(value.getAttribute('aria-expanded')).toBe('true');
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    value.dispatchEvent(space);
+    expect(space.defaultPrevented).toBe(true);
+    expect(value.getAttribute('aria-expanded')).toBe('false');
+    const primitiveHost = document.createElement('div');
+    const primitive = toRemoteObject(42, registry);
+    const disposePrimitive = render(() => <ValueView value={primitive} kernel={{ log: domain } as unknown as OptikKernel} domain={domain} />, primitiveHost);
+    expect(primitiveHost.querySelector('[role="button"]')).toBeNull();
+    disposePrimitive();
+    dispose();
+    expect(registry.size).toBe(1);
+    registry.release(root.objectId!);
+    expect(registry.size).toBe(0);
   });
 });

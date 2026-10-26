@@ -76,6 +76,7 @@ function DangerButton(props: {
 
   return (
     <button
+      type="button"
       class={`icon-btn text-danger ${props.class ?? ''}`}
       classList={{ 'bg-danger-bg': armed() }}
       onClick={() => {
@@ -120,7 +121,7 @@ function StorageRow(props: {
   );
 
   return (
-    <div class="px-3 py-2 border-b border-line">
+    <div class="optik-row px-3 py-2 border-b border-line">
       {/* 键行：键名用 token 色，右侧挂类型与体积，和值区拉开一个层级 */}
       <div class="row-center gap-1.5">
         <span
@@ -179,7 +180,7 @@ function StorageRow(props: {
 
       <div class="row-center gap-1 mt-1 not-selectable">
         <Show when={!props.readOnly}>
-          <button class="icon-btn min-h-9 px-2" onClick={props.onEdit}>
+          <button type="button" class="icon-btn min-h-9 px-2" onClick={props.onEdit}>
             编辑
           </button>
           <DangerButton
@@ -231,13 +232,13 @@ function EditSheet(props: {
       }}
     >
       <div class="shrink-0 row-center gap-2 px-2 py-1.5 border-b border-line bg-bg-elevated">
-        <button class="chip shrink-0" onClick={props.onCancel}>
+        <button type="button" class="chip shrink-0" onClick={props.onCancel}>
           ‹ 取消
         </button>
         <span class="flex-1 min-w-0 truncate not-selectable">
           {props.draft.isNew ? `新增到${AREA_LABELS[props.area]}` : `编辑 ${props.draft.key}`}
         </span>
-        <button class="btn-primary shrink-0 min-h-9" onClick={props.onSave}>
+        <button type="button" class="btn-primary shrink-0 min-h-9" onClick={props.onSave}>
           保存
         </button>
       </div>
@@ -281,7 +282,7 @@ function EditSheet(props: {
           <label class="flex-1 text-fg-tertiary not-selectable">值</label>
           {/* 手机上给一段 JSON 手动排版是不可能的，这个按钮省掉的是整件事 */}
           <Show when={canFormat()}>
-            <button class="icon-btn min-h-8 px-2 text-accent" onClick={format}>
+            <button type="button" class="icon-btn min-h-8 px-2 text-accent" onClick={format}>
               格式化 JSON
             </button>
           </Show>
@@ -429,6 +430,7 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
           <For each={AREAS}>
             {(candidate) => (
               <button
+                type="button"
                 class="chip shrink-0"
                 classList={{ 'bg-accent text-accent-fg': area() === candidate }}
                 onClick={() => {
@@ -471,11 +473,12 @@ export function StoragePanel(props: { kernel: OptikKernel; copier: CopyControlle
               ? '正在读取…'
               : `${status().itemCount} 项 · ${formatBytes(status().totalBytes)}`}
           </span>
-          <button class="chip shrink-0" onClick={refresh}>
+          <button type="button" class="chip shrink-0" onClick={refresh}>
             刷新
           </button>
           <Show when={!readOnly()}>
             <button
+              type="button"
               class="chip shrink-0 text-accent"
               onClick={() => setEditing({ key: '', value: '', isNew: true })}
             >

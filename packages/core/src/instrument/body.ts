@@ -204,6 +204,11 @@ export function splitUrl(rawUrl: string): {
   const last = segments[segments.length - 1];
   const name = last ?? parsed.hostname;
 
+  // URL credentials are never useful in a debugging record and are routinely
+  // leaked when rows are copied or sent through the protocol bridge.
+  parsed.username = '';
+  parsed.password = '';
+
   return {
     url: parsed.href,
     name,

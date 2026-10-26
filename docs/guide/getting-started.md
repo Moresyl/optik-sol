@@ -14,7 +14,7 @@ Optik Sol 是嵌入被调试页面的移动端开发者工具。它不需要代�
 
 ```html
 <script
-  src="https://unpkg.com/optik-sol@0.4.1"
+  src="https://unpkg.com/optik-sol@0.4.2"
   data-theme="light"
   data-max-logs="2000"
   data-max-requests="500"
@@ -26,7 +26,7 @@ Optik Sol 是嵌入被调试页面的移动端开发者工具。它不需要代�
 ## 方式二：通过 npm 按需挂载
 
 ```bash
-npm install optik-sol@0.4.1
+npm install optik-sol@0.4.2
 ```
 
 ```ts
@@ -51,7 +51,7 @@ optik?.destroy();
 
 ```html
 <script
-  src="https://unpkg.com/optik-sol@0.4.1"
+  src="https://unpkg.com/optik-sol@0.4.2"
   data-optik-manual
 ></script>
 <script>

@@ -15,10 +15,16 @@ English | [简体中文](README.zh-CN.md)
 
 ---
 
-Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 73 KB gzipped.
+Optik Sol puts a full debugging console inside any page running on a phone or in a WebView — a single file, roughly 86 KB gzipped for the current build.
+
+Compatibility baseline: modern evergreen browsers, iOS 15+, and Android 10+. The package exposes ESM for bundlers and a browser-ready global IIFE for a direct `<script>` tag; no server or runtime dependency is required.
+
+### Runtime and trust boundary
+
+Optik runs in the inspected page and keeps captured data in that page by default. It is a diagnostics surface, not a security sandbox: any script that can execute in the page may be able to read the same evidence. Enable it only in controlled builds, and attach protocol transports only when they are trusted or authenticated.
 
 ```html
-<script src="https://unpkg.com/optik-sol"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2"></script>
 ```
 
 Recording starts the moment the script executes. Drop it in `<head>` and there is no wait for `DOMContentLoaded`: errors and requests fired during page startup are all captured.
@@ -30,7 +36,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | **Console** | Logs at every level, groups, repeat collapsing, `%c` styling, regex search with highlighting, expandable highlighted JSON strings, checkbox batch copy, expression evaluation (`$_` refers to the previous result) |
 | **Network** | XHR / Fetch / sendBeacon / WebSocket / EventSource / static resources — formatted and highlighted request/response bodies, timing breakdown, structured WebSocket frames, privacy-safe HAR 1.2 export |
 | **Elements** | Live, lazily expanded DOM tree, in-page picking, highlighting, box model, computed styles, highlighted outer HTML, selector and bulk metadata copy |
-| **Storage** | localStorage / sessionStorage / Cookie / IndexedDB, with full read-write access and collapsible JSON tree/code views |
+| **Storage** | localStorage / sessionStorage / Cookie with read-write access, plus read-only IndexedDB inspection and collapsible JSON tree/code views |
 | **Environment** | Device, viewport, safe area, memory, load timing, bounded main-thread long-task evidence, capability detection |
 
 ## Design highlights
@@ -45,6 +51,7 @@ Recording starts the moment the script executes. Drop it in `<head>` and there i
 | **Laid out by mobile rules** | `100dvh`, `env(safe-area-inset-*)`, touch targets ≥ 44 px, 16 px inputs, sizes in px only — never rem |
 | **Split when wide, drill down when narrow** | At a panel width ≥ 640 px the layout splits (the ratio is remembered locally); `pointer: fine` switches to compact rows, while touch keeps full row height |
 | **Never leaks into the host page** | The whole panel lives in a Shadow DOM, isolated in both directions; every hook passes through to the original method, and `destroy()` restores each one from its original property descriptor |
+| **Keyboard and touch friendly** | Tabs support arrow/Home/End navigation, expandable values support Enter/Space, and non-interactive values stay out of the tab order |
 
 It also captures signals that debugging tools commonly miss: resource load failures (`<img>` / `<script>` / CSS 404s — these events do not bubble), CSP violations, whether `sendBeacon` was actually accepted, EventSource streams, requests with no JavaScript API (via Resource Timing), and cache hits.
 
@@ -55,7 +62,7 @@ The full reasoning behind these trade-offs is in [DESIGN.md](DESIGN.md).
 ### Script tag
 
 ```html
-<script src="https://unpkg.com/optik-sol" data-theme="dark" data-max-logs="2000"></script>
+<script src="https://unpkg.com/optik-sol@0.4.2" data-theme="dark" data-max-logs="2000"></script>
 ```
 
 | Attribute | Description |
@@ -72,7 +79,7 @@ Once mounted, `window.Optik` is available.
 ### Bundler
 
 ```bash
-npm i optik-sol
+npm i optik-sol@0.4.2
 ```
 
 ```js
@@ -126,6 +133,7 @@ parameters are redacted. Code can call `serializeHar(records)` and explicitly op
 retained payloads with `{ includeBodies: true, includeWebSocketFrames: true }`; supported
 JSON and form fields are then redacted too. Raw export additionally requires
 `{ redactSensitive: false }`.
+Common credential key/value payloads in text and WebSocket frames are redacted by default as well.
 
 The Environment panel also keeps a bounded history of browser-reported main-thread
 long tasks (50ms or longer), including cumulative/maximum duration and available
