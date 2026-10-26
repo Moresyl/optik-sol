@@ -212,7 +212,7 @@ export function instrumentWebSocket(
       };
 
       // Wrap `send` per-instance so outbound frames are captured too.
-      const wrappedSend = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+      const wrappedSend = (data: Parameters<WebSocket['send']>[0]) => {
         if (active) {
           try {
             pushFrame(describeFrame('send', data, maxFramePayload));
