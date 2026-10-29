@@ -45,12 +45,12 @@
     "solid-js": "^1.9.0"
   },
   "devDependencies": {
-    "@unocss/cli": "^66.10.2",
-    "@unocss/preset-wind3": "^66.10.2",
-    "solid-js": "^1.9.15",
-    "typescript": "~6.0.3",
-    "unocss": "^66.10.2",
-    "vite": "^8.3.0",
+    "@unocss/cli": "^66.11.0",
+    "@unocss/preset-wind3": "^66.11.0",
+    "solid-js": "^1.9.17",
+    "typescript": "~7.0.2",
+    "unocss": "^66.11.0",
+    "vite": "^8.3.5",
     "vite-plugin-solid": "^2.11.14"
   }
 }
