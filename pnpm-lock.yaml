@@ -53,6 +53,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      '@typescript/typescript6':
+        specifier: ~6.0.2
+        version: 6.0.2
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -70,7 +73,7 @@ importers:
         version: 4.65.0
       rollup-plugin-dts:
         specifier: ^6.5.1
-        version: 6.5.1(rollup@4.65.0)(typescript@7.0.2)
+        version: 6.5.1(@typescript/typescript6@6.0.2)(rollup@4.65.0)(typescript@7.0.2)
       solid-js:
         specifier: ^1.9.17
         version: 1.9.17
@@ -1239,6 +1242,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@typescript/typescript6@6.0.2':
+    resolution: {integrity: sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w==}
+    hasBin: true
+
   '@ungap/structured-clone@1.4.0':
     resolution: {integrity: sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ==}
 
@@ -2192,6 +2199,11 @@ packages:
 
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
+
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -3287,6 +3299,10 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
+  '@typescript/typescript6@6.0.2':
+    dependencies:
+      '@typescript/old': typescript@6.0.3
+
   '@ungap/structured-clone@1.4.0': {}
 
   '@unocss/autocomplete@66.11.0':
@@ -4209,7 +4225,7 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.2.15
       '@rolldown/binding-win32-x64-msvc': 1.2.15
 
-  rollup-plugin-dts@6.5.1(rollup@4.65.0)(typescript@7.0.2):
+  rollup-plugin-dts@6.5.1(@typescript/typescript6@6.0.2)(rollup@4.65.0)(typescript@7.0.2):
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -4219,6 +4235,7 @@ snapshots:
       typescript: 7.0.2
     optionalDependencies:
       '@babel/code-frame': 8.0.0
+      '@typescript/typescript6': 6.0.2
 
   rollup@4.65.0:
     dependencies:
@@ -4341,6 +4358,8 @@ snapshots:
   tinyrainbow@3.2.0: {}
 
   trim-lines@3.0.1: {}
+
+  typescript@6.0.3: {}
 
   typescript@7.0.2:
     optionalDependencies:
