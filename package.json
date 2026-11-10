@@ -35,14 +35,14 @@
     "clean": "pnpm -r exec rimraf dist .turbo tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "5.1.0",
     "happy-dom": "21.0.4",
-    "rimraf": "^6.0.1",
-    "solid-js": "1.9.17",
+    "rimraf": "^6.1.4",
+    "solid-js": "1.9.18",
     "typescript": "~7.0.2",
-    "vite": "^8.3.5",
-    "vite-plugin-solid": "2.11.14",
-    "vitest": "5.0.5"
+    "vite": "^8.3.6",
+    "vite-plugin-solid": "2.11.15",
+    "vitest": "5.1.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
